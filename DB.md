@@ -1,8 +1,7 @@
 # 📊 T-RESERVE ENGINE — Документация БД (для менторов)
 
-> Версия: 1.1 | Дата: 11.04.2026
+> Версия: 1.2 | Дата: 11.04.2026
 > СУБД: PostgreSQL 16
-> Обновление: добавлены `@Version` (optimistic lock), `category`, `duration_minutes`
 
 ---
 
@@ -30,8 +29,9 @@ erDiagram
         BIGSERIAL id PK
         VARCHAR_255 name "название площадки"
         VARCHAR_500 address "адрес"
-        JSONB seat_map "карта мест для SVG"
-        INT capacity "общее кол-во мест"
+        INT rows_count "кол-во рядов"
+        INT cols_count "мест в ряду"
+        INT capacity "rows x cols"
         TIMESTAMPTZ created_at
     }
 
@@ -39,7 +39,6 @@ erDiagram
         BIGSERIAL id PK
         BIGINT venue_id FK "ссылка на площадку"
         VARCHAR_255 title "название мероприятия"
-        VARCHAR_255 performer "исполнитель"
         TEXT description "описание"
         VARCHAR_50 category "CINEMA / CONCERT / SPORT / THEATER"
         INT duration_minutes "длительность в минутах"
@@ -59,7 +58,6 @@ erDiagram
         VARCHAR_20 status "AVAILABLE / LOCKED / BOOKED"
         NUMERIC price "цена конкретного билета"
         BIGINT user_id FK "кто забронировал (NULL если свободно)"
-        TIMESTAMPTZ locked_at "время блокировки"
         TIMESTAMPTZ lock_expires_at "когда истечёт блокировка"
         TIMESTAMPTZ booked_at "время подтверждения оплаты"
     }
@@ -91,35 +89,24 @@ erDiagram
 | Поле | Тип | Ограничения | Описание |
 |---|---|---|---|
 | `id` | BIGSERIAL | PK | Уникальный идентификатор |
-| `name` | VARCHAR(255) | NOT NULL | Название: "Олимпийский", "Зал №3" |
+| `name` | VARCHAR(255) | NOT NULL | Название: "Октябрь — Зал 1", "Лужники — Трибуна А" |
 | `address` | VARCHAR(500) | — | Физический адрес |
-| `seat_map` | JSONB | NOT NULL | JSON-структура карты мест для SVG-рендера на фронте |
-| `capacity` | INT | NOT NULL | Общее количество мест |
+| `rows_count` | INT | NOT NULL | Количество рядов (A, B, C...) |
+| `cols_count` | INT | NOT NULL | Количество мест в ряду (1, 2, 3...) |
+| `capacity` | INT | NOT NULL | Общее количество мест (rows × cols) |
 | `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Дата создания |
 
-**Зачем**: Отделяет площадку от мероприятия. Один зал может принимать множество мероприятий. `seat_map` хранит координаты для фронтенд-рендера.
+**Зачем**: Отделяет площадку от мероприятия. Один зал может принимать множество мероприятий.
 
-**Формат `seat_map` (JSONB)**:
-```json
-{
-  "rows": [
-    {
-      "label": "A",
-      "seats": [
-        {"seatId": "A-1", "col": 1, "x": 50, "y": 100, "category": "VIP"},
-        {"seatId": "A-2", "col": 2, "x": 80, "y": 100, "category": "VIP"},
-        {"seatId": "A-3", "col": 3, "x": 110, "y": 100, "category": "STANDARD"}
-      ]
-    },
-    {
-      "label": "B",
-      "seats": [
-        {"seatId": "B-1", "col": 1, "x": 50, "y": 140, "category": "STANDARD"}
-      ]
-    }
-  ],
-  "stagePosition": {"x": 200, "y": 20, "width": 300, "height": 50}
-}
+**Как работает матрица мест**: Карта зала — простая сетка. Фронт рисует таблицу `rows_count × cols_count`. Идентификатор места генерируется автоматически: ряд A = места A-1, A-2, ..., A-{cols_count}; ряд B = места B-1, B-2 и т.д.
+
+```
+Пример: rows_count=3, cols_count=5 → Зал на 15 мест
+
+         1      2      3      4      5
+  A   [ A-1 ][ A-2 ][ A-3 ][ A-4 ][ A-5 ]
+  B   [ B-1 ][ B-2 ][ B-3 ][ B-4 ][ B-5 ]
+  C   [ C-1 ][ C-2 ][ C-3 ][ C-4 ][ C-5 ]
 ```
 
 ---
@@ -130,13 +117,12 @@ erDiagram
 |---|---|---|---|
 | `id` | BIGSERIAL | PK | Уникальный идентификатор |
 | `venue_id` | BIGINT | FK → venues(id), NOT NULL | На какой площадке проводится |
-| `title` | VARCHAR(255) | NOT NULL | Название: "Концерт Макса Коржа" |
-| `performer` | VARCHAR(255) | — | Исполнитель/команда |
+| `title` | VARCHAR(255) | NOT NULL | Название: "Концерт Макса Коржа", "Inception" |
 | `description` | TEXT | — | Полное описание мероприятия |
 | `category` | VARCHAR(50) | — | Тип: CINEMA, CONCERT, SPORT, THEATER. Для фильтрации |
 | `duration_minutes` | INT | — | Длительность в минутах (120 для кино, 90 для матча) |
 | `start_time` | TIMESTAMPTZ | NOT NULL | Дата и время начала |
-| `base_price` | NUMERIC(10,2) | NOT NULL | Базовая цена билета (может варьироваться по категории) |
+| `base_price` | NUMERIC(10,2) | NOT NULL | Базовая цена билета |
 | `status` | VARCHAR(20) | CHECK | Жизненный цикл мероприятия |
 | `version` | BIGINT | DEFAULT 0 | Optimistic lock — защита от concurrent admin edits |
 | `created_by` | BIGINT | FK → users(id) | Какой админ создал |
@@ -165,10 +151,9 @@ erDiagram
 | `event_id` | BIGINT | FK → events(id), NOT NULL | К какому мероприятию |
 | `seat_id` | VARCHAR(50) | NOT NULL | Идентификатор места: "A-12", "B-5" |
 | `status` | VARCHAR(20) | CHECK, DEFAULT 'AVAILABLE' | Текущее состояние места |
-| `price` | NUMERIC(10,2) | — | Цена конкретного билета (может != base_price) |
+| `price` | NUMERIC(10,2) | — | Цена конкретного билета |
 | `user_id` | BIGINT | FK → users(id), nullable | Кто забронировал. NULL = свободно |
-| `locked_at` | TIMESTAMPTZ | nullable | Когда было заблокировано (для расчёта таймера) |
-| `lock_expires_at` | TIMESTAMPTZ | nullable | locked_at + 10 минут. Cancel Worker проверяет это |
+| `lock_expires_at` | TIMESTAMPTZ | nullable | Когда истечёт блокировка. Cancel Worker проверяет это |
 | `booked_at` | TIMESTAMPTZ | nullable | Когда оплата подтверждена |
 
 > [!NOTE]
@@ -209,5 +194,5 @@ events (1) ──── (N) tickets    "одно мероприятие → мн
 |---|---|
 | `orders` (заказы) | MVP: один lock = один ticket. Нет корзины. Можно добавить позже |
 | `payments` (оплаты) | Mock payment. Логика подтверждения прямо в BookingService. Для Stripe — добавить позже |
-| `seat_categories` | Категория хранится в `seat_map` JSONB. Для MVP не нужна отдельная таблица |
+| `seat_categories` (VIP/Standard) | Все места одной цены для MVP. Категории — на следующую итерацию |
 | `notifications` | Fire-and-forget в Python сервис. Не храним историю нотификаций |
