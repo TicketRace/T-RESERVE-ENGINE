@@ -40,6 +40,8 @@ erDiagram
         BIGINT venue_id FK "ссылка на площадку"
         VARCHAR_255 title "название мероприятия"
         TEXT description "описание"
+        VARCHAR_500 image_url "иллюстрация"
+        VARCHAR_10 age_restriction "возрастное ограничение"
         VARCHAR_50 category "CINEMA / CONCERT / SPORT / THEATER"
         INT duration_minutes "длительность в минутах"
         TIMESTAMPTZ start_time "дата и время начала"
@@ -119,6 +121,8 @@ erDiagram
 | `venue_id` | BIGINT | FK → venues(id), NOT NULL | На какой площадке проводится |
 | `title` | VARCHAR(255) | NOT NULL | Название: "Концерт Макса Коржа", "Inception" |
 | `description` | TEXT | — | Полное описание мероприятия |
+| `image_url` | VARCHAR(500) | — | Ссылка на иллюстрацию (постер, обложка) |
+| `age_restriction` | VARCHAR(10) | — | Возрастное ограничение: "0+", "6+", "12+", "16+", "18+" |
 | `category` | VARCHAR(50) | — | Тип: CINEMA, CONCERT, SPORT, THEATER. Для фильтрации |
 | `duration_minutes` | INT | — | Длительность в минутах (120 для кино, 90 для матча) |
 | `start_time` | TIMESTAMPTZ | NOT NULL | Дата и время начала |
@@ -174,8 +178,19 @@ stateDiagram-v2
 
 > [!IMPORTANT]
 > **Один ряд таблицы `tickets` = одно конкретное место на одно конкретное мероприятие.** При создании ивента на площадку с 500 местами — создаётся 500 строк в tickets со статусом AVAILABLE.
+---
+
+## Индексы
+
+| Индекс | Поля | Зачем |
+|---|---|---|
+| `idx_tickets_event_status` | `(event_id, status)` | Быстрый SELECT всех мест ивента по статусу. Главный запрос карты |
+| `idx_tickets_user` | `(user_id) WHERE user_id IS NOT NULL` | Partial index: история покупок пользователя |
+| `idx_tickets_locked_expires` | `(lock_expires_at) WHERE status='LOCKED'` | Partial index: Safety net cron ищет просроченные LOCKED билеты |
+| `idx_events_status_time` | `(status, start_time)` | Быстрый фильтр активных ивентов по дате |
 
 ---
+
 
 ## Связи между таблицами
 
@@ -193,6 +208,6 @@ events (1) ──── (N) tickets    "одно мероприятие → мн
 | Вариант | Почему НЕ делаем |
 |---|---|
 | `orders` (заказы) | MVP: один lock = один ticket. Нет корзины. Можно добавить позже |
-| `payments` (оплаты) | Mock payment. Логика подтверждения прямо в BookingService. Для Stripe — добавить позже |
+| `payments` (оплаты) | Бесплатный payment. Логика подтверждения прямо в BookingService. Для Stripe — добавить позже |
 | `seat_categories` (VIP/Standard) | Все места одной цены для MVP. Категории — на следующую итерацию |
 | `notifications` | Fire-and-forget в Python сервис. Не храним историю нотификаций |
