@@ -1,6 +1,6 @@
 # 📊 T-RESERVE ENGINE — Документация БД (для менторов)
 
-> Версия: 1.2 | Дата: 11.04.2026
+> Версия: 1.3 | Дата: 17.04.2026
 > СУБД: PostgreSQL 16
 
 ---
@@ -12,7 +12,9 @@ erDiagram
     users ||--o{ tickets : "бронирует"
     users ||--o{ events : "создаёт (admin)"
     venues ||--o{ events : "проводится в"
-    events ||--o{ tickets : "содержит места"
+    venues ||--o{ seats : "содержит места"
+    events ||--o{ tickets : "содержит билеты"
+    seats ||--o{ tickets : "привязан к билету"
 
     users {
         BIGSERIAL id PK
@@ -31,8 +33,14 @@ erDiagram
         VARCHAR_500 address "адрес"
         INT rows_count "кол-во рядов"
         INT cols_count "мест в ряду"
-        INT capacity "rows x cols"
         TIMESTAMPTZ created_at
+    }
+
+    seats {
+        BIGSERIAL id PK
+        BIGINT venue_id FK "ссылка на площадку"
+        VARCHAR_5 row_label "A, B, C..."
+        INT seat_number "1, 2, 3..."
     }
 
     events {
@@ -56,7 +64,7 @@ erDiagram
     tickets {
         BIGSERIAL id PK
         BIGINT event_id FK "ссылка на мероприятие"
-        VARCHAR_50 seat_id "идентификатор места: A-12"
+        BIGINT seat_id FK "ссылка на место"
         VARCHAR_20 status "AVAILABLE / LOCKED / BOOKED"
         NUMERIC price "цена конкретного билета"
         BIGINT user_id FK "кто забронировал (NULL если свободно)"
@@ -95,16 +103,34 @@ erDiagram
 | `address` | VARCHAR(500) | — | Физический адрес |
 | `rows_count` | INT | NOT NULL | Количество рядов (A, B, C...) |
 | `cols_count` | INT | NOT NULL | Количество мест в ряду (1, 2, 3...) |
-| `capacity` | INT | NOT NULL | Общее количество мест (rows × cols) |
 | `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Дата создания |
 
 **Зачем**: Отделяет площадку от мероприятия. Один зал может принимать множество мероприятий.
 
-**Как работает матрица мест**: Карта зала — простая сетка. Фронт рисует таблицу `rows_count × cols_count`. Идентификатор места генерируется автоматически: ряд A = места A-1, A-2, ..., A-{cols_count}; ряд B = места B-1, B-2 и т.д.
+---
+
+### 3. `seats` — Места (физические кресла в зале)
+
+| Поле | Тип | Ограничения | Описание |
+|---|---|---|---|
+| `id` | BIGSERIAL | PK | Уникальный идентификатор места |
+| `venue_id` | BIGINT | FK → venues(id), NOT NULL | К какой площадке |
+| `row_label` | VARCHAR(5) | NOT NULL | Буква ряда: "A", "B", "C" |
+| `seat_number` | INT | NOT NULL | Номер места в ряду: 1, 2, 3... |
+
+`UNIQUE(venue_id, row_label, seat_number)` — одно место в зале не дублируется.
+
+**Зачем**: Место — отдельная сущность. Можно в будущем добавить `is_active` (сломанное кресло), `category` (VIP/Standard), без изменения схемы билетов.
+
+**Как заполняется**: При создании площадки (rows=3, cols=5) автоматически создаётся 15 строк:
 
 ```
-Пример: rows_count=3, cols_count=5 → Зал на 15 мест
+Вставка: venue_id=1
+  (1, 'A', 1), (1, 'A', 2), ..., (1, 'A', 5),
+  (1, 'B', 1), (1, 'B', 2), ..., (1, 'B', 5),
+  (1, 'C', 1), (1, 'C', 2), ..., (1, 'C', 5)
 
+Фронт рисует:
          1      2      3      4      5
   A   [ A-1 ][ A-2 ][ A-3 ][ A-4 ][ A-5 ]
   B   [ B-1 ][ B-2 ][ B-3 ][ B-4 ][ B-5 ]
@@ -113,7 +139,7 @@ erDiagram
 
 ---
 
-### 3. `events` — Мероприятия
+### 4. `events` — Мероприятия
 
 | Поле | Тип | Ограничения | Описание |
 |---|---|---|---|
@@ -147,13 +173,13 @@ erDiagram
 
 ---
 
-### 4. `tickets` — Билеты/Места (⚡ главная таблица)
+### 5. `tickets` — Билеты (⚡ главная таблица)
 
 | Поле | Тип | Ограничения | Описание |
 |---|---|---|---|
 | `id` | BIGSERIAL | PK | Уникальный идентификатор билета |
 | `event_id` | BIGINT | FK → events(id), NOT NULL | К какому мероприятию |
-| `seat_id` | VARCHAR(50) | NOT NULL | Идентификатор места: "A-12", "B-5" |
+| `seat_id` | BIGINT | FK → seats(id), NOT NULL | Какое место |
 | `status` | VARCHAR(20) | CHECK, DEFAULT 'AVAILABLE' | Текущее состояние места |
 | `price` | NUMERIC(10,2) | — | Цена конкретного билета |
 | `user_id` | BIGINT | FK → users(id), nullable | Кто забронировал. NULL = свободно |
@@ -195,10 +221,12 @@ stateDiagram-v2
 ## Связи между таблицами
 
 ```
-users (1) ──── (N) tickets     "один юзер → много борированных билетов"
+users (1) ──── (N) tickets     "один юзер → много забронированных билетов"
 users (1) ──── (N) events      "один админ → много созданных ивентов"
+venues (1) ──── (N) seats      "одна площадка → много мест"
 venues (1) ──── (N) events     "одна площадка → много мероприятий"
-events (1) ──── (N) tickets    "одно мероприятие → много мест/билетов"
+seats (1) ──── (N) tickets     "одно место → много билетов (на разные ивенты)"
+events (1) ──── (N) tickets    "одно мероприятие → много билетов"
 ```
 
 ---
