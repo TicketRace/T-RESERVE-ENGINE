@@ -52,7 +52,8 @@ spring:
 app:
   jwt:
     secret: ${JWT_SECRET:t-reserve-super-secret-key-change-in-prod-256-bits-minimum}
-    expiration-ms: 86400000  # 24 hours
+    expiration-ms: 86400000       # 24 hours (access token)
+    refresh-expiration-ms: 604800000  # 7 days (refresh token)
   booking:
     lock-duration-minutes: 10
 
