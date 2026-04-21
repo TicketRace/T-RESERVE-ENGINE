@@ -1,2 +1,26 @@
+# Build
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# JVM crash logs
+hs_err_pid*.log
+replay_pid*.log
+
+# Test temp files
+*.json
+!src/**/*.json
+!.commitlintrc.json
+!package.json
+!package-lock.json
+
+# OS
+.DS_Store
+Thumbs.db
+
 # Internal notes (not for git)
 notes/
+node_modules/
