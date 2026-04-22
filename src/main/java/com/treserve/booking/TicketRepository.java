@@ -44,4 +44,14 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     /** Билеты юзера */
     List<Ticket> findByUserIdAndStatus(Long userId, TicketStatus status);
+
+    /** Найти все билеты пользователя с подгрузкой мероприятия и места.*/
+    @Query("""
+        SELECT t FROM Ticket t
+        JOIN FETCH t.event e
+        JOIN FETCH t.seat s
+        WHERE t.user.id = :userId
+        ORDER BY t.bookedAt DESC NULLS LAST, t.lockExpiresAt DESC
+    """)
+    List<Ticket> findByUserIdWithDetails(@Param("userId") Long userId);
 }
