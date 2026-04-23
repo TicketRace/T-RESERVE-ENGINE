@@ -30,18 +30,18 @@
 
 | Method | Path | Auth | Описание | Response | Status |
 |---|---|---|---|---|---|
-| `GET` | `/api/users/me` | 🔒 USER | Профиль текущего пользователя | `{id, email, name, role}` | TODO |
-| `GET` | `/api/users/me/bookings` | 🔒 USER | История бронирований пользователя (LOCKED + BOOKED) | `[{ticketId, event, seat, status, bookedAt}]` | TODO |
+| `GET` | `/api/users/me` | 🔒 USER | Профиль текущего пользователя | `{id, email, name, role}` | ✅ |
+| `GET` | `/api/users/me/bookings` | 🔒 USER | История бронирований пользователя (LOCKED + BOOKED) | `[{ticketId, event, seat, status, bookedAt}]` | ✅ |
 
 ## Admin — `/api/admin`
 
 | Method | Path | Auth | Описание | Body | Response | Status |
 |---|---|---|---|---|---|---|
 | `GET` | `/api/venues` | 🔒 ADMIN | Список всех площадок с количеством мест | Venues list | ✅ |
-| `POST` | `/api/admin/events` | 🔒 ADMIN | Создание мероприятия. Привязка к venue, генерация билетов | `{title, description, venueId, startsAt, price}` | Created event | TODO |
-| `PUT` | `/api/admin/events/{id}` | 🔒 ADMIN | Редактирование мероприятия (до начала продаж) | `{title, ...}` | Updated event | TODO |
-| `DELETE` | `/api/admin/events/{id}` | 🔒 ADMIN | Удаление мероприятия (каскадно удаляет билеты) | — | 204 | TODO |
-| `GET` | `/api/admin/dashboard` | 🔒 ADMIN | Дашборд: общая статистика продаж, кол-во ивентов, выручка | — | `{totalEvents, totalBookings, revenue}` | TODO |
+| `POST` | `/api/admin/events` | 🔒 ADMIN | Создание мероприятия. Привязка к venue, генерация билетов | `{title, description, venueId, startsAt, price}` | Created event | ✅ |
+| `PUT` | `/api/admin/events/{id}` | 🔒 ADMIN | Редактирование мероприятия (до начала продаж) | `{title, ...}` | Updated event | ✅ |
+| `DELETE` | `/api/admin/events/{id}` | 🔒 ADMIN | Удаление мероприятия (каскадно удаляет билеты) | — | 204 | ✅ |
+| `GET` | `/api/admin/dashboard` | 🔒 ADMIN | Дашборд: общая статистика продаж, кол-во ивентов, выручка | — | `{totalEvents, totalBookings, revenue}` | ✅ |
 
 ## System
 
