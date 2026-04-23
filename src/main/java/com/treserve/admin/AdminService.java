@@ -2,6 +2,7 @@ package com.treserve.admin;
 
 import com.treserve.booking.TicketRepository;
 import com.treserve.booking.TicketStatus;
+import com.treserve.common.exception.ResourceNotFoundException;
 import com.treserve.event.Event;
 import com.treserve.event.EventRepository;
 import com.treserve.event.dto.EventCreateRequest;
@@ -32,9 +33,10 @@ public class AdminService {
     @Transactional
     public EventResponse createEvent(EventCreateRequest request, Long adminId) {
         Venue venue = venueRepository.findById(request.getVenueId())
-                .orElseThrow(() -> new RuntimeException("Venue not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Venue", request.getVenueId()));
+        
         User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new RuntimeException("Admin not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Admin", adminId));
 
         Event event = Event.builder()
                 .title(request.getTitle())
@@ -83,11 +85,11 @@ public class AdminService {
     @Transactional
     public EventResponse updateEvent(Long eventId, EventUpdateRequest request, Long adminId) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Event", eventId));
 
         // Проверка: можно редактировать только до начала продаж (startTime > now)
         if (event.getStartTime().isBefore(java.time.Instant.now())) {
-            throw new RuntimeException("Cannot edit event after sales started");
+            throw new IllegalArgumentException("Cannot edit event after sales started");
         }
 
         event.setTitle(request.getTitle());
@@ -121,12 +123,13 @@ public class AdminService {
 
     @Transactional
     public void deleteEvent(Long eventId) {
-        if (!eventRepository.existsById(eventId)) {
-            throw new RuntimeException("Event not found");
-        }
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event", eventId));
+        
         if (eventRepository.hasBookedTickets(eventId)) {
-            throw new RuntimeException("Cannot delete event with booked tickets");
+            throw new IllegalArgumentException("Cannot delete event with BOOKED tickets");
         }
+        
         ticketRepository.deleteAll(ticketRepository.findByEventIdWithSeat(eventId));
         eventRepository.deleteById(eventId);
     }
