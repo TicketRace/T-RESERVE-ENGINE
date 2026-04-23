@@ -2,6 +2,8 @@
 
 Высоконагруженная система бронирования билетов с защитой от Race Condition.
 
+[Figma](https://www.figma.com/design/SjI0zvNK74xYOAYqUwlnl3/%D0%A1%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0-%D0%B1%D1%80%D0%BE%D0%BD%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F?node-id=0-1&t=zJmoVd0dsGO4Khtd-1)
+
 ## 🛠 Технологический стек
 - **Backend:** Java 21 (Virtual Threads), Spring Boot 3.3
 - **Database:** PostgreSQL 16 (Pessimistic Locking `FOR UPDATE NOWAIT`)
