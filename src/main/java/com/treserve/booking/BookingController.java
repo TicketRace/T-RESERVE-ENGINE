@@ -23,6 +23,7 @@ public class BookingController {
     private final BookingService bookingService;
 
     @GetMapping("/api/events/{eventId}/seats")
+    @Tag(name = "Events")
     @Operation(summary = "Карта мест: все места + их статусы (polling каждые 3 сек)")
     public List<SeatInfo> getSeats(@PathVariable Long eventId) {
         return ticketRepository.findByEventIdWithSeat(eventId).stream()
