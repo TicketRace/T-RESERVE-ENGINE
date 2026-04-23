@@ -31,19 +31,4 @@ public class EventController {
             .orElseThrow(() -> new com.treserve.common.exception.ResourceNotFoundException("Event", id));
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Создать мероприятие (ADMIN)")
-    public Event create(@RequestBody Event event) {
-        return eventRepository.save(event);
-    }
-
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Удалить мероприятие (ADMIN)")
-    public void delete(@PathVariable Long id) {
-        eventRepository.deleteById(id);
-    }
 }
