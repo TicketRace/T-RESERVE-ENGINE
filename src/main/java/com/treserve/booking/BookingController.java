@@ -19,23 +19,14 @@ import java.util.stream.Collectors;
 @Tag(name = "Booking", description = "Ядро — бронирование мест")
 public class BookingController {
 
-    private final TicketRepository ticketRepository;
+    private final SeatService seatService;
     private final BookingService bookingService;
 
     @GetMapping("/api/events/{eventId}/seats")
     @Tag(name = "Events")
-    @Operation(summary = "Карта мест: все места + их статусы (polling каждые 3 сек)")
+    @Operation(summary = "Карта мест: все места + их статусы (polling каждые 3 сек, Redis cached)")
     public List<SeatInfo> getSeats(@PathVariable Long eventId) {
-        return ticketRepository.findByEventIdWithSeat(eventId).stream()
-            .map(t -> new SeatInfo(
-                t.getSeat().getId(),
-                t.getSeat().getSeatLabel(),
-                t.getSeat().getRowLabel(),
-                t.getSeat().getSeatNumber(),
-                t.getStatus().name(),
-                t.getPrice()
-            ))
-            .collect(Collectors.toList());
+        return seatService.getSeats(eventId);
     }
 
     @PostMapping("/api/bookings/lock")
