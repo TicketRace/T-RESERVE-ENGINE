@@ -25,6 +25,7 @@ import java.util.List;
 public class SafetyNetScheduler {
 
     private final TicketRepository ticketRepository;
+    private final SeatService seatService;
 
     @Scheduled(fixedRate = 30_000) // каждые 30 секунд
     @Transactional
@@ -42,6 +43,12 @@ public class SafetyNetScheduler {
         }
 
         ticketRepository.saveAll(expired);
+
+        // Инвалидировать кэш для каждого затронутого ивента
+        expired.stream()
+            .map(t -> t.getEvent().getId())
+            .distinct()
+            .forEach(seatService::evictSeatsCache);
 
         log.info("SafetyNet: released {} expired locks", expired.size());
     }

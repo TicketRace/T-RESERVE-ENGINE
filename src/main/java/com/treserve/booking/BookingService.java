@@ -22,6 +22,7 @@ public class BookingService {
 
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+    private final SeatService seatService;
 
     @Value("${app.booking.lock-duration-minutes:10}")
     private int lockDurationMinutes;
@@ -63,6 +64,7 @@ public class BookingService {
             log.info("LOCKED seat {} for event {} by user {} (expires {})",
                 seatId, eventId, userId, expiresAt);
 
+            seatService.evictSeatsCache(eventId);
             return new LockResponse(ticket.getId(), expiresAt);
 
         } catch (PessimisticLockingFailureException e) {
@@ -100,6 +102,7 @@ public class BookingService {
 
         ticketRepository.save(ticket);
 
+        seatService.evictSeatsCache(ticket.getEvent().getId());
         log.info("BOOKED ticket {} for user {}", ticketId, userId);
     }
 
@@ -126,6 +129,7 @@ public class BookingService {
 
         ticketRepository.save(ticket);
 
+        seatService.evictSeatsCache(ticket.getEvent().getId());
         log.info("CANCELLED lock on ticket {} by user {}", ticketId, userId);
     }
 }
