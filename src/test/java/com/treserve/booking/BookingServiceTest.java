@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
@@ -74,6 +75,8 @@ class BookingServiceTest {
         lockedTicket.setUser(testUser);
     }
 
+    // ─── tryLock ──────────────────────────────────────────────────────────────
+
     @Test
     @DisplayName("tryLock: свободное место → успешная блокировка")
     void tryLock_success() {
@@ -103,5 +106,74 @@ class BookingServiceTest {
 
         verify(ticketRepository, never()).save(any());
         verify(seatService, never()).evictSeatsCache(any());
+    }
+
+    @Test
+    @DisplayName("tryLock: PG блокировка (строка занята другой транзакцией) → 409")
+    void tryLock_pgLockContention() {
+        when(ticketRepository.findAvailableForUpdate(1L, 1L))
+            .thenThrow(new PessimisticLockingFailureException("FOR UPDATE NOWAIT failed"));
+
+        assertThatThrownBy(() -> bookingService.tryLock(1L, 1L, 1L))
+            .isInstanceOf(SeatAlreadyLockedException.class);
+    }
+    // ─── confirm ──────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("confirm: LOCKED билет → BOOKED")
+    void confirm_success() {
+        when(ticketRepository.findByIdForUpdate(10L))
+            .thenReturn(Optional.of(lockedTicket));
+        when(ticketRepository.save(any())).thenReturn(lockedTicket);
+
+        bookingService.confirm(10L, 1L);
+
+        assertThat(lockedTicket.getStatus()).isEqualTo(TicketStatus.BOOKED);
+        assertThat(lockedTicket.getLockExpiresAt()).isNull();
+        verify(seatService).evictSeatsCache(1L);
+    }
+
+    @Test
+    @DisplayName("confirm: истёкший лок → IllegalArgumentException")
+    void confirm_expired() {
+        lockedTicket.setLockExpiresAt(Instant.now().minusSeconds(60)); // истёк
+        when(ticketRepository.findByIdForUpdate(10L))
+            .thenReturn(Optional.of(lockedTicket));
+
+        assertThatThrownBy(() -> bookingService.confirm(10L, 1L))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Lock expired");
+    }
+
+    @Test
+    @DisplayName("confirm: чужой лок → IllegalArgumentException")
+    void confirm_wrongUser() {
+        // lockedTicket принадлежит testUser (id=1)
+        // Юзер 2 пытается подтвердить чужой лок
+        when(ticketRepository.findByIdForUpdate(10L))
+            .thenReturn(Optional.of(lockedTicket));
+
+        assertThatThrownBy(() -> bookingService.confirm(10L, 99L)) // userId=99, не владелец
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("not locked by you");
+
+        verify(ticketRepository, never()).save(any());
+    }
+
+    // ─── cancel ───────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("cancel: LOCKED билет → AVAILABLE, пользователь сброшен")
+    void cancel_success() {
+        when(ticketRepository.findByIdForUpdate(10L))
+            .thenReturn(Optional.of(lockedTicket));
+        when(ticketRepository.save(any())).thenReturn(lockedTicket);
+
+        bookingService.cancel(10L, 1L);
+
+        assertThat(lockedTicket.getStatus()).isEqualTo(TicketStatus.AVAILABLE);
+        assertThat(lockedTicket.getUser()).isNull();
+        assertThat(lockedTicket.getLockExpiresAt()).isNull();
+        verify(seatService).evictSeatsCache(1L);
     }
 }
