@@ -1,6 +1,10 @@
 package com.treserve.event;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,15 +24,22 @@ public class EventController {
 
     @GetMapping
     @Operation(summary = "Список мероприятий (пагинация)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Страница мероприятий")
+    })
     public Page<Event> list(@PageableDefault(size = 20) Pageable pageable) {
         return eventRepository.findAll(pageable);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Детали мероприятия")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Мероприятие найдено",
+            content = @Content(schema = @Schema(implementation = Event.class))),
+        @ApiResponse(responseCode = "404", description = "Мероприятие не найдено")
+    })
     public Event getById(@PathVariable Long id) {
         return eventRepository.findById(id)
             .orElseThrow(() -> new com.treserve.common.exception.ResourceNotFoundException("Event", id));
     }
-
 }
