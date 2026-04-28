@@ -10,8 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,7 +23,8 @@ public class EventController {
     @GetMapping
     @Operation(summary = "Список мероприятий (пагинация)")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Страница мероприятий")
+        @ApiResponse(responseCode = "200", description = "Список мероприятий получен"),
+        @ApiResponse(responseCode = "400", description = "Неверные параметры пагинации")
     })
     public Page<Event> list(@PageableDefault(size = 20) Pageable pageable) {
         return eventRepository.findAll(pageable);
@@ -34,8 +33,7 @@ public class EventController {
     @GetMapping("/{id}")
     @Operation(summary = "Детали мероприятия")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Мероприятие найдено",
-            content = @Content(schema = @Schema(implementation = Event.class))),
+        @ApiResponse(responseCode = "200", description = "Мероприятие найдено", content = @Content(schema = @Schema(implementation = Event.class))),
         @ApiResponse(responseCode = "404", description = "Мероприятие не найдено")
     })
     public Event getById(@PathVariable Long id) {
