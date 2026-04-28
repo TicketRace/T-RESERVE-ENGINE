@@ -20,4 +20,10 @@ public interface EventRepository extends JpaRepository<Event, Long> {
         @Param("category") String category,
         Pageable pageable
     );
+
+    /**
+     * Проверяет, есть ли у мероприятия оплаченные билеты.
+     * Нужно для защиты от удаления ивента с проданными билетами.*/
+    @Query("SELECT COUNT(t) > 0 FROM Ticket t WHERE t.event.id = :eventId AND t.status = 'BOOKED'")
+    boolean hasBookedTickets(@Param("eventId") Long eventId);
 }

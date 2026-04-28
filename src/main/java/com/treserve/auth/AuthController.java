@@ -5,6 +5,10 @@ import com.treserve.auth.dto.LoginRequest;
 import com.treserve.auth.dto.RefreshRequest;
 import com.treserve.auth.dto.RegisterRequest;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,18 +26,36 @@ public class AuthController {
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Регистрация → access + refresh токены")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Пользователь зарегистрирован",
+            content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Невалидные данные (email/пароль)"),
+        @ApiResponse(responseCode = "409", description = "Email уже занят")
+    })
     public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
         return authService.register(request);
     }
 
     @PostMapping("/login")
     @Operation(summary = "Логин → access + refresh токены")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Успешный вход",
+            content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Невалидные данные"),
+        @ApiResponse(responseCode = "401", description = "Неверный email или пароль")
+    })
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
 
     @PostMapping("/refresh")
     @Operation(summary = "Обновить access токен (передать refresh token)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Новый access токен выдан",
+            content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Невалидный запрос"),
+        @ApiResponse(responseCode = "401", description = "Refresh токен истёк или невалиден")
+    })
     public AuthResponse refresh(@Valid @RequestBody RefreshRequest request) {
         return authService.refresh(request.getRefreshToken());
     }
