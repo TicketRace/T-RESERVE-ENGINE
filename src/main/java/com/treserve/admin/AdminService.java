@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -56,15 +57,20 @@ public class AdminService {
 
         // Генерация билетов (tickets) для всех мест площадки
         List<Seat> seats = seatRepository.findByVenueId(venue.getId());
+        List<com.treserve.booking.Ticket> tickets = new ArrayList<>();
+        
         for (Seat seat : seats) {
             com.treserve.booking.Ticket ticket = com.treserve.booking.Ticket.builder()
                     .event(event)
                     .seat(seat)
-                    .status(com.treserve.booking.TicketStatus.AVAILABLE)
+                    .status(TicketStatus.AVAILABLE)
                     .price(request.getBasePrice())
                     .build();
-            ticketRepository.save(ticket);
+            tickets.add(ticket);
         }
+        
+        ticketRepository.saveAll(tickets);
+
 
         return new EventResponse(
                 event.getId(),
