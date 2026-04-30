@@ -1,248 +1,132 @@
-# Ведение проекта
+# Руководство разработчика
 
-## Обзор
-
-Разработка сервисов ведется в собственных репозиториях группы TicketRace. Для отслеживания статусов предлангается ведение доски проекта
-
-## Работа с доской
-
-Задачи фиксируем небольшие, если задача подразумевает под собой что-то очень большое, ее необходимо поделить на несколько задач
-
-1. Доска состоит из 6 разделов: New, Development, Testing, Review, Release, Done
-2. New - новая задача, еще не приступали. Заносятся всеми участниками команды по потребности (например, в процессе анализа задачи вы поняли, что ее нужно поделить на несколько; например, в процессе решения задачи вы поняли, что не хватает чего-то)
-3. Development - задача находится в процессе выполнения: анализируются возможные пути выполнения, пишется код, unit тесты для написанной логики
-4. Testing - задача тестируется тестировщиком: прогоняются тесты не только в рамках задачи, но и в рамках системы - не сломалось ли ничего
-5. Review - проверка написанного кода другими участниками команды: смотрим на работоспособность, стиль, выполняет ли код поставленную задачу
-6. Release - вливаем решение в main, тестировщик следит, что проект собирается и работает, иначе выполняется откат
-7. Done - если все хорошо задача уходит в бэклог  
-
-
-## Git Flow (Работа с кодом)
-1. **Никаких пушей в `main`!!!** Основная ветка всегда должна быть в рабочем состоянии
-2. Создаем ветку под свою задачу от `main`:
-   - для веток с кодом используем паттерн `<Номер задачи с доски> Название задачи`
-   - при необходимости поправить доки вне задачи используем `docs <название документа> <дата>`
-3. Перед созданием PR провести git rebase в интерактивном режиме, чтобы поправить названия коммитов, а также привести их в логичные блоки (например, вы меняли несколько раз файл, после каждого изменения делали коммит - необходимо сделать rebase и слить все коммиты в один, чтобы на Review было проще)
-4. Делаем **Pull Request (PR)**
-5. Свободный участник делает Code Review, дает комментарии, их нужно исправить
-6. После аппрува задача дополнительно тестируется тестировщиком
-7. Если тестирование успешно, PR вливается в main
-
-## Стандарты коммитов
-Пишем кратко и понятно:
-- `feat:` добавил генерацию PDF.
-- `fix:` исправил ошибку такую-то.
-- `docs:` обновил README.
-
-К моменту создания PR коммиты должны быть атомарны в своей логике, каждый коммит = готовое решение для части от задачи
-
-## Проблемы, баги
-Если что-то не работает - идем во вкладку **Issues**:
-1. Жмем **New Issue**.
-2. Если баг: пишем "Что ожидал" и "Что получил".
-3. Вешаем лейбл
-
-## Как быстро править тексты
-Если видишь ошибку в `.md` файле или сценарии:
-1. Открой файл в браузере на GitHub.
-2. Нажми значок карандаша
-3. Исправь текст
-4. Снизу выбери "Create a new branch..." и жми **Propose changes**.
-5. Создастся PR, который нужно будет замерджить.
+## Предусловия
+- **Docker Desktop** — для PostgreSQL, Redis, RabbitMQ
+- **Java 21 (LTS)** — [Microsoft Build of OpenJDK](https://learn.microsoft.com/en-us/java/openjdk/download#openjdk-21)
+- **Maven 3.9+** — или используйте `./mvnw` (если добавлен)
 
 ---
 
-## Спринты и дедлайны
-- Неделя 1 (11-17 апреля): Фундамент
-- Неделя 2 (18-24 апреля): Ядро — Booking
-- Неделя 3 (25 апр — 1 мая): Full Flow
-- Неделя 4 (2-8 мая): Фронтенд интеграция
-- Неделя 5 (9-15 мая): Админка + Полировка
-- Неделя 6 (16-22 мая): Load Testing + Финал
+## Локальная разработка
 
-# План разработки — T-RESERVE-ENGINE
+### 1. Поднять только инфраструктуру (без приложения)
+```powershell
+docker compose up postgres redis rabbitmq -d
+```
 
----
+### 2. Запуск приложения (с hot-reload для разработки)
+```powershell
+mvn spring-boot:run
+```
+Или через JAR:
+```powershell
+mvn package -DskipTests -q
+java -Xmx256m -jar target/t-reserve-engine-0.1.0-SNAPSHOT.jar
+```
 
-## Неделя 1 (11–17 апреля) — Фундамент
-
-### Цель
-Обеспечить стабильный локальный запуск проекта и готовность к разработке функционала.
-
-### Задачи
-- Поднять Postgres, Redis, RabbitMQ и backend локально
-- Проверить Flyway миграции и seed-данные
-- Настроить базовые профили и конфигурации
-- Реализовать единый формат ошибок (global exception handler)
-- Описать DTO и добавить валидацию (Bean Validation)
-- Обновить Swagger-документацию
-- Добавить smoke-check эндпоинт `/actuator/health`
-
-### Результат
-- Backend запускается через `docker-compose up` без ручной настройки
-- База содержит тестовые данные (пользователи, площадки, события, билеты)
-- Команда может начать разработку на едином окружении и согласованных API-контрактах
-
-### Карточки (Kanban)
-- INFRA local env
-- DB migration check
-- Global exception handler
-- DTO + validation
-- Swagger cleanup
+Приложение: **http://localhost:8080**
+Swagger: **http://localhost:8080/swagger-ui/index.html**
 
 ---
 
-## Неделя 2 (18–24 апреля) — Ядро: Booking
+## Тестирование
 
-### Цель
-Реализовать основной поток бронирования с учетом конкурентного доступа.
+### Unit-тесты
+```powershell
+mvn test
+```
 
-### Задачи
-- Реализовать `POST /api/auth/register`
-- Реализовать `POST /api/auth/login`
-- Реализовать `POST /api/auth/refresh`
-- Реализовать `GET /api/events`
-- Реализовать `GET /api/events/{id}/seats`
-- Реализовать `POST /api/bookings/lock`
-- Реализовать `POST /api/bookings/{id}/confirm`
-- Реализовать `DELETE /api/bookings/{id}`
-- Написать integration-тесты (happy path + conflict)
+### Конкретный тест-класс
+```powershell
+mvn test -Dtest=BookingServiceTest
+```
 
-### Результат
-- Пользователь может пройти полный сценарий: регистрация → вход → просмотр событий → выбор мест → блокировка → подтверждение/отмена
-- Минимум один конкурентный сценарий покрыт тестами
-
-### Карточки (Kanban)
-- Auth register
-- Auth login
-- Auth refresh
-- Events list
-- Event details
-- Seat map
-- Booking lock
-- Booking confirm
-- Booking cancel
-- Booking integration tests
+### Все тесты + integration
+```powershell
+mvn verify
+```
 
 ---
 
-## Неделя 3 (25 апреля — 1 мая) — Full Flow
+## Git Workflow
 
-### Цель
-Довести систему до полноценного пользовательского сценария.
+```
+main       ← стабильный релиз (мержится из develop перед встречами/дедлайнами)
+develop    ← основная ветка разработки
+feature/*  ← фича-ветки (от develop, PR в develop)
+```
 
-### Задачи
-- Реализовать worker автоотмены (scheduler)
-- Реализовать `GET /api/users/me/bookings`
-- Привести ошибки к единому контракту (400/401/404/409)
-- Добавить проверки edge cases:
-  - expired lock
-  - double confirm
-  - доступ к чужой брони
-- Добавить заглушку или интеграцию PDF-генерации
-- Написать регрессионные integration-тесты
+### Создать фича-ветку
+```powershell
+git checkout develop
+git pull origin develop
+git checkout -b feature/my-feature
+```
 
-### Результат
-- Работает полный сценарий: auth → events → seats → booking → user bookings
-- Просроченные блокировки автоматически освобождаются
-- Готов демонстрационный backend
-
-### Карточки (Kanban)
-- Cancel worker
-- My bookings endpoint
-- Error contract alignment
-- Full flow integration test
-- PDF stub / async hook
+### Закончить фичу
+```powershell
+git push -u origin feature/my-feature
+# Создать PR в develop на GitHub
+```
 
 ---
 
-## Неделя 4 (2–8 мая) — Интеграция с фронтендом
+## Тестирование API (PowerShell)
 
-### Цель
-Стабилизировать backend для работы с UI.
+### Регистрация
+```powershell
+[System.IO.File]::WriteAllText("$pwd\test.json", '{"email":"test@test.com","password":"123456","name":"Тест"}')
+curl.exe -s http://localhost:8080/api/auth/register -H "Content-Type: application/json" -d "@test.json"
+```
 
-### Задачи
-- Зафиксировать API-контракты (auth/events/seats/booking)
-- Проверить и настроить CORS
-- Реализовать polling карты мест (каждые 3 секунды)
-- Протестировать сценарии с фронтендом:
-  - login
-  - список событий
-  - выбор мест
-  - таймер блокировки
-  - confirm / conflict
-- Собрать и исправить интеграционные баги
+### Сохрани токен
+```powershell
+$token = "ВСТАВЬ_СЮДА_ЗНАЧЕНИЕ_token"
+```
 
-### Результат
-- Фронтенд работает с backend без моков
-- Карта мест обновляется через polling
+### Посмотреть ивенты
+```powershell
+curl.exe -s http://localhost:8080/api/events
+```
 
-### Карточки (Kanban)
-- CORS verification
-- API contract freeze
-- Seat polling optimization
-- Front-back integration bugfixes
-- QA smoke сценарии
+### Карта мест
+```powershell
+curl.exe -s http://localhost:8080/api/events/1/seats
+```
 
----
+### Забронировать место A-1
+```powershell
+[System.IO.File]::WriteAllText("$pwd\lock.json", '{"eventId":1,"seatId":1}')
+curl.exe -s http://localhost:8080/api/bookings/lock -H "Content-Type: application/json" -H "Authorization: Bearer $token" -d "@lock.json"
+```
 
-## Неделя 5 (9–15 мая) — Админка и полировка
+### Подтвердить бронь
+```powershell
+curl.exe -s -X POST http://localhost:8080/api/bookings/1/confirm -H "Authorization: Bearer $token"
+```
 
-### Цель
-Реализовать админский функционал и стабилизировать систему перед нагрузкой.
+### Отменить бронь
+```powershell
+curl.exe -s -X DELETE http://localhost:8080/api/bookings/2 -H "Authorization: Bearer $token" -w "\nHTTP: %{http_code}"
+```
 
-### Задачи
-- Реализовать admin endpoints для создания мероприятий
-- Реализовать генерацию билетов при создании события
-- Проверить доступы `/api/admin/**`
-- Добавить валидацию входных данных админских запросов
-- Обновить документацию и Swagger
-- Исправить накопленные баги
-
-### Результат
-- Администратор может создавать события
-- Для событий автоматически создаются билеты
-- Backend готов к системному тестированию
-
-### Карточки (Kanban)
-- Admin create event
-- Ticket generation on event create
-- Admin auth/role tests
-- Docs + Swagger polish
-- Bugfix buffer
+### Refresh token
+```powershell
+$refresh = "ВСТАВЬ_REFRESH_TOKEN"
+[System.IO.File]::WriteAllText("$pwd\refresh.json", "{`"refreshToken`":`"$refresh`"}")
+curl.exe -s http://localhost:8080/api/auth/refresh -H "Content-Type: application/json" -d "@refresh.json"
+```
 
 ---
 
-## Неделя 6 (16–22 мая) — Нагрузочное тестирование и финал
+## Остановка
 
-### Цель
-Подтвердить корректную работу системы при высокой конкуренции.
+```powershell
+# Spring Boot: Ctrl+C
 
-### Задачи
-- Подготовить JMeter сценарий (1000 одновременных запросов)
-- Проверить результат: 1 успешный lock, остальные — 409
-- Собрать метрики:
-  - latency
-  - error rate
-  - throughput
-- Оптимизировать при необходимости:
-  - Redis
-  - DB locking
-  - индексы
-  - thread pool
-- Провести финальное regression-тестирование
-- Подготовить release checklist и демо
+# Docker (сохранить данные):
+docker compose stop
 
-### Результат
-- Получен отчет по нагрузке
-- Подтверждена корректная обработка race condition
-- Подготовлен релиз-кандидат
-
-### Карточки (Kanban)
-- JMeter script
-- Load test run
-- Perf tuning
-- Final regression
-- Release candidate check
-
----
+# Docker (удалить данные):
+docker compose down -v
+```
