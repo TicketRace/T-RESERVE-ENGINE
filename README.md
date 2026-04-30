@@ -1,79 +1,48 @@
 # T-RESERVE ENGINE 🚀
 
-Высоконагруженная система бронирования билетов с защитой от Race Condition.
+> Высоконагруженная система бронирования билетов с защитой от Race Condition.
 
 [Figma](https://www.figma.com/design/SjI0zvNK74xYOAYqUwlnl3/%D0%A1%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0-%D0%B1%D1%80%D0%BE%D0%BD%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F?node-id=0-1&t=zJmoVd0dsGO4Khtd-1)
 
 ## 🛠 Технологический стек
-- **Backend:** Java 21 (Virtual Threads), Spring Boot 3.3
-- **Database:** PostgreSQL 16 (Pessimistic Locking `FOR UPDATE NOWAIT`)
-- **Cache & Locks:** Redis 7
-- **Message Broker:** RabbitMQ 3.13 (зарезервировано для v2)
-- **Background Tasks:** Spring `@Scheduled` (SafetyNet для отмены броней каждые 30 сек)
-- **Security:** Stateless JWT (Access + Refresh tokens)
-- **Database Migrations:** Flyway
+Java 21 · Spring Boot 3.3 · PostgreSQL 16 · Redis 7 · RabbitMQ · JWT · Flyway · Docker · GitHub Actions CI
+
+Подробное обоснование выбора технологий → [ARCHITECTURE.md](./ARCHITECTURE.md)
 
 ---
 
 ## 🚀 Быстрый старт
 
-### 1. Предусловия
-- Установите и запустите **Docker Desktop**
-- Установите **Java 21 (LTS)**
-- Склонируйте репозиторий и откройте терминал в корневой папке.
+> **Нужен только Docker Desktop.** Java, Maven и всё остальное — внутри контейнера.
 
-### 2. Поднятие инфраструктуры (БД, Redis, RabbitMQ)
-```powershell
-docker compose up -d
+```bash
+git clone https://github.com/TicketRace/T-RESERVE-ENGINE.git
+cd T-RESERVE-ENGINE
+docker compose up
 ```
-Проверьте статус через `docker ps` — все контейнеры должны быть `healthy`.
 
-### 3. Сборка и запуск приложения
-```powershell
-# Сборка JAR
-mvn package -DskipTests -q
+Дождитесь строки `Started TReserveApplication` (~30 сек при первом запуске).
 
-# Запуск
-java -Xmx256m -jar target/t-reserve-engine-0.1.0-SNAPSHOT.jar
-```
-Приложение запустится на порту **8080**.
+Приложение запустится на **http://localhost:8080**
 
 ---
 
 ## 📖 API Документация (Swagger)
 
-После запуска перейдите по адресу:
 👉 **http://localhost:8080/swagger-ui/index.html**
 
-Здесь можно протестировать все эндпоинты (регистрация, логин, бронирование) прямо из браузера.
+Все эндпоинты с описанием, кодами ответов и примерами.
 
 ---
 
-## 🧪 Тестирование (curl / PowerShell)
-
-Полный список команд для тестирования регистрации, логина и всего цикла бронирования (lock -> confirm -> cancel) находится в файле:
-[API_ENDPOINTS.md](./API_ENDPOINTS.md)
-
-### Пример быстрой проверки бронирования:
-1. Зарегистрируйся (`POST /api/auth/register`)
-2. Получи Access Token из ответа.
-3. Посмотри карту мест: `GET /api/events/1/seats`
-4. Залочь место:
-```powershell
-curl.exe -X POST http://localhost:8080/api/bookings/lock `
-  -H "Content-Type: application/json" `
-  -H "Authorization: Bearer YOUR_TOKEN" `
-  -d '{"eventId":1,"seatId":1}'
-```
+## 🧪 Быстрая проверка
 
 ### 1. Регистрация
-```powershell
-# Записываем JSON в файл (PowerShell плохо дружит с кавычками в curl)
-[System.IO.File]::WriteAllText("$pwd\test.json", '{"email":"test@test.com","password":"123456","name":"Тест"}')
-
-curl.exe -s http://localhost:8080/api/auth/register -H "Content-Type: application/json" -d "@test.json"
+```bash
+curl -s -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","password":"123456","name":"Тест"}'
 ```
-
 Ответ:
 ```json
 {
@@ -82,81 +51,45 @@ curl.exe -s http://localhost:8080/api/auth/register -H "Content-Type: applicatio
   "user": {"id": 3, "email": "test@test.com", "name": "Тест", "role": "USER"}
 }
 ```
-
-### 2. Сохрани токен в переменную
-```powershell
-$token = "ВСТАВЬ_СЮДА_ЗНАЧЕНИЕ_token_ИЗ_ОТВЕТА"
+### 2. Посмотреть ивенты (без авторизации)
+```bash
+curl -s http://localhost:8080/api/events
+```
+### 3. Карта мест (без авторизации)
+```bash
+curl -s http://localhost:8080/api/events/1/seats
+```
+### 4. Бронирование (с токеном из шага 1)
+```bash
+curl -s -X POST http://localhost:8080/api/bookings/lock \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"eventId":1,"seatId":1}'
+```
+Ответ: 
+```
+{"lockId":1,"expiresAt":"2026-..."} — место заблокировано на 10 мин.
+```
+### 5. Race Condition — повтори шаг 4 с тем же местом
+```
+→ 409 Conflict: место уже занято!
 ```
 
-### 3. Посмотреть ивенты (без авторизации)
-```powershell
-curl.exe -s http://localhost:8080/api/events
-```
-
-### 4. Посмотреть карту мест
-```powershell
-curl.exe -s http://localhost:8080/api/events/1/seats
-```
-
-### 5. Забронировать место A-1
-```powershell
-[System.IO.File]::WriteAllText("$pwd\lock.json", '{"eventId":1,"seatId":1}')
-curl.exe -s http://localhost:8080/api/bookings/lock -H "Content-Type: application/json" -H "Authorization: Bearer $token" -d "@lock.json"
-```
-
-Ответ: `{"lockId":1,"expiresAt":"2026-..."}` — место заблокировано на 10 мин.
-
-### 6. Подтвердить бронь (mock оплата)
-```powershell
-# lockId из предыдущего ответа
-curl.exe -s -X POST http://localhost:8080/api/bookings/1/confirm -H "Authorization: Bearer $token"
-```
-
-Ответ: `Booking confirmed`
-
-### 7. Забронировать и ОТМЕНИТЬ
-```powershell
-# Бронируем A-2
-[System.IO.File]::WriteAllText("$pwd\lock.json", '{"eventId":1,"seatId":2}')
-curl.exe -s http://localhost:8080/api/bookings/lock -H "Content-Type: application/json" -H "Authorization: Bearer $token" -d "@lock.json"
-
-# Отменяем (lockId из ответа)
-curl.exe -s -X DELETE http://localhost:8080/api/bookings/2 -H "Authorization: Bearer $token" -w "\nHTTP: %{http_code}"
-```
-
-Ответ: `HTTP: 204` (успешная отмена)
-
-### 8. Попробовать занять уже занятое место
-```powershell
-[System.IO.File]::WriteAllText("$pwd\lock.json", '{"eventId":1,"seatId":1}')
-curl.exe -s http://localhost:8080/api/bookings/lock -H "Content-Type: application/json" -H "Authorization: Bearer $token" -d "@lock.json"
-```
-
-Ответ: `409 Conflict` — место уже забронировано!
-
-### 9. Обновить access token (refresh)
-```powershell
-$refresh = "ВСТАВЬ_СЮДА_ЗНАЧЕНИЕ_refreshToken_ИЗ_РЕГИСТРАЦИИ"
-[System.IO.File]::WriteAllText("$pwd\refresh.json", "{`"refreshToken`":`"$refresh`"}")
-curl.exe -s http://localhost:8080/api/auth/refresh -H "Content-Type: application/json" -d "@refresh.json"
-```
+Полный набор тестовых команд: [API_ENDPOINTS.md](./API_ENDPOINTS.md)
 
 ---
 
-## Остановить всё
+## 🛑 Остановка
 
-```powershell
-# Остановить Spring Boot: Ctrl+C в терминале где он запущен
-
-# Остановить Docker (сохранить данные):
-docker compose stop
-
-# Остановить Docker (удалить данные):
-docker compose down -v
+```bash
+docker compose down       # остановить (данные сохранятся)
+docker compose down -v    # остановить + удалить данные
 ```
 
 ---
 
 ## 📂 Дополнительная документация
+- [Архитектура и роадмап](./ARCHITECTURE.md)
 - [Карта эндпоинтов (API)](./API_ENDPOINTS.md)
 - [Схема Базы Данных (DB)](./DB.md)
+- [Руководство разработчика](./CONTRIBUTING.md)

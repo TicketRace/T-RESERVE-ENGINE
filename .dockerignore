@@ -1,0 +1,21 @@
+# Build artifacts
+target/
+*.jar
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Docs & notes
+notes/
+*.md
