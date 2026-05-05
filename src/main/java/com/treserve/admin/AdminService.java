@@ -17,7 +17,7 @@ import com.treserve.venue.VenueRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,7 +55,6 @@ public class AdminService {
 
         event = eventRepository.save(event);
 
-        // Генерация билетов (tickets) для всех мест площадки
         List<Seat> seats = seatRepository.findByVenueId(venue.getId());
         List<com.treserve.booking.Ticket> tickets = new ArrayList<>();
         
@@ -70,7 +69,6 @@ public class AdminService {
         }
         
         ticketRepository.saveAll(tickets);
-
 
         return new EventResponse(
                 event.getId(),
@@ -90,46 +88,68 @@ public class AdminService {
 
     @Transactional
     public EventResponse updateEvent(Long eventId, EventUpdateRequest request, Long adminId) {
+        // 1. Находим существующее событие
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", eventId));
 
-        // Проверка: можно редактировать только до начала продаж (startTime > now)
-        if (event.getStartTime().isBefore(java.time.Instant.now())) {
+        // 2. Проверяем, можно ли редактировать (актуальное время)
+        Instant now = Instant.now();
+        if (event.getStartTime().isBefore(now)) {
             throw new IllegalArgumentException("Cannot edit event after sales started");
         }
 
-        event.setTitle(request.getTitle());
-        event.setDescription(request.getDescription());
-        event.setStatus(request.getStatus());
-        if (request.getStartTime() != null) event.setStartTime(request.getStartTime());
-        if (request.getBasePrice() != null) event.setBasePrice(request.getBasePrice());
-        if (request.getImageUrl() != null) event.setImageUrl(request.getImageUrl());
-        if (request.getAgeRestriction() != null) event.setAgeRestriction(request.getAgeRestriction());
-        if (request.getCategory() != null) event.setCategory(request.getCategory());
-        if (request.getDurationMinutes() != null) event.setDurationMinutes(request.getDurationMinutes());
+        // 3. Обновляем только переданные поля
+        if (request.getTitle() != null) {
+            event.setTitle(request.getTitle());
+        }
+        if (request.getDescription() != null) {
+            event.setDescription(request.getDescription());
+        }
+        if (request.getStatus() != null) {
+            event.setStatus(request.getStatus());
+        }
+        if (request.getStartTime() != null) {
+            event.setStartTime(request.getStartTime());
+        }
+        if (request.getBasePrice() != null) {
+            event.setBasePrice(request.getBasePrice());
+        }
+        if (request.getImageUrl() != null) {
+            event.setImageUrl(request.getImageUrl());
+        }
+        if (request.getAgeRestriction() != null) {
+            event.setAgeRestriction(request.getAgeRestriction());
+        }
+        if (request.getCategory() != null) {
+            event.setCategory(request.getCategory());
+        }
+        if (request.getDurationMinutes() != null) {
+            event.setDurationMinutes(request.getDurationMinutes());
+        }
 
-        event = eventRepository.save(event);
-
-        Venue venue = event.getVenue();
+        // 4. Сохраняем
+        Event savedEvent = eventRepository.save(event);
+        
+        // 5. Возвращаем ответ
         return new EventResponse(
-                event.getId(),
-                event.getTitle(),
-                event.getDescription(),
-                event.getImageUrl(),
-                event.getAgeRestriction(),
-                event.getCategory(),
-                event.getDurationMinutes(),
-                event.getStartTime(),
-                event.getBasePrice(),
-                event.getStatus(),
-                venue.getId(),
-                venue.getName()
+                savedEvent.getId(),
+                savedEvent.getTitle(),
+                savedEvent.getDescription(),
+                savedEvent.getImageUrl(),
+                savedEvent.getAgeRestriction(),
+                savedEvent.getCategory(),
+                savedEvent.getDurationMinutes(),
+                savedEvent.getStartTime(),
+                savedEvent.getBasePrice(),
+                savedEvent.getStatus(),
+                savedEvent.getVenue().getId(),
+                savedEvent.getVenue().getName()
         );
     }
 
     @Transactional
     public void deleteEvent(Long eventId) {
-        Event event = eventRepository.findById(eventId)
+        eventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", eventId));
         
         if (eventRepository.hasBookedTickets(eventId)) {
