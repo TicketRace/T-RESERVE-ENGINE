@@ -1,0 +1,52 @@
+.seat-page {
+  padding: 1rem 0 3rem;
+}
+
+.header-line,
+.seat-page h1,
+.bottom-row p {
+  margin: 0 0 2rem;
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+
+.board-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+  padding: 2rem 2rem 3rem;
+  border-radius: 36px;
+  background: rgba(233, 230, 245, 0.8);
+  box-shadow: 0 28px 50px rgba(34, 28, 78, 0.12);
+}
+
+.seat-price {
+  position: static;
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.pay-button {
+  min-width: 214px;
+  min-height: 48px;
+  border-radius: 18px;
+  background: #a8a2f4;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .bottom-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
