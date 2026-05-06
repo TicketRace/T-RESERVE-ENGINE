@@ -25,7 +25,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
      * Если status != AVAILABLE → вернёт пустой Optional.
      */
     @Query(value = """
-        SELECT * FROM tickets
+        SELECT id, event_id, seat_id, status, price, user_id, lock_expires_at, booked_at
+        FROM tickets
         WHERE event_id = :eventId AND seat_id = :seatId AND status = 'AVAILABLE'
         FOR UPDATE NOWAIT
     """, nativeQuery = true)
@@ -35,7 +36,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     );
 
     /** Найти билет по ID с блокировкой строки */
-    @Query(value = "SELECT * FROM tickets WHERE id = :id FOR UPDATE NOWAIT", nativeQuery = true)
+    @Query(value = "SELECT id, event_id, seat_id, status, price, user_id, lock_expires_at, booked_at FROM tickets WHERE id = :id FOR UPDATE NOWAIT", nativeQuery = true)
     Optional<Ticket> findByIdForUpdate(@Param("id") Long id);
 
     /** Safety net: просроченные LOCKED билеты */

@@ -59,6 +59,10 @@ app:
     refresh-expiration-ms: 604800000  # 7 days (refresh token)
   booking:
     lock-duration-minutes: 10
+  cache:
+    default-ttl-seconds: 30
+    seats-ttl-seconds: 10
+    events-ttl-seconds: 60
 
 # ═══ Swagger ═══
 springdoc:
