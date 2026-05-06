@@ -1,0 +1,73 @@
+<section class="auth-page">
+  <div class="auth-card">
+
+    <h1>{{ mode === 'login' ? 'Вход' : 'Регистрация' }}</h1>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+
+      <input
+        *ngIf="mode === 'register'"
+        type="text"
+        formControlName="name"
+        placeholder="Имя (необязательно)"
+      />
+      <div class="error" *ngIf="form.get('name')?.errors?.['maxlength']">
+        Максимум 100 символов
+      </div>
+
+      <input
+        type="email"
+        formControlName="email"
+        placeholder="Email"
+      />
+      <div class="error" *ngIf="form.get('email')?.touched && form.get('email')?.errors">
+        Некорректный email
+      </div>
+
+      <div class="password-wrapper">
+        <input
+          [type]="hidePassword ? 'password' : 'text'"
+          formControlName="password"
+          placeholder="Пароль"
+        />
+        <button
+        type="button"
+        (click)="togglePassword()"
+        [style.opacity]="form.get('password')?.value ? 1 : 0.4"
+      >
+        👁
+      </button>
+      </div>
+
+      <div class="error" *ngIf="form.get('password')?.touched">
+        <span *ngIf="form.get('password')?.errors?.['required']">
+          Пароль обязателен
+        </span>
+        <span *ngIf="form.get('password')?.errors?.['minlength']">
+          Минимум 6 символов
+        </span>
+        <span *ngIf="form.get('password')?.errors?.['maxlength']">
+          Максимум 100 символов
+        </span>
+      </div>
+
+      <div *ngIf="error" class="error">
+        {{ error }}
+      </div>
+
+      <button class="main-btn" type="submit" [disabled]="form.invalid">
+        {{ mode === 'login' ? 'Войти' : 'Зарегистрироваться' }}
+      </button>
+
+      <a *ngIf="mode === 'login'" routerLink="/register">
+        Создать аккаунт
+      </a>
+
+      <a *ngIf="mode === 'register'" routerLink="/login">
+        Уже есть аккаунт?
+      </a>
+
+    </form>
+
+  </div>
+</section>

@@ -1,0 +1,19 @@
+<div class="seat-zone">
+  <div class="screen">сцена</div>
+
+  <div class="seat-grid">
+    <button
+      *ngFor="let seat of seats"
+      class="seat-tile"
+      type="button"
+      [class.available]="seat.status === 'AVAILABLE'"
+      [class.locked]="seat.status === 'LOCKED'"
+      [class.booked]="seat.status === 'BOOKED'"
+      [class.selected]="selectedSeatId === seat.seatId"
+      [disabled]="seat.status !== 'AVAILABLE'"
+      (click)="onSeatClick(seat)"
+    >
+      {{ seat.rowLabel }}-{{ seat.seatNumber }}
+    </button>
+  </div>
+</div>

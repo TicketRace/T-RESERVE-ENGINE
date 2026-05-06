@@ -1,0 +1,31 @@
+<form class="form-grid" (ngSubmit)="createEvent()">
+
+  <label>Название события 
+    <input [(ngModel)]="title" name="title" type="text" />
+  </label>
+
+  <label>Время проведения 
+    <input [(ngModel)]="startsAt" name="startsAt" type="datetime-local" />
+  </label>
+
+  <label>Место проведения 
+    <select [(ngModel)]="selectedVenueId" name="venue">
+      <option *ngFor="let v of venues" [ngValue]="v.id">
+        {{ v.name }} (мест: {{ v.seatsCount }})
+      </option>
+    </select>
+  </label>
+
+  <label>Цена билета
+    <input [(ngModel)]="price" name="price" type="number" />
+  </label>
+
+  <button class="create-button" type="submit">
+    Сохранить событие
+  </button>
+
+</form>
+
+<div class="create-success" *ngIf="created">
+  Событие добавлено
+</div>
