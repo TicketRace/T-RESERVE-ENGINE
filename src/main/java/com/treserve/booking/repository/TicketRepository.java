@@ -43,7 +43,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     Optional<Ticket> findByIdForUpdate(@Param("id") Long id);
 
     /** Safety net: просроченные LOCKED билеты */
-    @Query("SELECT t FROM Ticket t WHERE t.status = com.treserve.booking.TicketStatus.LOCKED AND t.lockExpiresAt < :now")
+    @Query("SELECT t FROM Ticket t WHERE t.status = com.treserve.booking.entity.TicketStatus.LOCKED AND t.lockExpiresAt < :now")
     List<Ticket> findExpiredLocks(@Param("now") Instant now);
 
     /** Билеты юзера */

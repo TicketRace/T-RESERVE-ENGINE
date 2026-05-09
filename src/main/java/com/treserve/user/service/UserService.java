@@ -4,6 +4,7 @@ import com.treserve.booking.entity.Ticket;
 import com.treserve.booking.repository.TicketRepository;
 import com.treserve.user.dto.UserBookingResponse;
 import com.treserve.user.dto.UserProfileResponse;
+import com.treserve.user.dto.mapper.UserMapper;
 import com.treserve.user.entity.User;
 import com.treserve.user.repository.UserRepository;
 
@@ -19,16 +20,12 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final TicketRepository ticketRepository;
+    private final UserMapper userMapper;  // ← ДОБАВЛЕНО
 
     public UserProfileResponse getProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return new UserProfileResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getName(),
-                user.getRole()
-        );
+        return userMapper.toResponse(user);  // ← ИЗМЕНЕНО
     }
 
     public List<UserBookingResponse> getUserBookings(Long userId) {

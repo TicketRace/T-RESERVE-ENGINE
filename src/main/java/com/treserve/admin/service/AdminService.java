@@ -1,5 +1,6 @@
 package com.treserve.admin.service;
 
+import com.treserve.admin.dto.mapper.AdminMapper;
 import com.treserve.booking.entity.TicketStatus;
 import com.treserve.booking.repository.TicketRepository;
 import com.treserve.common.exception.ResourceNotFoundException;
@@ -31,6 +32,7 @@ public class AdminService {
     private final SeatRepository seatRepository;
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+    private final AdminMapper adminMapper;  // ← ДОБАВЛЕНО
 
     @Transactional
     public EventResponse createEvent(EventCreateRequest request, Long adminId) {
@@ -72,21 +74,8 @@ public class AdminService {
         
         ticketRepository.saveAll(tickets);
 
-
-        return new EventResponse(
-                event.getId(),
-                event.getTitle(),
-                event.getDescription(),
-                event.getImageUrl(),
-                event.getAgeRestriction(),
-                event.getCategory(),
-                event.getDurationMinutes(),
-                event.getStartTime(),
-                event.getBasePrice(),
-                event.getStatus(),
-                venue.getId(),
-                venue.getName()
-        );
+        // ← ИЗМЕНЕНО: используем маппер
+        return adminMapper.toEventResponse(event);
     }
 
     @Transactional
@@ -111,21 +100,8 @@ public class AdminService {
 
         event = eventRepository.save(event);
 
-        Venue venue = event.getVenue();
-        return new EventResponse(
-                event.getId(),
-                event.getTitle(),
-                event.getDescription(),
-                event.getImageUrl(),
-                event.getAgeRestriction(),
-                event.getCategory(),
-                event.getDurationMinutes(),
-                event.getStartTime(),
-                event.getBasePrice(),
-                event.getStatus(),
-                venue.getId(),
-                venue.getName()
-        );
+        // ← ИЗМЕНЕНО: используем маппер
+        return adminMapper.toEventResponse(event);
     }
 
     @Transactional
