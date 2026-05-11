@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { VenueSeatTemplate } from '../../models/event';
-import { MockApiService } from '../../services/mock-api.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -16,12 +15,8 @@ export class AdminVenueBuilderComponent implements OnInit {
   venue = 'Площадка';
   seats: VenueSeatTemplate[] = [];
 
-  constructor(private readonly mockApi: MockApiService) {}
-
   ngOnInit(): void {
-    this.mockApi.getVenueTemplate().subscribe((template) => {
-      this.seats = template;
-    });
+    this.seats = [];
   }
 
   toggleSeat(target: VenueSeatTemplate): void {

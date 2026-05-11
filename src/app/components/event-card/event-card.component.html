@@ -1,12 +1,12 @@
 <article class="event-card" (click)="openEvent()">
-  <div class="event-poster" [style.background-image]="'url(' + event.imageUrl + ')'"></div>
+  <div class="event-poster" [style.background-image]="event.imageUrl ? 'url(' + event.imageUrl + ')' : 'none'"></div>
   <div class="event-copy">
     <div class="event-line">
       <span class="pill">{{ event.category }}</span>
-      <span class="meta">{{ event.ageRating }}</span>
+      <span class="meta">{{ event.ageRestriction }}</span>
     </div>
     <h3>{{ event.title }}</h3>
-    <p>{{ event.tagline }}</p>
-    <span class="meta">{{ event.venue }}</span>
+    <p *ngIf="event.description">{{ event.description }}</p>
+    <span class="meta">{{ event.venue.name }}</span>
   </div>
 </article>

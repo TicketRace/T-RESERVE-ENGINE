@@ -1,30 +1,38 @@
 import { Component } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
-import { MockApiService } from '../../services/mock-api.service';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-admin-create-event',
   standalone: true,
-  imports: [FormsModule, CommonModule, RouterLink],
+  imports: [FormsModule, CommonModule],
   templateUrl: './admin-create-event.component.html',
   styleUrl: './admin-create-event.component.css',
 })
 export class AdminCreateEventComponent {
   title = '';
+  description = '';
+  imageUrl = '';
+  category = '';
+  ageRestriction = '';
+  durationMinutes = 120;
+
   venues: any[] = [];
   selectedVenueId: number | null = null;
-  startsAt = '';
-  price = 800;
+
+  startTime = '';
+  basePrice = 800;
+
   created = false;
+
   eventId: number | null = null;
   isEditMode = false;
-  originalSession: any;
 
   constructor(
-    private readonly mockApi: MockApiService,
+    private readonly http: HttpClient,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
   ) {}
@@ -37,32 +45,55 @@ export class AdminCreateEventComponent {
 
     const payload = {
       title: this.title,
-      description: '...',
+      description: this.description,
       venueId: Number(this.selectedVenueId),
-      startsAt: this.startsAt,
-      price: this.price,
+
+      startTime: new Date(this.startTime).toISOString(),
+      basePrice: this.basePrice,
+
+      imageUrl: this.imageUrl,
+      ageRestriction: this.ageRestriction,
+      category: this.category,
+      durationMinutes: Number(this.durationMinutes),
     };
 
+    const updatePayload = {
+    title: this.title,
+    description: this.description,
+    status: 'ACTIVE',
+
+    startTime: new Date(this.startTime).toISOString(),
+    basePrice: this.basePrice,
+
+    imageUrl: this.imageUrl,
+    ageRestriction: this.ageRestriction,
+    category: this.category,
+    durationMinutes: Number(this.durationMinutes),
+  };
+
     const request$ = this.isEditMode && this.eventId
-      ? this.mockApi.updateEvent(this.eventId, {
-          title: payload.title,
-          sessions: [
-            {
-              ...this.originalSession,
-              startsAt: this.startsAt,
-              label: new Date(this.startsAt).toLocaleString('ru-RU'),
-              price: this.price,
-            }
-          ]
-        })
-      : this.mockApi.createEvent(payload);
+      ? this.http.put(
+          `http://localhost:8080/api/admin/events/${this.eventId}`,
+          updatePayload
+        )
+      : this.http.post(
+          'http://localhost:8080/api/admin/events',
+          payload
+        );
 
     request$.subscribe({
       next: () => {
         this.created = true;
-        setTimeout(() => this.router.navigate(['/admin']), 800);
+
+        setTimeout(() => {
+          this.router.navigate(['/admin']);
+        }, 800);
       },
-      error: (err) => console.error(err),
+
+      error: (err) => {
+        console.error(err);
+        alert('Ошибка сохранения');
+      },
     });
   }
 
@@ -70,22 +101,39 @@ export class AdminCreateEventComponent {
     this.router.navigate(['/admin/venue-builder']);
   }
 
+  goBack(): void {
+    this.router.navigate(['/admin']);
+  }
+
   ngOnInit(): void {
-    this.mockApi.getVenues().subscribe(v => {
-      this.venues = v;
-    });
+    
+   this.http.get<any[]>('http://localhost:8080/api/venues')
+    .subscribe(v => this.venues = v);
 
-    const id = this.route.snapshot.paramMap.get('id');
+  const id = this.route.snapshot.paramMap.get('id');
 
-    if (id) {
-      this.isEditMode = true;
-      this.eventId = Number(id);
+  if (id) {
+    this.isEditMode = true;
+    this.eventId = Number(id);
 
-      this.mockApi.getEventById(this.eventId).subscribe(event => {
+    this.http.get<any>(`http://localhost:8080/api/events/${this.eventId}`)
+      .subscribe(event => {
+
         this.title = event.title;
-        this.startsAt = event.sessions[0]?.startsAt ?? '';
-        this.selectedVenueId = this.venues.find(v => v.name === event.venue)?.id ?? null;
-        this.price = event.sessions[0]?.price ?? 0;
+        this.description = event.description;
+
+        this.imageUrl = event.imageUrl;
+
+        this.category = event.category;
+        this.ageRestriction = event.ageRestriction;
+
+        this.durationMinutes = event.durationMinutes;
+
+        this.startTime = event.startTime?.slice(0, 16);
+
+        this.basePrice = event.basePrice;
+
+        this.selectedVenueId = event.venue?.id;
       });
     }
   }

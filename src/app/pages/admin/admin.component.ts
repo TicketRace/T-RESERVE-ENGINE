@@ -2,9 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { AdminEventSummary } from '../../models/event';
 import { User } from '../../models/user';
 import { AuthService } from '../../services/auth.service';
-import { MockApiService } from '../../services/mock-api.service';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-admin',
@@ -20,13 +20,19 @@ export class AdminComponent implements OnInit {
 
   constructor(
     private readonly authService: AuthService,
-    private readonly mockApi: MockApiService,
+    private readonly http: HttpClient,
   ) {}
 
   loadEvents(): void {
-    this.mockApi.getAdminEvents().subscribe(events => {
-      this.events = events;
-    });
+    this.http.get<any>('http://localhost:8080/api/events')
+      .subscribe(res => {
+        this.events = (res.content ?? res).map((e: any) => ({
+          id: e.id,
+          title: e.title,
+          venue: e.venue?.name,
+          nextSession: e.startTime,
+        }));
+      });
   }
 
   delete(id: number): void {
@@ -34,11 +40,10 @@ export class AdminComponent implements OnInit {
 
     if (!confirmed) return;
 
-    this.mockApi.deleteEvent(id).subscribe(() => {
-      this.loadEvents();
-    });
+    this.http.delete(
+      `http://localhost:8080/api/admin/events/${id}`
+    ).subscribe(() => this.loadEvents());
   }
-
 
   ngOnInit(): void {
     this.user = this.authService.snapshot();

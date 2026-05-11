@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Seat } from '../../models/seat';
 import { CommonModule } from '@angular/common';
+import { KeyValue } from '@angular/common';
 
 @Component({
   selector: 'app-seat-map',
@@ -10,7 +11,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './seat-map.component.css',
 })
 export class SeatMapComponent {
-  @Input() seats: Seat[] = [];
+  @Input() groupedSeats: Record<string, Seat[]> = {};
   @Input() selectedSeatId: number | null = null;
   @Output() readonly seatSelected = new EventEmitter<Seat>();
 
@@ -18,5 +19,11 @@ export class SeatMapComponent {
     if (seat.status === 'AVAILABLE') {
       this.seatSelected.emit(seat);
     }
-  }
+  };
+  sortRows = (
+    a: KeyValue<string, Seat[]>,
+    b: KeyValue<string, Seat[]>
+  ): number => {
+    return a.key.localeCompare(b.key);
+  };
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { AuthResponse, User } from '../models/user';
-import { MockApiService } from './mock-api.service';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root',
@@ -10,23 +10,26 @@ export class AuthService {
   private readonly currentUserSubject = new BehaviorSubject<User | null>(null);
   readonly currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor(private readonly mockApi: MockApiService) {
-    const userJson = localStorage.getItem('user');
+ constructor(private http: HttpClient) {
+  const userJson = localStorage.getItem('user');
 
-    if (userJson) {
-      this.currentUserSubject.next(JSON.parse(userJson));
-    }
-
+  if (userJson) {
+    this.currentUserSubject.next(JSON.parse(userJson));
+  }
+ }
+ 
+ login(email: string, password: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(
+      'http://localhost:8080/api/auth/login',
+      { email, password }
+    ).pipe(tap(res => this.persist(res)));
   }
 
-  login(email: string, password: string): Observable<AuthResponse> {
-    return this.mockApi.login({ email, password }).pipe(tap((response) => this.persist(response)));
-  }
-
-  register(email: string, password: string, name: string): Observable<AuthResponse> {
-    return this.mockApi.register({ email, password, name }).pipe(
-      tap((response) => this.persist(response)),
-    );
+ register(email: string, password: string, name: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(
+      'http://localhost:8080/api/auth/register',
+      { email, password, name }
+    ).pipe(tap(res => this.persist(res)));
   }
 
   logout(): void {
@@ -48,5 +51,18 @@ export class AuthService {
     localStorage.setItem('refreshToken', response.refreshToken);
     localStorage.setItem('user', JSON.stringify(response.user));
     this.currentUserSubject.next(response.user);
+  }
+
+  refresh(): Observable<AuthResponse> {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+    throw new Error('No refresh token');
+    }
+    return this.http.post<AuthResponse>(
+      'http://localhost:8080/api/auth/refresh',
+      { refreshToken }
+    ).pipe(
+      tap(res => this.persist(res))
+    );
   }
 }

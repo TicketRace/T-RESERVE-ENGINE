@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EventItem, EventSession } from '../../models/event';
-import { MockApiService } from '../../services/mock-api.service';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-event-details',
@@ -18,7 +18,7 @@ export class EventDetailsComponent implements OnInit {
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
-    private readonly mockApi: MockApiService,
+    private readonly http: HttpClient,
   ) {}
 
   ngOnInit(): void {
@@ -27,14 +27,20 @@ export class EventDetailsComponent implements OnInit {
       this.router.navigate(['/events']);
       return;
     }
+    
+    this.http.get<EventItem>(`http://localhost:8080/api/events/${id}`)
+  .subscribe(event => {
+    this.event = event;
 
-    this.mockApi.getEventById(id).subscribe((event) => {
-      this.event = event;
-    });
-
-    this.mockApi.getSessions(id).subscribe((sessions) => {
-      this.sessions = sessions;
-    });
+    this.sessions = [
+      {
+        id: 1,
+        eventId: event.id,
+        price: 800,
+        startsAt: '2026-05-12T19:00:00'
+      }
+    ];
+  });
   }
 
   selectSession(session: EventSession): void {
@@ -44,4 +50,8 @@ export class EventDetailsComponent implements OnInit {
 
     this.router.navigate(['/event', this.event.id, 'session', session.id, 'seats']);
   }
+
+  selectSessionByEvent(event: any) {
+  this.router.navigate(['/events', event.id, 'sessions']);
+}
 }

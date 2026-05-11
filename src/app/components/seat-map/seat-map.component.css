@@ -1,6 +1,12 @@
 .seat-zone {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 60vh;
+  width: 100%;
   gap: 2rem;
+  overflow-x: auto;
 }
 
 .screen {
@@ -17,12 +23,25 @@
 }
 
 .seat-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(54px, 61px));
-  justify-content: center;
-  gap: 2rem 2.4rem;
-  margin-top: 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+
+  width: 100%;
+  align-items: center;
 }
+
+.row-label {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+    background: #e6e3ff;
+    font-weight: 600;
+  }
 
 .seat-tile {
   width: 61px;
@@ -33,6 +52,7 @@
   font-size: 0.8rem;
   cursor: pointer;
   transition: transform 0.18s ease;
+  flex: 0 0 auto;
 }
 
 .seat-tile.available:hover {
@@ -54,10 +74,51 @@
   color: white;
 }
 
+.row-seats {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  width: max-content;
+}
+
+.seat-row {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  align-items: center;
+  width: max-content;
+  margin: 0 auto;
+  gap: 12px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.row-scale {
+  display: flex;
+}
+
 @media (max-width: 900px) {
   .seat-grid {
-    transform: scale(0.85);
     transform-origin: top center;
     gap: 1rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .seat-tile {
+    width: 48px;
+    height: 40px;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .seat-tile {
+    width: 38px;
+    height: 32px;
   }
 }
