@@ -1,12 +1,18 @@
 package com.treserve.booking;
 
 import com.treserve.booking.dto.LockResponse;
+import com.treserve.booking.entity.Ticket;
+import com.treserve.booking.entity.TicketStatus;
+import com.treserve.booking.repository.TicketRepository;
+import com.treserve.booking.service.BookingService;
+import com.treserve.booking.service.SeatService;
 import com.treserve.common.exception.ResourceNotFoundException;
 import com.treserve.common.exception.SeatAlreadyLockedException;
-import com.treserve.event.Event;
-import com.treserve.user.User;
-import com.treserve.user.UserRepository;
-import com.treserve.venue.Seat;
+import com.treserve.event.entity.Event;
+import com.treserve.user.entity.User;
+import com.treserve.user.repository.UserRepository;
+import com.treserve.venue.entity.Seat;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
