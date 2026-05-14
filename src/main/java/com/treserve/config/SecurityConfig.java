@@ -1,9 +1,13 @@
 package com.treserve.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -17,7 +21,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
@@ -26,6 +33,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final ObjectMapper objectMapper;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -33,6 +41,12 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) ->
+                    writeError(response, HttpStatus.UNAUTHORIZED, "Unauthorized"))
+                .accessDeniedHandler((request, response, accessDeniedException) ->
+                    writeError(response, HttpStatus.FORBIDDEN, "Forbidden"))
+            )
             .authorizeHttpRequests(auth -> auth
                 // Public
                 .requestMatchers("/api/auth/**").permitAll()
@@ -73,5 +87,16 @@ public class SecurityConfig {
         var source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
+    }
+
+    private void writeError(HttpServletResponse response, HttpStatus status, String message) throws IOException {
+        response.setStatus(status.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        objectMapper.writeValue(response.getWriter(), Map.of(
+            "timestamp", Instant.now().toString(),
+            "status", status.value(),
+            "error", message
+        ));
     }
 }
