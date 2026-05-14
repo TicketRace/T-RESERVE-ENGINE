@@ -1,0 +1,21 @@
+<section class="shell events-page">
+  <div *ngIf="notification" class="notification">
+    {{ notification }}
+  </div>
+  
+  <div class="search-row">
+    <input [(ngModel)]="search" type="text" placeholder="Поиск" (input)="onSearch()" />
+  </div>
+
+  <div class="grid-list" *ngIf="!loading; else loadingState">
+    <app-event-card
+      *ngFor="let event of filteredEvents"
+      [event]="event"
+      (open)="openEvent($event)"
+    ></app-event-card>
+  </div>
+</section>
+
+<ng-template #loadingState>
+  <section class="shell loading-card">Загрузка событий...</section>
+</ng-template>

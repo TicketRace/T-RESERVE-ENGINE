@@ -1,0 +1,26 @@
+<section class="shell payment-page">
+  <h1>Оплата выбранных билетов</h1>
+  <p>Выбрано мест: {{ selectedSeat ? '1. ' + selectedSeat.seatLabel : '0' }}</p>
+
+  <div *ngIf="errorMessage" class="error-box">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="isLoading" class="loader">
+    Бронируем место...
+  </div>
+
+  <div class="payment-card">
+    <h2>Выберете способ оплаты</h2>
+    <button
+      class="payment-action"
+      type="button"
+      (click)="payFree()"
+      [disabled]="isLoading || !lockId"
+    >
+      Купить бесплатно
+    </button>
+  </div>
+
+  <div class="timer-row">Осталось: {{ expiresLabel }}</div>
+</section>

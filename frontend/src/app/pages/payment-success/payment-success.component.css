@@ -1,0 +1,27 @@
+.success-page {
+  display: grid;
+  place-items: center;
+  min-height: 70vh;
+}
+
+.success-box {
+  display: grid;
+  gap: 2rem;
+  width: min(100%, 720px);
+  text-align: center;
+}
+
+.success-box p,
+.success-link {
+  font-size: clamp(2rem, 3vw, 2.5rem);
+}
+
+.success-link {
+  display: inline-flex;
+  justify-content: center;
+  padding: 0.9rem 1.2rem;
+  border-radius: 22px;
+  background: #a8a2f4;
+  color: var(--ink-900);
+  text-decoration: none;
+}

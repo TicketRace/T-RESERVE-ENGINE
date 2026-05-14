@@ -1,0 +1,33 @@
+<section class="shell admin-page">
+  <div class="admin-top">
+    <h1>Ваши события</h1>
+  
+
+  <a routerLink="/admin/create" class="create-link">Добавить событие</a>
+  </div> 
+  <div class="admin-list">
+    <div class="admin-row" *ngFor="let event of events">
+      <div class="event-main">
+        <h2>{{ event.title }}</h2>
+        <span>{{ event.nextSession | date:'d MMMM HH:mm' }}</span>
+      </div>
+
+      <div class="admin-actions">
+        <button class="icon-btn edit" [routerLink]="['/admin/create', event.id]" title="Редактировать">
+          🔍
+        </button>
+
+        <button class="icon-btn delete" (click)="delete(event.id)" title="Удалить">
+          ✕
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="created-modal" *ngIf="showCreatedModal">
+    <div class="created-card">
+      <h3>Событие добавлено</h3>
+      <button type="button">Закрыть</button>
+    </div>
+  </div>
+</section>

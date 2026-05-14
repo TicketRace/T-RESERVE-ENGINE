@@ -1,0 +1,18 @@
+<section class="shell seat-page" *ngIf="event && session">
+  <div class="header-line">{{ event.title }} Дата: {{ session.startsAt | date:'d MMMM HH:mm' }}</div>
+  <h1>Выберите место</h1>
+
+  <div class="board-card">
+    <app-seat-map
+      [seats]="seats"
+      [selectedSeatId]="selectedSeat?.seatId ?? null"
+      (seatSelected)="selectSeat($event)"
+    ></app-seat-map>
+    <div class="seat-price">{{ session.price }} руб</div>
+  </div>
+
+  <div class="bottom-row">
+    <p>Выбрано мест: {{ selectedSeat ? '1. ' + selectedSeat.seatLabel : '0' }}</p>
+    <button class="pay-button" type="button" [disabled]="!selectedSeat" (click)="proceed()">оплатить</button>
+  </div>
+</section>

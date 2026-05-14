@@ -1,0 +1,45 @@
+.payment-page {
+  padding: 2rem 0 3rem;
+}
+
+.payment-page h1,
+.payment-page p,
+.timer-row {
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+
+.payment-card {
+  display: grid;
+  place-items: center;
+  gap: 2rem;
+  min-height: 360px;
+}
+
+.payment-card h2 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.5rem);
+}
+
+.payment-action {
+  min-width: 378px;
+  min-height: 48px;
+  border-radius: 18px;
+  background: #a8a2f4;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
+.error-box {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: #ffdddd;
+  color: #900;
+  font-size: 1.6rem;
+  text-align: center;
+}
+
+.loader {
+  font-size: 1.6rem;
+  text-align: center;
+}

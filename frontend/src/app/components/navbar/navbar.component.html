@@ -1,0 +1,18 @@
+<header class="nav-frame">
+  <div class="shell nav-row">
+    <a *ngIf="!isAdmin" class="nav-link brand" routerLink="/events">
+      События
+    </a>
+    <nav class="nav-actions">
+      <a *ngIf="isAdmin" class="nav-link" routerLink="/admin">
+        Мои события
+      </a>
+
+      <a *ngIf="!isAdmin" class="nav-link" (click)="goProfile()">
+        Личный кабинет
+      </a>
+      <span *ngIf="isLoggedIn" class="user-name">{{ userName }}</span>
+      <button *ngIf="isLoggedIn" class="text-button" type="button" (click)="logout()">Выйти</button>
+    </nav>
+  </div>
+</header>
