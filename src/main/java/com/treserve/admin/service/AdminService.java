@@ -3,6 +3,7 @@ package com.treserve.admin.service;
 import com.treserve.admin.dto.mapper.AdminMapper;
 import com.treserve.booking.entity.TicketStatus;
 import com.treserve.booking.repository.TicketRepository;
+import com.treserve.common.exception.BusinessConflictException;
 import com.treserve.common.exception.ResourceNotFoundException;
 import com.treserve.event.dto.EventCreateRequest;
 import com.treserve.event.dto.EventResponse;
@@ -117,7 +118,7 @@ public class AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("Event", eventId));
         
         if (eventRepository.hasBookedTickets(eventId)) {
-            throw new IllegalArgumentException("Cannot delete event with BOOKED tickets");
+            throw new BusinessConflictException("Cannot delete event with BOOKED tickets");
         }
         
         ticketRepository.deleteAll(ticketRepository.findByEventIdWithSeat(eventId));

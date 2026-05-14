@@ -6,6 +6,7 @@ import com.treserve.booking.entity.TicketStatus;
 import com.treserve.booking.repository.TicketRepository;
 import com.treserve.booking.service.BookingService;
 import com.treserve.booking.service.SeatService;
+import com.treserve.common.exception.ForbiddenOperationException;
 import com.treserve.common.exception.ResourceNotFoundException;
 import com.treserve.common.exception.SeatAlreadyLockedException;
 import com.treserve.event.entity.Event;
@@ -182,7 +183,7 @@ class BookingServiceTest {
     }
 
     @Test
-    @DisplayName("confirm: чужой лок → IllegalArgumentException")
+    @DisplayName("confirm: чужой лок → ForbiddenOperationException")
     void confirm_wrongUser() {
         // lockedTicket принадлежит testUser (id=1)
         // Юзер 99 пытается подтвердить чужой лок
@@ -190,7 +191,7 @@ class BookingServiceTest {
                 .thenReturn(Optional.of(lockedTicket));
 
         assertThatThrownBy(() -> bookingService.confirm(10L, 99L)) // userId=99, не владелец
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ForbiddenOperationException.class)
                 .hasMessageContaining("not locked by you");
 
         // Побочные эффекты: ничего не изменилось (#7)
@@ -248,14 +249,14 @@ class BookingServiceTest {
     }
 
     @Test
-    @DisplayName("cancel: чужой лок → IllegalArgumentException")
+    @DisplayName("cancel: чужой лок → ForbiddenOperationException")
     void cancel_wrongUser() {
         // #8
         when(ticketRepository.findByIdForUpdate(10L))
                 .thenReturn(Optional.of(lockedTicket));
 
         assertThatThrownBy(() -> bookingService.cancel(10L, 99L))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ForbiddenOperationException.class)
                 .hasMessageContaining("not locked by you");
 
         verify(ticketRepository, never()).save(any());
