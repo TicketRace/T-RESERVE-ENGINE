@@ -1,6 +1,17 @@
-<section class="shell payment-page">
-  <h1>Оплата выбранных билетов</h1>
-  <p>Выбрано мест: {{ selectedSeat ? '1. ' + selectedSeat.seatLabel : '0' }}</p>
+﻿<section class="shell payment-page">
+
+  <button type="button" class="back-button" (click)="goBack()">
+    ← Назад
+  </button>
+
+  <div class="payment-header">
+    <h1>Оплата выбранных билетов</h1>
+
+    <p class="seat-info">
+      Выбрано мест:
+      {{ selectedSeat ? '1. ' + selectedSeat.seatLabel : '0' }}
+    </p>
+  </div>
 
   <div *ngIf="errorMessage" class="error-box">
     {{ errorMessage }}
@@ -11,7 +22,8 @@
   </div>
 
   <div class="payment-card">
-    <h2>Выберете способ оплаты</h2>
+    <h2>Выберите способ оплаты</h2>
+
     <button
       class="payment-action"
       type="button"
@@ -20,7 +32,10 @@
     >
       Купить бесплатно
     </button>
+
+    <div class="timer-row">
+      Осталось: {{ expiresLabel }}
+    </div>
   </div>
 
-  <div class="timer-row">Осталось: {{ expiresLabel }}</div>
 </section>

@@ -1,4 +1,4 @@
-export interface EventSession {
+﻿export interface EventSession {
   id: number;
   eventId: number;
   startsAt: string;
@@ -9,13 +9,16 @@ export interface EventItem {
   id: number;
   title: string;
   description: string;
-  venue: string;
-  imageUrl: string;
+  venue: {
+    id: number;
+    name: string;
+    address: string;
+  };
+  imageUrl: string | null;
   category: string;
-  ageRating: string;
-  tagline: string;
-  featured: boolean;
-  sessions: EventSession[];
+  ageRestriction: string;
+  startTime: string;
+  basePrice: number;
 }
 
 export interface AdminEventSummary {
