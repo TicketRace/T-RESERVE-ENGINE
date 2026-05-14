@@ -1,0 +1,86 @@
+﻿.payment-page {
+  position: relative;
+  padding: 2rem 0 3rem;
+}
+
+.payment-header {
+  margin-bottom: 2rem;
+}
+
+.payment-page h1,
+.payment-page p,
+.timer-row {
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+
+.seat-info {
+  font-size: 1.2rem;
+  color: #5d5d5d;
+}
+
+.payment-card {
+  display: grid;
+  place-items: center;
+  gap: 2rem;
+  min-height: 360px;
+}
+
+.payment-card h2 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.5rem);
+}
+
+.payment-action {
+  min-width: 378px;
+  min-height: 48px;
+  border-radius: 18px;
+  background: #a8a2f4;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
+.error-box {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: #ffdddd;
+  color: #900;
+  font-size: 1.6rem;
+  text-align: center;
+}
+
+.loader {
+  font-size: 1.6rem;
+  text-align: center;
+}
+
+.back-button {
+  margin-bottom: 2rem;
+
+  border: none;
+  background: transparent;
+
+  font-size: 1rem;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  color: #545353;
+
+  transition: opacity 0.2s ease;
+}
+
+.back-button:hover {
+  opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+  .payment-card {
+    padding: 2rem 1rem;
+  }
+
+  .payment-action {
+    width: 100%;
+    min-width: unset;
+  }
+}

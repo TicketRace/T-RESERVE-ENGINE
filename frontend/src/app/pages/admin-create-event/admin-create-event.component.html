@@ -1,0 +1,64 @@
+﻿<button type="button" class="back-button" (click)="goBack()">
+    ← Назад
+  </button>
+
+<form class="form-grid" (ngSubmit)="createEvent()">
+
+  <label>Название события 
+    <input [(ngModel)]="title" name="title" type="text" />
+  </label>
+
+  <label>
+    Описание
+    <textarea [(ngModel)]="description" name="description" > 
+    </textarea>
+  </label>
+
+  <label>
+    URL изображения
+    <input [(ngModel)]="imageUrl" name="imageUrl" type="text" placeholder="https://..."/>
+  </label>
+
+  <label>
+    Категория
+    <input [(ngModel)]="category" name="category" type="text" />
+  </label>
+
+  <label>
+    Возрастное ограничение
+    <input [(ngModel)]="ageRestriction" name="ageRestriction" type="text" placeholder="18+" />
+  </label>
+
+  <label>
+    Длительность (минуты)
+    <input [(ngModel)]="durationMinutes" name="durationMinutes" type="number" />
+  </label>
+
+  <label>Время проведения 
+    <input [(ngModel)]="startTime" name="startTime" type="datetime-local" />
+  </label>
+
+  <label>Место проведения 
+    <select [(ngModel)]="selectedVenueId" name="venue" [disabled]="isEditMode">
+      <option *ngFor="let v of venues" [ngValue]="v.id">
+        {{ v.name }} (мест: {{ v.seatsCount }})
+      </option>
+    </select>
+    <small *ngIf="isEditMode" class="hint">
+      Площадку нельзя изменить после создания события
+    </small>
+  </label>
+
+  <label>Цена билета
+    <input [(ngModel)]="basePrice" name="basePrice" type="number" />
+  </label>
+
+  <button class="create-button" type="submit">
+    Сохранить событие
+  </button>
+
+</form>
+
+<div class="create-success" *ngIf="created">
+  {{ isEditMode ? 'Событие изменено' : 'Событие добавлено' }}
+</div>

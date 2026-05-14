@@ -1,6 +1,8 @@
 # T-RESERVE ENGINE — API Endpoint Map
 
 > Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+>
+> **Для точных JSON request/response тел** смотреть Swagger UI — он генерируется из кода и всегда актуален. Этот документ — обзорная карта эндпоинтов.
 
 ## Auth — `/api/auth`
 

@@ -1,0 +1,39 @@
+.event-card {
+  display: grid;
+  gap: 0.9rem;
+  cursor: pointer;
+}
+
+.event-poster {
+  aspect-ratio: 335 / 203;
+  border-radius: 22px;
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 18px 40px rgba(26, 25, 44, 0.14);
+}
+
+.event-copy {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.event-copy h3,
+.event-copy p {
+  margin: 0;
+}
+
+.event-copy h3 {
+  font-size: 1.75rem;
+}
+
+.event-copy p,
+.meta {
+  color: var(--muted-600);
+}
+
+.event-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}

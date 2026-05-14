@@ -1,0 +1,21 @@
+﻿<section class="shell profile-page">
+  <div class="profile-head">
+    <h1>Ваши билеты</h1>
+  </div>
+
+  <div class="ticket-list" *ngIf="bookings.length; else emptyState">
+    <article class="ticket-card" *ngFor="let booking of bookings">
+      <div>
+        <h2>{{ booking.eventTitle }}</h2>
+        <p>
+          Дата покупки:
+          {{ booking.bookedAt| date:'d MMMM HH:mm' }}</p>
+      </div>
+      <button class="action-chip" type="button">Посмотреть билет</button>
+    </article>
+  </div>
+
+  <ng-template #emptyState>
+    <div class="empty-box">Пока билетов нет. Купите билет на странице события.</div>
+  </ng-template>
+</section>

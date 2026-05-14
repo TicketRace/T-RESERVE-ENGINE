@@ -3,6 +3,7 @@ package com.treserve.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,36 +20,51 @@ import java.util.Map;
 @EnableCaching
 public class RedisCacheConfig {
 
+    @Value("${app.cache.default-ttl-seconds}")
+    private long defaultTtlSeconds;
+
+    @Value("${app.cache.seats-ttl-seconds}")
+    private long seatsTtlSeconds;
+
+    @Value("${app.cache.events-ttl-seconds}")
+    private long eventsTtlSeconds;
+
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return mapper;
+    }
+
     /**
-     * Кэш-менеджер с разными TTL для разных кэшей.
+     * Кэш-менеджер с TTL из application.yml.
      *
-     * seats:{eventId} — TTL 10 сек (polling каждые 3 сек, кэш покрывает 3+ запроса)
-     * events — TTL 60 сек (список ивентов меняется редко)
+     * seats:{eventId} — TTL из app.cache.seats-ttl-seconds
+     * events — TTL из app.cache.events-ttl-seconds
      */
     @Bean
-    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        // Jackson ObjectMapper без type-metadata
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        objectMapper.activateDefaultTyping(
-            objectMapper.getPolymorphicTypeValidator(),
+    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory,
+                                          ObjectMapper objectMapper) {
+        ObjectMapper redisMapper = objectMapper.copy();
+        redisMapper.activateDefaultTyping(
+            redisMapper.getPolymorphicTypeValidator(),
             ObjectMapper.DefaultTyping.NON_FINAL
         );
 
-        var jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+        var jsonSerializer = new GenericJackson2JsonRedisSerializer(redisMapper);
 
-        // Default: 30 сек TTL
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
-            .entryTtl(Duration.ofSeconds(30))
+            .entryTtl(Duration.ofSeconds(defaultTtlSeconds))
             .serializeValuesWith(
                 RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer))
             .disableCachingNullValues();
 
-        // Per-cache TTL
+        // Per-cache TTL        
         Map<String, RedisCacheConfiguration> cacheConfigs = Map.of(
-            "seats", defaultConfig.entryTtl(Duration.ofSeconds(10)),  // seats — 10 сек
-            "events", defaultConfig.entryTtl(Duration.ofSeconds(60))  // events — 60 сек
+            "seats", defaultConfig.entryTtl(Duration.ofSeconds(seatsTtlSeconds)),
+            "events", defaultConfig.entryTtl(Duration.ofSeconds(eventsTtlSeconds))
         );
 
         return RedisCacheManager.builder(connectionFactory)
@@ -57,3 +73,4 @@ public class RedisCacheConfig {
             .build();
     }
 }
+

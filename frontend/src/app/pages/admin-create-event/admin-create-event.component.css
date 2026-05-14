@@ -1,0 +1,181 @@
+﻿.create-page {
+  display: grid;
+  gap: 2rem;
+  padding: 1rem 0 3rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem 2rem;
+  align-items: start;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem;
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+}
+
+.form-grid label {
+  display: grid;
+  flex-direction: column;
+  gap: 0.7rem;
+  font-size: 1rem; 
+  font-weight: 500;
+  color: #1d1d1d
+}
+
+.form-grid input, 
+.form-grid textarea,
+.form-grid select {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+  font-size: 1rem;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
+}
+
+.form-grid textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.form-grid input:focus, 
+.form-grid textarea:focus,
+.form-grid select:focus {
+  border-color: #7c5cff;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.12);
+}
+
+.form-grid input::placeholder,
+.form-grid textarea::placeholder {
+  color: #999;
+}
+
+.builder-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  min-height: 58px;
+  padding: 0.8rem 1rem;
+
+  border-radius: 18px;
+  background: rgba(217, 217, 217, 0.64);
+
+  cursor: pointer;
+  user-select: none;
+
+  font-size: 1rem;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.builder-link:hover {
+  background: rgba(200, 200, 200, 0.8);
+}
+
+.create-button {
+  grid-column: 1 / -1;
+
+  justify-self: start;
+
+  min-width: 260px;
+  min-height: 54px;
+
+  margin-top: 1rem;
+  padding: 0.9rem 1.4rem;
+
+  border: none;
+  border-radius: 18px;
+
+  background: #eaf736;
+
+  font-size: 1rem;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.create-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(234, 247, 54, 0.3);
+}
+
+.create-button:active {
+  transform: translateY(0);
+}
+
+.create-success {
+  max-width: 1000px;
+
+  margin: 0 auto;
+
+  padding: 1rem 1.2rem;
+
+  border-radius: 16px;
+
+  background: #efffed;
+  border: 1px solid #b6efae;
+
+  color: #1d7d1d;
+
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+@media (max-width: 980px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    padding: 1.5rem;
+  }
+
+  .builder-link {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .form-grid {
+    padding: 1rem;
+    border-radius: 20px;
+  }
+
+  .form-grid label {
+    font-size: 0.95rem;
+  }
+
+  .form-grid input,
+  .form-grid textarea,
+  .form-grid select {
+    font-size: 0.95rem;
+  }
+}

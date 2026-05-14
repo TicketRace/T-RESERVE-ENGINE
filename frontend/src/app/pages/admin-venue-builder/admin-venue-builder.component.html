@@ -1,0 +1,21 @@
+<section class="shell builder-page">
+  <div class="builder-head">
+    <label>Площадка <input [(ngModel)]="venue" type="text" /></label>
+    <p>Выберете неактивные места</p>
+  </div>
+
+  <div class="builder-board">
+    <div class="builder-grid">
+      <button
+        *ngFor="let seat of seats"
+        class="builder-seat"
+        type="button"
+        [class.disabled]="seat.disabled"
+        (click)="toggleSeat(seat)"
+      ></button>
+    </div>
+    <div class="builder-screen">сцена</div>
+  </div>
+
+  <a class="back-action" routerLink="/admin/create">Вернуться к событию</a>
+</section>
