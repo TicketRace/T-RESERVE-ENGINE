@@ -1,11 +1,21 @@
-.payment-page {
+﻿.payment-page {
+  position: relative;
   padding: 2rem 0 3rem;
+}
+
+.payment-header {
+  margin-bottom: 2rem;
 }
 
 .payment-page h1,
 .payment-page p,
 .timer-row {
   font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+
+.seat-info {
+  font-size: 1.2rem;
+  color: #5d5d5d;
 }
 
 .payment-card {
@@ -42,4 +52,35 @@
 .loader {
   font-size: 1.6rem;
   text-align: center;
+}
+
+.back-button {
+  margin-bottom: 2rem;
+
+  border: none;
+  background: transparent;
+
+  font-size: 1rem;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  color: #545353;
+
+  transition: opacity 0.2s ease;
+}
+
+.back-button:hover {
+  opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+  .payment-card {
+    padding: 2rem 1rem;
+  }
+
+  .payment-action {
+    width: 100%;
+    min-width: unset;
+  }
 }

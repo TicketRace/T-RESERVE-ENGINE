@@ -1,4 +1,4 @@
-<section class="shell admin-page">
+﻿<section class="shell admin-page">
   <div class="admin-top">
     <h1>Ваши события</h1>
   
@@ -9,7 +9,7 @@
     <div class="admin-row" *ngFor="let event of events">
       <div class="event-main">
         <h2>{{ event.title }}</h2>
-        <span>{{ event.nextSession | date:'d MMMM HH:mm' }}</span>
+        <span>{{ event.nextSession| date:'d MMMM HH:mm' }}</span>
       </div>
 
       <div class="admin-actions">

@@ -1,16 +1,35 @@
-<section class="shell details-page" *ngIf="event as data">
+﻿<section class="shell details-page" *ngIf="event as data">
   <div class="title-card">
-    <p>{{ data.category }} {{ data.ageRating }} {{ data.venue }}</p>
+    <p>{{ data.category }} {{ data.ageRestriction }} {{ data.venue.name }}</p>
     <h1>{{ data.title }}</h1>
-    <div class="poster"></div>
-    <button class="action-chip" type="button" (click)="selectSession(data.sessions[0])">Купить билеты</button>
+    <div 
+      class="poster"
+      [style.background-image]="'url(' + data.imageUrl + ')'"
+    ></div>
+
+    <button
+      class="action-chip"
+      type="button"
+      (click)="selectSession(sessions[0])"
+    >
+      Купить билеты
+    </button>
   </div>
 
   <div class="dates-card">
     <h2>Выберете дату</h2>
+
     <div class="date-row" *ngFor="let session of sessions">
       <span>{{ session.startsAt | date:'d MMMM HH:mm' }}</span>
-      <button class="action-chip" type="button" (click)="selectSession(session)">Купить билеты</button>
+
+      <button
+        class="action-chip"
+        type="button"
+        (click)="selectSession(session)"
+      >
+        Купить билеты
+      </button>
     </div>
+
   </div>
 </section>

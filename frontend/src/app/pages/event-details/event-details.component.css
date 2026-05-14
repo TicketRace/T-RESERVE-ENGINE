@@ -1,4 +1,4 @@
-.details-page {
+﻿.details-page {
   display: grid;
   gap: 3rem;
   padding: 1.5rem 0 3rem;
@@ -28,8 +28,7 @@
   border-radius: 28px;
   background:
     linear-gradient(135deg, rgba(27, 30, 54, 0.85), rgba(114, 93, 212, 0.35)),
-    url('https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1400&q=80')
-      center/cover;
+    center/cover;
 }
 
 .action-chip {
