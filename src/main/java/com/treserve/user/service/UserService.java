@@ -33,6 +33,8 @@ public class UserService {
         return tickets.stream()
                 .map(t -> new UserBookingResponse(
                         t.getId(),
+                        t.getEvent().getId(),
+                        t.getEvent().getStartTime(),
                         t.getEvent().getTitle(),
                         t.getSeat().getSeatLabel(),
                         t.getStatus().name(),

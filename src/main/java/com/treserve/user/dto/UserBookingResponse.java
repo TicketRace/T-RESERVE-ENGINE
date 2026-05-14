@@ -14,6 +14,12 @@ public class UserBookingResponse {
     @Schema(description = "ID билета", example = "100")
     private Long ticketId;
 
+    @Schema(description = "ID мероприятия", example = "1")
+    private Long eventId;
+
+    @Schema(description = "Дата и время мероприятия", example = "2026-05-20T19:00:00Z")
+    private Instant eventStartTime;
+
     @Schema(description = "Название мероприятия", example = "Рок-фестиваль")
     private String eventTitle;
 
