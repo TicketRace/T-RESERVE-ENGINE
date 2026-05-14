@@ -79,6 +79,24 @@ curl -s -X POST http://localhost:8080/api/bookings/lock \
 
 ---
 
+## Автоматические тесты
+
+Unit-тесты:
+
+```bash
+mvn test
+```
+
+Интеграционные тесты используют Testcontainers, PostgreSQL и Redis, поэтому для запуска нужен Docker:
+
+```bash
+mvn verify -P integration-tests
+```
+
+В CI интеграционные тесты запускаются отдельным job и являются quality gate перед merge.
+
+---
+
 ## 🛑 Остановка
 
 ```bash
