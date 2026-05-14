@@ -1,16 +1,15 @@
-<section class="shell profile-page">
+﻿<section class="shell profile-page">
   <div class="profile-head">
     <h1>Ваши билеты</h1>
-    <div class="profile-user">
-      <span>{{ user?.name }}</span>
-    </div>
   </div>
 
   <div class="ticket-list" *ngIf="bookings.length; else emptyState">
     <article class="ticket-card" *ngFor="let booking of bookings">
       <div>
-        <h2>{{ booking.event.title }}</h2>
-        <p>{{ booking.session.startsAt | date:'d MMMM HH:mm' }}</p>
+        <h2>{{ booking.eventTitle }}</h2>
+        <p>
+          Дата покупки:
+          {{ booking.bookedAt| date:'d MMMM HH:mm' }}</p>
       </div>
       <button class="action-chip" type="button">Посмотреть билет</button>
     </article>

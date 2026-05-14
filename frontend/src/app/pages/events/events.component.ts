@@ -1,10 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { EventItem } from '../../models/event';
-import { MockApiService } from '../../services/mock-api.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EventCardComponent } from '../../components/event-card/event-card.component';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-events',
@@ -22,7 +22,7 @@ export class EventsComponent implements OnInit {
   
 
   constructor(
-    private readonly mockApi: MockApiService,
+    private readonly http: HttpClient,
     private readonly router: Router,
   ) {}
 
@@ -44,23 +44,26 @@ export class EventsComponent implements OnInit {
   }
 
   onSearch(): void {
-    this.fetchEvents(this.search);
+    const term = this.search.toLowerCase().trim();
+    this.filteredEvents = this.events.filter(e =>
+      e.title.toLowerCase().includes(term) ||
+      e.description?.toLowerCase().includes(term)
+    );
   }
 
   openEvent(id: number): void {
     this.router.navigate(['/event', id]);
   }
 
-  private fetchEvents(search = ''): void {
-    this.mockApi.getEvents(search).subscribe({
-      next: (events) => {
-        this.events = events;
-        this.filteredEvents = events;
+  private fetchEvents(): void {
+    this.http.get<any>('http://localhost:8080/api/events?page=0&size=20')
+      .subscribe({
+      next: (res) => {
+        this.events = res.content;
+        this.filteredEvents = res.content;
         this.loading = false;
       },
-      error: () => {
-        this.loading = false;
-      },
-    });
+        error: () => this.loading = false,
+      });
   }
 }

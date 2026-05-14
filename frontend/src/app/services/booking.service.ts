@@ -1,23 +1,32 @@
-import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+﻿import { Injectable } from '@angular/core';
 import { LockResponse } from '../models/booking';
-import { MockApiService } from './mock-api.service';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root',
 })
 export class BookingService {
-  constructor(private readonly mockApi: MockApiService) {}
-
-  lockSeat(sessionId: number, seatId: number): Observable<LockResponse> {
-    return this.mockApi.lockSeat(sessionId, seatId);
+  constructor(
+    private readonly http: HttpClient
+  ) {}
+ lockSeat(eventId: number, seatId: number) {
+    return this.http.post<LockResponse>(
+      'http://localhost:8080/api/bookings/lock',
+      { eventId, seatId }
+    );
   }
 
-  confirmBooking(lockId: number, paymentMethod: string): Observable<string> {
-    return this.mockApi.confirmBooking(lockId, paymentMethod);
+  confirmBooking(lockId: number) {
+    return this.http.post(
+      `http://localhost:8080/api/bookings/${lockId}/confirm`,
+      {},
+      { responseType: 'text' }
+    );
   }
 
-  cancelBooking(lockId: number): Observable<void> {
-    return this.mockApi.cancelBooking(lockId);
+  cancelBooking(lockId: number) {
+    return this.http.delete(
+      `http://localhost:8080/api/bookings/${lockId}`
+    );
   }
 }
