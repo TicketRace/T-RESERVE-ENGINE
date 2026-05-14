@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.treserve.event.entity.Event;
 import com.treserve.event.repository.EventRepository;
+import com.treserve.common.exception.ResourceNotFoundException;
 
 @RestController
 @RequestMapping("/api/events")
@@ -29,8 +30,11 @@ public class EventController {
         @ApiResponse(responseCode = "200", description = "Список мероприятий получен"),
         @ApiResponse(responseCode = "400", description = "Неверные параметры пагинации")
     })
-    public Page<Event> list(@PageableDefault(size = 20) Pageable pageable) {
-        return eventRepository.findAll(pageable);
+    public Page<Event> list(
+        @RequestParam(required = false, defaultValue = "") String search,
+        @RequestParam(required = false, defaultValue = "") String category,
+        @PageableDefault(size = 20) Pageable pageable) {
+        return eventRepository.findActiveEvents(search, category, pageable);
     }
 
     @GetMapping("/{id}")
@@ -40,7 +44,7 @@ public class EventController {
         @ApiResponse(responseCode = "404", description = "Мероприятие не найдено")
     })
     public Event getById(@PathVariable Long id) {
-        return eventRepository.findById(id)
-            .orElseThrow(() -> new com.treserve.common.exception.ResourceNotFoundException("Event", id));
+        return eventRepository.findByIdWithVenue(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Event", id));
     }
 }

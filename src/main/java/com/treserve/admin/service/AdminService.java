@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +33,13 @@ public class AdminService {
     private final SeatRepository seatRepository;
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
-    private final AdminMapper adminMapper;  // ← ДОБАВЛЕНО
+    private final AdminMapper adminMapper;
+
+    public List<EventResponse> getAllEvents() {
+        return eventRepository.findAll().stream()
+                .map(adminMapper::toEventResponse)
+                .collect(Collectors.toList());
+    }
 
     @Transactional
     public EventResponse createEvent(EventCreateRequest request, Long adminId) {

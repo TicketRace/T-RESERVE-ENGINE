@@ -5,6 +5,7 @@ import com.treserve.admin.service.AdminService;
 import com.treserve.event.dto.EventCreateRequest;
 import com.treserve.event.dto.EventResponse;
 import com.treserve.event.dto.EventUpdateRequest;
+import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,6 +25,16 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminService adminService;
+
+    @GetMapping("/events")
+    @Operation(summary = "Список всех мероприятий (для админ-панели)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Список получен"),
+        @ApiResponse(responseCode = "403", description = "Доступ запрещён (требуется роль ADMIN)")
+    })
+    public List<EventResponse> getEvents() {
+        return adminService.getAllEvents();
+    }
 
     @PostMapping("/events")
     @ResponseStatus(HttpStatus.CREATED)

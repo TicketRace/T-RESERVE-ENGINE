@@ -42,8 +42,12 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     @Query(value = "SELECT id, event_id, seat_id, status, price, user_id, lock_expires_at, booked_at FROM tickets WHERE id = :id FOR UPDATE NOWAIT", nativeQuery = true)
     Optional<Ticket> findByIdForUpdate(@Param("id") Long id);
 
-    /** Safety net: просроченные LOCKED билеты */
-    @Query("SELECT t FROM Ticket t WHERE t.status = com.treserve.booking.entity.TicketStatus.LOCKED AND t.lockExpiresAt < :now")
+    /** Safety net: просроченные LOCKED билеты (JOIN FETCH event для evictSeatsCache) */
+    @Query("""
+        SELECT t FROM Ticket t
+        JOIN FETCH t.event
+        WHERE t.status = com.treserve.booking.entity.TicketStatus.LOCKED AND t.lockExpiresAt < :now
+    """)
     List<Ticket> findExpiredLocks(@Param("now") Instant now);
 
     /** Билеты юзера */
