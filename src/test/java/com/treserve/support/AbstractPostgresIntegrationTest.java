@@ -11,29 +11,30 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(properties = {
     "spring.flyway.clean-disabled=false",
     "spring.jpa.show-sql=false",
     "logging.level.com.treserve=INFO",
     "logging.level.org.springframework.security=WARN",
-    "management.health.rabbit.enabled=false"
+    "management.health.rabbit.enabled=false",
+    "app.safety-net.enabled=false"
 })
 @ActiveProfiles("it")
-@Testcontainers
 public abstract class AbstractPostgresIntegrationTest {
 
-    @Container
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
         .withDatabaseName("treserve_it")
         .withUsername("treserve")
         .withPassword("treserve_dev");
 
-    @Container
     static final GenericContainer<?> REDIS = new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
         .withExposedPorts(6379);
+
+    static {
+        POSTGRES.start();
+        REDIS.start();
+    }
 
     @DynamicPropertySource
     static void registerPostgresProperties(DynamicPropertyRegistry registry) {
