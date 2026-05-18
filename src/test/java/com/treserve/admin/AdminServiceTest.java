@@ -1,5 +1,6 @@
 package com.treserve.admin;
 
+import com.treserve.admin.dto.mapper.AdminMapper;
 import com.treserve.admin.service.AdminService;
 import com.treserve.booking.entity.Ticket;
 import com.treserve.booking.repository.TicketRepository;
@@ -58,6 +59,9 @@ class AdminServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private AdminMapper adminMapper;
 
     @InjectMocks
     private AdminService adminService;
@@ -141,6 +145,15 @@ class AdminServiceTest {
             
             when(seatRepository.findByVenueId(1L)).thenReturn(testSeats);
             when(ticketRepository.saveAll(anyIterable())).thenReturn(new ArrayList<>());
+
+            // id, title, description, imageUrl, ageRestriction, category,
+            // durationMinutes, startTime, basePrice, status, venueId, venueName
+            EventResponse mappedResponse = new EventResponse(
+                1L, "Новый концерт", "Описание нового концерта",
+                null, null, null, null, null,
+                BigDecimal.valueOf(1500), "ACTIVE", 1L, "Тестовая площадка"
+            );
+            when(adminMapper.toEventResponse(any(Event.class))).thenReturn(mappedResponse);
 
             EventResponse response = adminService.createEvent(createRequest, 1L);
 
@@ -227,6 +240,11 @@ class AdminServiceTest {
             when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
             when(eventRepository.save(any(Event.class))).thenAnswer(invocation ->
                     invocation.getArgument(0));
+
+            EventResponse mappedResponse = new EventResponse(
+                1L, null, null, null, null, null, null, null, null, null, null, null
+            );
+            when(adminMapper.toEventResponse(any(Event.class))).thenReturn(mappedResponse);
 
             EventResponse response = adminService.updateEvent(1L, updateRequest, 1L);
 

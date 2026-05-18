@@ -95,9 +95,9 @@ public class AdminService {
             throw new IllegalArgumentException("Cannot edit event after sales started");
         }
 
-        event.setTitle(request.getTitle());
-        event.setDescription(request.getDescription());
-        event.setStatus(request.getStatus());
+        if (request.getTitle() != null) event.setTitle(request.getTitle());
+        if (request.getDescription() != null) event.setDescription(request.getDescription());
+        if (request.getStatus() != null) event.setStatus(request.getStatus());
         if (request.getStartTime() != null) event.setStartTime(request.getStartTime());
         if (request.getBasePrice() != null) event.setBasePrice(request.getBasePrice());
         if (request.getImageUrl() != null) event.setImageUrl(request.getImageUrl());
