@@ -8,6 +8,7 @@ import com.treserve.booking.entity.TicketStatus;
 import com.treserve.booking.dto.LockResponse;
 import com.treserve.booking.dto.SeatInfo;
 import com.treserve.support.AbstractPostgresIntegrationTest;
+import com.treserve.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +24,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class BookingServiceIntegrationIT extends AbstractPostgresIntegrationTest {
 
     private static final long EVENT_ID = 1L;
-    private static final long USER_ID = 2L;
 
     @Autowired
     private BookingService bookingService;
@@ -37,17 +37,21 @@ class BookingServiceIntegrationIT extends AbstractPostgresIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @Test
     @DisplayName("tryLock сохраняет LOCKED-состояние в PostgreSQL")
     void tryLockPersistsLockedStateInDatabase() {
         Ticket ticket = firstTicketForEvent(EVENT_ID);
+        Long userId = testUserId();
         assertThat(seatStatusFromService(EVENT_ID, ticket.getSeat().getId())).isEqualTo(TicketStatus.AVAILABLE.name());
 
-        LockResponse response = bookingService.tryLock(EVENT_ID, ticket.getSeat().getId(), USER_ID);
+        LockResponse response = bookingService.tryLock(EVENT_ID, ticket.getSeat().getId(), userId);
 
         TicketState state = readTicketState(response.getLockId());
         assertThat(state.status()).isEqualTo(TicketStatus.LOCKED.name());
-        assertThat(state.userId()).isEqualTo(USER_ID);
+        assertThat(state.userId()).isEqualTo(userId);
         assertThat(state.lockExpiresAt()).isNotNull();
         assertThat(state.bookedAt()).isNull();
         assertThat(seatStatusFromService(EVENT_ID, ticket.getSeat().getId())).isEqualTo(TicketStatus.LOCKED.name());
@@ -57,13 +61,14 @@ class BookingServiceIntegrationIT extends AbstractPostgresIntegrationTest {
     @DisplayName("confirm переводит LOCKED → BOOKED и очищает lock_expires_at")
     void confirmPersistsBookedStateInDatabase() {
         Ticket ticket = firstTicketForEvent(EVENT_ID);
-        LockResponse lock = bookingService.tryLock(EVENT_ID, ticket.getSeat().getId(), USER_ID);
+        Long userId = testUserId();
+        LockResponse lock = bookingService.tryLock(EVENT_ID, ticket.getSeat().getId(), userId);
 
-        bookingService.confirm(lock.getLockId(), USER_ID);
+        bookingService.confirm(lock.getLockId(), userId);
 
         TicketState state = readTicketState(lock.getLockId());
         assertThat(state.status()).isEqualTo(TicketStatus.BOOKED.name());
-        assertThat(state.userId()).isEqualTo(USER_ID);
+        assertThat(state.userId()).isEqualTo(userId);
         assertThat(state.lockExpiresAt()).isNull();
         assertThat(state.bookedAt()).isNotNull();
     }
@@ -72,9 +77,10 @@ class BookingServiceIntegrationIT extends AbstractPostgresIntegrationTest {
     @DisplayName("cancel переводит LOCKED → AVAILABLE и сбрасывает пользователя")
     void cancelReturnsTicketToAvailableAndClearsUser() {
         Ticket ticket = firstTicketForEvent(EVENT_ID);
-        LockResponse lock = bookingService.tryLock(EVENT_ID, ticket.getSeat().getId(), USER_ID);
+        Long userId = testUserId();
+        LockResponse lock = bookingService.tryLock(EVENT_ID, ticket.getSeat().getId(), userId);
 
-        bookingService.cancel(lock.getLockId(), USER_ID);
+        bookingService.cancel(lock.getLockId(), userId);
 
         TicketState state = readTicketState(lock.getLockId());
         assertThat(state.status()).isEqualTo(TicketStatus.AVAILABLE.name());
@@ -87,20 +93,21 @@ class BookingServiceIntegrationIT extends AbstractPostgresIntegrationTest {
     @DisplayName("confirm просроченного LOCKED-билета не меняет состояние БД")
     void confirmExpiredLockLeavesDatabaseStateUnchanged() {
         Ticket ticket = firstTicketForEvent(EVENT_ID);
+        Long userId = testUserId();
         Instant expiredAt = Instant.now().minusSeconds(60);
         jdbcTemplate.update("""
                 UPDATE tickets
                 SET status = 'LOCKED', user_id = ?, lock_expires_at = ?, booked_at = NULL
                 WHERE id = ?
-                """, USER_ID, Timestamp.from(expiredAt), ticket.getId());
+                """, userId, Timestamp.from(expiredAt), ticket.getId());
 
-        assertThatThrownBy(() -> bookingService.confirm(ticket.getId(), USER_ID))
+        assertThatThrownBy(() -> bookingService.confirm(ticket.getId(), userId))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Lock expired");
 
         TicketState state = readTicketState(ticket.getId());
         assertThat(state.status()).isEqualTo(TicketStatus.LOCKED.name());
-        assertThat(state.userId()).isEqualTo(USER_ID);
+        assertThat(state.userId()).isEqualTo(userId);
         assertThat(state.lockExpiresAt()).isNotNull();
         assertThat(state.bookedAt()).isNull();
     }
@@ -112,6 +119,10 @@ class BookingServiceIntegrationIT extends AbstractPostgresIntegrationTest {
             .findFirst()
             .orElseThrow()
             .getStatus();
+    }
+
+    private Long testUserId() {
+        return userRepository.findByEmail("user@treserve.com").orElseThrow().getId();
     }
 
     private Ticket firstTicketForEvent(long eventId) {
