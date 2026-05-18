@@ -207,81 +207,79 @@ class AdminServiceTest {
     @Test
     @DisplayName("updateEvent: успешное обновление мероприятия до начала продаж")
     void updateEvent_success() {
-    try (MockedStatic<Instant> instantMock = mockStatic(Instant.class)) {
-        instantMock.when(Instant::now).thenReturn(NOW);
-
+        
         // ПРАВИЛЬНОЕ создание Event с указанием ВСЕХ полей
+        // Event создаётся ДО MockedStatic: Instant.plusSeconds() внутри вызывает
+        // static factory, которые Mockito мокает в null → setStartTime(null) → NPE
         Event event = new Event();
         event.setId(1L);
         event.setTitle("Тестовый концерт");
         event.setDescription("Описание тестового концерта");
         event.setVenue(testVenue);
-        event.setStartTime(NOW.plusSeconds(3600));
+        event.setStartTime(NOW.plusSeconds(3600)); // до мока
         event.setBasePrice(BigDecimal.valueOf(1000));
         event.setStatus("ACTIVE");
         event.setCreatedBy(testAdmin);
 
-        System.out.println("=== ДИАГНОСТИКА ===");
-        System.out.println("NOW = " + NOW);
-        System.out.println("event.getStartTime() = " + event.getStartTime());
+        try (MockedStatic<Instant> instantMock = mockStatic(Instant.class)) {
+            instantMock.when(Instant::now).thenReturn(NOW);
 
-        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
-        
-        when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> {
-            return invocation.getArgument(0);
-        });
+            when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+            when(eventRepository.save(any(Event.class))).thenAnswer(invocation ->
+                    invocation.getArgument(0));
 
-        EventResponse response = adminService.updateEvent(1L, updateRequest, 1L);
+            EventResponse response = adminService.updateEvent(1L, updateRequest, 1L);
 
-        assertThat(response).isNotNull();
-        assertThat(response.getId()).isEqualTo(1L);
-        assertThat(event.getTitle()).isEqualTo("Обновлённый концерт");
-        assertThat(event.getDescription()).isEqualTo("Новое описание");
-        assertThat(event.getStatus()).isEqualTo("DRAFT");
-        assertThat(event.getBasePrice()).isEqualByComparingTo("2000");
-        assertThat(event.getStartTime()).isEqualTo(NOW.plusSeconds(10800));
-        assertThat(event.getImageUrl()).isEqualTo("https://example.com/new-image.jpg");
-        assertThat(event.getAgeRestriction()).isEqualTo("18+");
-        assertThat(event.getCategory()).isEqualTo("SPORT");
-        assertThat(event.getDurationMinutes()).isEqualTo(150);
-
-        verify(eventRepository).save(event);
+            assertThat(response).isNotNull();
+            assertThat(response.getId()).isEqualTo(1L);
+            assertThat(event.getTitle()).isEqualTo("Обновлённый концерт");
+            assertThat(event.getDescription()).isEqualTo("Новое описание");
+            assertThat(event.getStatus()).isEqualTo("DRAFT");
+            assertThat(event.getBasePrice()).isEqualByComparingTo("2000");
+            assertThat(event.getImageUrl()).isEqualTo("https://example.com/new-image.jpg");
+            assertThat(event.getAgeRestriction()).isEqualTo("18+");
+            assertThat(event.getCategory()).isEqualTo("SPORT");
+            assertThat(event.getDurationMinutes()).isEqualTo(150);
+            verify(eventRepository).save(event);
+        }
     }
-}
     @Test
     @DisplayName("updateEvent: обновление только части полей (null не перезаписывает существующие)")
     void updateEvent_nullOptionalFields_doesNotOverwriteExistingValues() {
-    try (MockedStatic<Instant> instantMock = mockStatic(Instant.class)) {
-        instantMock.when(Instant::now).thenReturn(NOW);
+        // Event и ожидаемые значения создаются ДО MockedStatic
+        Instant expectedStartTime = NOW.plusSeconds(3600);
 
         Event event = new Event();
         event.setId(1L);
         event.setTitle("Тестовый концерт");
         event.setDescription("Описание тестового концерта");
         event.setVenue(testVenue);
-        event.setStartTime(NOW.plusSeconds(3600));
+        event.setStartTime(expectedStartTime);
         event.setBasePrice(BigDecimal.valueOf(1000));
         event.setStatus("ACTIVE");
         event.setCreatedBy(testAdmin);
+        event.setDurationMinutes(120);
 
         EventUpdateRequest partialRequest = new EventUpdateRequest();
         partialRequest.setTitle("Только заголовок обновлён");
         partialRequest.setStatus("ACTIVE");
 
-        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
-        when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> {
-            return invocation.getArgument(0);
-        });
+        try (MockedStatic<Instant> instantMock = mockStatic(Instant.class)) {
+            instantMock.when(Instant::now).thenReturn(NOW);
 
-        adminService.updateEvent(1L, partialRequest, 1L);
+            when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+            when(eventRepository.save(any(Event.class))).thenAnswer(invocation ->
+                    invocation.getArgument(0));
 
-        assertThat(event.getTitle()).isEqualTo("Только заголовок обновлён");
-        assertThat(event.getDescription()).isEqualTo("Описание тестового концерта");
-        assertThat(event.getBasePrice()).isEqualByComparingTo("1000");
-        assertThat(event.getStartTime()).isEqualTo(NOW.plusSeconds(3600));
-        assertThat(event.getDurationMinutes()).isEqualTo(120);
+            adminService.updateEvent(1L, partialRequest, 1L);
+
+            assertThat(event.getTitle()).isEqualTo("Только заголовок обновлён");
+            assertThat(event.getDescription()).isEqualTo("Описание тестового концерта");
+            assertThat(event.getBasePrice()).isEqualByComparingTo("1000");
+            assertThat(event.getStartTime()).isEqualTo(expectedStartTime);
+            assertThat(event.getDurationMinutes()).isEqualTo(120);
+        }
     }
-}
 
     @Test
     @DisplayName("updateEvent: событие не найдено → ResourceNotFoundException")
@@ -298,28 +296,29 @@ class AdminServiceTest {
     @Test
     @DisplayName("updateEvent: продажи уже начались → IllegalArgumentException")
     void updateEvent_afterSalesStarted_throwsException() {
-    try (MockedStatic<Instant> instantMock = mockStatic(Instant.class)) {
-        instantMock.when(Instant::now).thenReturn(NOW);
-
+        // Event создаётся ДО MockedStatic
         Event pastEvent = new Event();
         pastEvent.setId(1L);
         pastEvent.setTitle("Тестовый концерт");
         pastEvent.setDescription("Описание тестового концерта");
         pastEvent.setVenue(testVenue);
-        pastEvent.setStartTime(NOW.minusSeconds(3600));
+        pastEvent.setStartTime(NOW.minusSeconds(3600)); // до мока — в прошлом
         pastEvent.setBasePrice(BigDecimal.valueOf(1000));
         pastEvent.setStatus("ACTIVE");
         pastEvent.setCreatedBy(testAdmin);
 
-        when(eventRepository.findById(1L)).thenReturn(Optional.of(pastEvent));
+        try (MockedStatic<Instant> instantMock = mockStatic(Instant.class)) {
+            instantMock.when(Instant::now).thenReturn(NOW);
 
-        assertThatThrownBy(() -> adminService.updateEvent(1L, updateRequest, 1L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Cannot edit event after sales started");
+            when(eventRepository.findById(1L)).thenReturn(Optional.of(pastEvent));
 
-        verify(eventRepository, never()).save(any());
+            assertThatThrownBy(() -> adminService.updateEvent(1L, updateRequest, 1L))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Cannot edit event after sales started");
+
+            verify(eventRepository, never()).save(any());
+        }
     }
-}
 
     // ==================== deleteEvent ====================
 
