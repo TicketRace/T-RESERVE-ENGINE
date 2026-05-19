@@ -5,6 +5,7 @@
   status: 'BOOKED' | 'LOCKED' | 'CANCELLED';
   price: number;
   bookedAt: string;
+  eventStartTime: string;
 }
 
 export interface LockResponse {
