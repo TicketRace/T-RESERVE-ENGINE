@@ -59,8 +59,8 @@ public class SecurityConfig {
                     "/api-docs", "/api-docs/**"
                 ).permitAll()
 
-                // Actuator + Error
-                .requestMatchers("/actuator/**", "/error").permitAll()
+                // Actuator + Error + Instance info (LB demo)
+                .requestMatchers("/actuator/**", "/error", "/api/instance").permitAll()
 
                 // Admin
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -80,7 +80,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200", "http://localhost:5173", "http://localhost:3000"));
+        config.setAllowedOrigins(List.of("http://localhost:4200", "http://localhost:5173", "http://localhost:3000", "http://localhost"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
