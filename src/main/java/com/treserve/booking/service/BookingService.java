@@ -4,6 +4,7 @@ import com.treserve.booking.dto.LockResponse;
 import com.treserve.booking.entity.Ticket;
 import com.treserve.booking.entity.TicketStatus;
 import com.treserve.booking.repository.TicketRepository;
+import com.treserve.common.exception.ForbiddenOperationException;
 import com.treserve.common.exception.ResourceNotFoundException;
 import com.treserve.common.exception.SeatAlreadyLockedException;
 import com.treserve.user.entity.User;
@@ -89,7 +90,7 @@ public class BookingService {
 
         // Проверки
         if (ticket.getUser() == null || !ticket.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("This ticket is not locked by you");
+            throw new ForbiddenOperationException("This ticket is not locked by you");
         }
         if (ticket.getStatus() != TicketStatus.LOCKED) {
             throw new IllegalArgumentException("Ticket is not in LOCKED state (current: " + ticket.getStatus() + ")");
@@ -120,7 +121,7 @@ public class BookingService {
             .orElseThrow(() -> new ResourceNotFoundException("Ticket", ticketId));
 
         if (ticket.getUser() == null || !ticket.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("This ticket is not locked by you");
+            throw new ForbiddenOperationException("This ticket is not locked by you");
         }
         if (ticket.getStatus() != TicketStatus.LOCKED) {
             throw new IllegalArgumentException("Can only cancel LOCKED tickets (current: " + ticket.getStatus() + ")");
