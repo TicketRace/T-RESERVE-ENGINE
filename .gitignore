@@ -20,6 +20,7 @@ replay_pid*.log
 !frontend/angular.json
 !frontend/tsconfig.json
 !frontend/tsconfig.app.json
+!frontend/tsconfig.spec.json
 
 # OS
 .DS_Store
