@@ -5,6 +5,7 @@ import com.treserve.admin.service.AdminService;
 import com.treserve.booking.entity.Ticket;
 import com.treserve.booking.repository.TicketRepository;
 import com.treserve.booking.entity.TicketStatus;
+import com.treserve.common.exception.BusinessConflictException;
 import com.treserve.common.exception.ResourceNotFoundException;
 import com.treserve.event.entity.Event;
 import com.treserve.event.repository.EventRepository;
@@ -367,7 +368,7 @@ class AdminServiceTest {
     }
 
     @Test
-    @DisplayName("deleteEvent: событие с оплаченными билетами → IllegalArgumentException")
+    @DisplayName("deleteEvent: событие с оплаченными билетами → BusinessConflictException")
     void deleteEvent_withBookedTickets_throwsException() {
         Event event = Event.builder()
                 .id(1L)
@@ -384,7 +385,7 @@ class AdminServiceTest {
         when(eventRepository.hasBookedTickets(1L)).thenReturn(true);
 
         assertThatThrownBy(() -> adminService.deleteEvent(1L))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BusinessConflictException.class)
                 .hasMessageContaining("Cannot delete event with BOOKED tickets");
 
         verify(ticketRepository, never()).deleteAll(any());
