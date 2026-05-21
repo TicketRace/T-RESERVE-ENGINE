@@ -70,6 +70,8 @@ export class AuthComponent {
   }
 
   submit(): void {
+    this.error = '';
+    
     if (this.form.invalid) {
       this.form.markAllAsTouched(); 
       this.error = 'Проверьте корректность данных';
