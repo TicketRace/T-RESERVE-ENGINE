@@ -2,10 +2,12 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { AuthService } from './auth.service';
 import { AuthResponse } from '../models/user';
+import { environment } from '../../environments/environment';
 
 describe('AuthService', () => {
   let service: AuthService;
   let httpMock: HttpTestingController;
+  const apiUrl = environment.apiUrl;
 
   const mockResponse: AuthResponse = {
     token: 'access-token',
@@ -41,7 +43,7 @@ describe('AuthService', () => {
       expect(res.token).toBe('access-token');
     });
 
-    const req = httpMock.expectOne('http://localhost:8080/api/auth/login');
+    const req = httpMock.expectOne(`${apiUrl}/api/auth/login`);
     expect(req.request.method).toBe('POST');
 
     req.flush(mockResponse);
@@ -55,7 +57,7 @@ describe('AuthService', () => {
   it('should register and persist user', () => {
     service.register('test@test.com', '123456', 'Test').subscribe();
 
-    const req = httpMock.expectOne('http://localhost:8080/api/auth/register');
+    const req = httpMock.expectOne(`${apiUrl}/api/auth/register`);
     expect(req.request.method).toBe('POST');
 
     req.flush(mockResponse);
@@ -90,7 +92,7 @@ describe('AuthService', () => {
   it('should return current user snapshot', () => {
     service.login('a', 'b').subscribe();
 
-    const req = httpMock.expectOne('http://localhost:8080/api/auth/login');
+    const req = httpMock.expectOne(`${apiUrl}/api/auth/login`);
     req.flush(mockResponse);
 
     expect(service.snapshot()?.email).toBe('test@test.com');
@@ -102,7 +104,7 @@ describe('AuthService', () => {
 
     service.refresh().subscribe();
 
-    const req = httpMock.expectOne('http://localhost:8080/api/auth/refresh');
+    const req = httpMock.expectOne(`${apiUrl}/api/auth/refresh`);
     expect(req.request.body).toEqual({ refreshToken: 'old-refresh' });
 
     req.flush(mockResponse);

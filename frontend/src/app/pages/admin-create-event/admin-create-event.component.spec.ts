@@ -5,6 +5,7 @@ import { HttpClientTestingModule, HttpTestingController }
 from '@angular/common/http/testing';
 
 import { ActivatedRoute, Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 describe('AdminCreateEventComponent', () => {
   let component: AdminCreateEventComponent;
@@ -12,6 +13,8 @@ describe('AdminCreateEventComponent', () => {
 
   let httpMock: HttpTestingController;
   let router: jasmine.SpyObj<Router>;
+
+  const apiUrl = environment.apiUrl; 
 
   beforeEach(async () => {
     router = jasmine.createSpyObj(
@@ -65,7 +68,7 @@ describe('AdminCreateEventComponent', () => {
     component.createEvent();
 
     const req = httpMock.expectOne(
-      'http://localhost:8080/api/admin/events'
+      `${apiUrl}/api/admin/events`
     );
 
     expect(req.request.method).toBe('POST');

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-admin-create-event',
@@ -30,6 +31,8 @@ export class AdminCreateEventComponent {
 
   eventId: number | null = null;
   isEditMode = false;
+
+  private apiUrl = environment.apiUrl;
 
   constructor(
     private readonly http: HttpClient,
@@ -73,11 +76,11 @@ export class AdminCreateEventComponent {
 
     const request$ = this.isEditMode && this.eventId
       ? this.http.put(
-          `http://localhost:8080/api/admin/events/${this.eventId}`,
+          `${this.apiUrl}/api/admin/events/${this.eventId}`,
           updatePayload
         )
       : this.http.post(
-          'http://localhost:8080/api/admin/events',
+          `${this.apiUrl}/api/admin/events`,
           payload
         );
 
@@ -107,7 +110,7 @@ export class AdminCreateEventComponent {
 
   ngOnInit(): void {
     
-   this.http.get<any[]>('http://localhost:8080/api/venues')
+   this.http.get<any[]>(`${this.apiUrl}/api/venues`)
     .subscribe(v => this.venues = v);
 
   const id = this.route.snapshot.paramMap.get('id');
@@ -116,7 +119,7 @@ export class AdminCreateEventComponent {
     this.isEditMode = true;
     this.eventId = Number(id);
 
-    this.http.get<any>(`http://localhost:8080/api/events/${this.eventId}`)
+    this.http.get<any>(`${this.apiUrl}/api/events/${this.eventId}`)
       .subscribe(event => {
 
         this.title = event.title;

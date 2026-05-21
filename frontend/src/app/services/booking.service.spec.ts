@@ -5,10 +5,12 @@ import {
 } from '@angular/common/http/testing';
 
 import { BookingService } from './booking.service';
+import { environment } from '../../environments/environment';
 
 describe('BookingService', () => {
   let service: BookingService;
   let httpMock: HttpTestingController;
+  const apiUrl = environment.apiUrl;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -29,7 +31,7 @@ describe('BookingService', () => {
     service.lockSeat(1, 15).subscribe();
 
     const req = httpMock.expectOne(
-      'http://localhost:8080/api/bookings/lock'
+      `${apiUrl}/api/bookings/lock`
     );
 
     expect(req.request.method).toBe('POST');
@@ -50,7 +52,7 @@ describe('BookingService', () => {
     service.confirmBooking(55).subscribe();
 
     const req = httpMock.expectOne(
-      'http://localhost:8080/api/bookings/55/confirm'
+      `${apiUrl}/api/bookings/55/confirm`
     );
 
     expect(req.request.method).toBe('POST');
@@ -65,7 +67,7 @@ describe('BookingService', () => {
     service.cancelBooking(77).subscribe();
 
     const req = httpMock.expectOne(
-      'http://localhost:8080/api/bookings/77'
+      `${apiUrl}/api/bookings/77`
     );
 
     expect(req.request.method).toBe('DELETE');
