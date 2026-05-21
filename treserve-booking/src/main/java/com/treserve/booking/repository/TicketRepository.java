@@ -1,6 +1,7 @@
 package com.treserve.booking.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -37,18 +38,20 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     /**
      * SELECT FOR UPDATE NOWAIT — пессимистическая блокировка.
+     * Захватывает строку, если статус AVAILABLE или LOCKED с истекшим временем блокировки.
      * Если строка уже заблокирована другой транзакцией → PG бросает ошибку мгновенно.
-     * Если status != AVAILABLE → вернёт пустой Optional.
      */
     @Query(value = """
         SELECT id, event_id, seat_id, status, price, user_id, lock_expires_at, booked_at
         FROM tickets
-        WHERE event_id = :eventId AND seat_id = :seatId AND status = 'AVAILABLE'
+        WHERE event_id = :eventId AND seat_id = :seatId 
+          AND (status = 'AVAILABLE' OR (status = 'LOCKED' AND lock_expires_at < :now))
         FOR UPDATE NOWAIT
     """, nativeQuery = true)
     Optional<Ticket> findAvailableForUpdate(
         @Param("eventId") Long eventId,
-        @Param("seatId") Long seatId
+        @Param("seatId") Long seatId,
+        @Param("now") Instant now
     );
 
     /** Найти билет по ID с блокировкой строки */
@@ -57,6 +60,14 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
         FROM tickets WHERE id = :id FOR UPDATE NOWAIT
     """, nativeQuery = true)
     Optional<Ticket> findByIdForUpdate(@Param("id") Long id);
+
+    /** Bulk Delete всех билетов мероприятия */
+    @Modifying
+    @Query("DELETE FROM Ticket t WHERE t.eventId = :eventId")
+    void deleteByEventId(@Param("eventId") Long eventId);
+
+    /** Проверка наличия оплаченных билетов — один COUNT запрос, без загрузки в память */
+    boolean existsByEventIdAndStatus(Long eventId, TicketStatus status);
 
     /**
      * Safety net: просроченные LOCKED билеты.

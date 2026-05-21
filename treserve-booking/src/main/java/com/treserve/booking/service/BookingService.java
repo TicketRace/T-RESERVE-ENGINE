@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
+import org.springframework.transaction.support.TransactionTemplate;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -28,6 +30,7 @@ public class BookingService {
     /** Port interface — implemented in treserve-app by JpaUserLookup. */
     private final UserLookup userLookup;
     private final SeatService seatService;
+    private final TransactionTemplate transactionTemplate;
 
     @Value("${app.booking.lock-duration-minutes:10}")
     private int lockDurationMinutes;
@@ -36,45 +39,45 @@ public class BookingService {
      * ЯДРО: Попытка заблокировать место.
      *
      * Flow:
-     * 1. BEGIN TRANSACTION (Spring @Transactional)
-     * 2. SELECT * FROM tickets WHERE ... FOR UPDATE NOWAIT
+     * 1. Проверяем что user существует через port interface (ВНЕ транзакции БД)
+     * 2. Выполняем транзакцию с пессимистической блокировкой БД (TransactionTemplate)
+     * 3. SELECT * FROM tickets WHERE ... FOR UPDATE NOWAIT
      *    - Строка свободна → получаем её, PG блокирует строку
      *    - Строка уже заблокирована другой транзакцией → PessimisticLockingFailureException
-     *    - Status != AVAILABLE → пустой Optional
-     * 3. UPDATE status='LOCKED', user_id, lock_expires_at
-     * 4. COMMIT → строка разблокируется
+     * 4. UPDATE status='LOCKED', user_id, lock_expires_at
+     * 5. COMMIT → строка разблокируется
      *
      * При 1000 конкурентных запросах на одно место:
      * - 1 получает 200 OK + lockId
      * - 999 получают 409 Conflict (мгновенно, без ожидания)
      */
-    @Transactional
     public LockResponse tryLock(Long eventId, Long seatId, Long userId) {
+        // Проверяем существование пользователя ВНЕ транзакции базы данных
+        if (!userLookup.existsById(userId)) {
+            throw new ResourceNotFoundException("User", userId);
+        }
+
         try {
-            // SELECT FOR UPDATE NOWAIT — атомарно захватываем строку
-            Ticket ticket = ticketRepository.findAvailableForUpdate(eventId, seatId)
-                .orElseThrow(() -> new SeatAlreadyLockedException(
-                    "Seat " + seatId + " for event " + eventId));
+            return transactionTemplate.execute(status -> {
+                // SELECT FOR UPDATE NOWAIT — атомарно захватываем строку
+                Ticket ticket = ticketRepository.findAvailableForUpdate(eventId, seatId, Instant.now())
+                    .orElseThrow(() -> new SeatAlreadyLockedException(
+                        "Seat " + seatId + " for event " + eventId));
 
-            // Проверяем что user существует через port interface
-            if (!userLookup.existsById(userId)) {
-                throw new ResourceNotFoundException("User", userId);
-            }
+                Instant expiresAt = Instant.now().plus(lockDurationMinutes, ChronoUnit.MINUTES);
 
-            Instant expiresAt = Instant.now().plus(lockDurationMinutes, ChronoUnit.MINUTES);
+                ticket.setStatus(TicketStatus.LOCKED);
+                ticket.setUserId(userId);
+                ticket.setLockExpiresAt(expiresAt);
 
-            ticket.setStatus(TicketStatus.LOCKED);
-            ticket.setUserId(userId);
-            ticket.setLockExpiresAt(expiresAt);
+                ticketRepository.save(ticket);
 
-            ticketRepository.save(ticket);
+                log.info("LOCKED seat {} for event {} by user {} (expires {})",
+                    seatId, eventId, userId, expiresAt);
 
-            log.info("LOCKED seat {} for event {} by user {} (expires {})",
-                seatId, eventId, userId, expiresAt);
-
-            seatService.evictSeatsCache(eventId);
-            return new LockResponse(ticket.getId(), expiresAt);
-
+                seatService.evictSeatsCache(eventId);
+                return new LockResponse(ticket.getId(), expiresAt);
+            });
         } catch (PessimisticLockingFailureException e) {
             // FOR UPDATE NOWAIT → строка уже заблокирована другой транзакцией
             log.debug("Lock contention on seat {} event {} — already being processed", seatId, eventId);
@@ -88,27 +91,32 @@ public class BookingService {
      */
     @Transactional
     public void confirm(Long ticketId, Long userId) {
-        Ticket ticket = ticketRepository.findByIdForUpdate(ticketId)
-            .orElseThrow(() -> new ResourceNotFoundException("Ticket", ticketId));
+        try {
+            Ticket ticket = ticketRepository.findByIdForUpdate(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket", ticketId));
 
-        if (ticket.getUserId() == null || !ticket.getUserId().equals(userId)) {
-            throw new ForbiddenOperationException("This ticket is not locked by you");
+            if (ticket.getUserId() == null || !ticket.getUserId().equals(userId)) {
+                throw new ForbiddenOperationException("This ticket is not locked by you");
+            }
+            if (ticket.getStatus() != TicketStatus.LOCKED) {
+                throw new IllegalArgumentException("Ticket is not in LOCKED state (current: " + ticket.getStatus() + ")");
+            }
+            if (ticket.getLockExpiresAt().isBefore(Instant.now())) {
+                throw new IllegalArgumentException("Lock expired, please try again");
+            }
+
+            ticket.setStatus(TicketStatus.BOOKED);
+            ticket.setBookedAt(Instant.now());
+            ticket.setLockExpiresAt(null);
+
+            ticketRepository.save(ticket);
+
+            seatService.evictSeatsCache(ticket.getEventId());
+            log.info("BOOKED ticket {} for user {}", ticketId, userId);
+        } catch (PessimisticLockingFailureException e) {
+            log.debug("Conflict on confirm ticket {} — seat is currently being processed", ticketId);
+            throw new SeatAlreadyLockedException("Ticket is currently locked by another process, please try again");
         }
-        if (ticket.getStatus() != TicketStatus.LOCKED) {
-            throw new IllegalArgumentException("Ticket is not in LOCKED state (current: " + ticket.getStatus() + ")");
-        }
-        if (ticket.getLockExpiresAt().isBefore(Instant.now())) {
-            throw new IllegalArgumentException("Lock expired, please try again");
-        }
-
-        ticket.setStatus(TicketStatus.BOOKED);
-        ticket.setBookedAt(Instant.now());
-        ticket.setLockExpiresAt(null);
-
-        ticketRepository.save(ticket);
-
-        seatService.evictSeatsCache(ticket.getEventId());
-        log.info("BOOKED ticket {} for user {}", ticketId, userId);
     }
 
     /**
@@ -117,23 +125,38 @@ public class BookingService {
      */
     @Transactional
     public void cancel(Long ticketId, Long userId) {
-        Ticket ticket = ticketRepository.findByIdForUpdate(ticketId)
-            .orElseThrow(() -> new ResourceNotFoundException("Ticket", ticketId));
+        try {
+            Ticket ticket = ticketRepository.findByIdForUpdate(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket", ticketId));
 
-        if (ticket.getUserId() == null || !ticket.getUserId().equals(userId)) {
-            throw new ForbiddenOperationException("This ticket is not locked by you");
+            if (ticket.getUserId() == null || !ticket.getUserId().equals(userId)) {
+                throw new ForbiddenOperationException("This ticket is not locked by you");
+            }
+            if (ticket.getStatus() != TicketStatus.LOCKED) {
+                throw new IllegalArgumentException("Can only cancel LOCKED tickets (current: " + ticket.getStatus() + ")");
+            }
+
+            ticket.setStatus(TicketStatus.AVAILABLE);
+            ticket.setUserId(null);
+            ticket.setLockExpiresAt(null);
+
+            ticketRepository.save(ticket);
+
+            seatService.evictSeatsCache(ticket.getEventId());
+            log.info("CANCELLED lock on ticket {} by user {}", ticketId, userId);
+        } catch (PessimisticLockingFailureException e) {
+            log.debug("Conflict on cancel ticket {} — seat is currently being processed", ticketId);
+            throw new SeatAlreadyLockedException("Ticket is currently locked by another process, please try again");
         }
-        if (ticket.getStatus() != TicketStatus.LOCKED) {
-            throw new IllegalArgumentException("Can only cancel LOCKED tickets (current: " + ticket.getStatus() + ")");
-        }
+    }
 
-        ticket.setStatus(TicketStatus.AVAILABLE);
-        ticket.setUserId(null);
-        ticket.setLockExpiresAt(null);
-
-        ticketRepository.save(ticket);
-
-        seatService.evictSeatsCache(ticket.getEventId());
-        log.info("CANCELLED lock on ticket {} by user {}", ticketId, userId);
+    /**
+     * Проверяет, есть ли у мероприятия оплаченные билеты.
+     * Нужно для защиты от удаления ивента с проданными билетами.
+     * Использует один COUNT запрос вместо загрузки всех билетов в память.
+     */
+    @Transactional(readOnly = true)
+    public boolean hasBookedTickets(Long eventId) {
+        return ticketRepository.existsByEventIdAndStatus(eventId, TicketStatus.BOOKED);
     }
 }

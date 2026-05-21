@@ -1,4 +1,9 @@
-package com.treserve.common.exception;
+package com.treserve.config;
+
+import com.treserve.common.exception.ResourceNotFoundException;
+import com.treserve.common.exception.SeatAlreadyLockedException;
+import com.treserve.common.exception.BusinessConflictException;
+import com.treserve.common.exception.ForbiddenOperationException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

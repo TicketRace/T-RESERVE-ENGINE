@@ -1,4 +1,4 @@
-package com.treserve.booking.dto.mapper;
+package com.treserve.booking.mapper;
 
 import com.treserve.booking.dto.LockResponse;
 import com.treserve.booking.entity.Ticket;

@@ -2,9 +2,8 @@ package com.treserve.admin;
 
 import com.treserve.admin.dto.mapper.AdminMapper;
 import com.treserve.admin.service.AdminService;
-import com.treserve.booking.entity.Ticket;
-import com.treserve.booking.repository.TicketRepository;
-import com.treserve.booking.entity.TicketStatus;
+import com.treserve.booking.service.BookingService;
+import com.treserve.booking.service.TicketAdminService;
 import com.treserve.common.exception.BusinessConflictException;
 import com.treserve.common.exception.ResourceNotFoundException;
 import com.treserve.event.entity.Event;
@@ -34,11 +33,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.StreamSupport;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,7 +53,10 @@ class AdminServiceTest {
     private SeatRepository seatRepository;
 
     @Mock
-    private TicketRepository ticketRepository;
+    private TicketAdminService ticketAdminService;
+
+    @Mock
+    private BookingService bookingService;
 
     @Mock
     private UserRepository userRepository;
@@ -145,7 +145,6 @@ class AdminServiceTest {
             });
             
             when(seatRepository.findByVenueId(1L)).thenReturn(testSeats);
-            when(ticketRepository.saveAll(anyIterable())).thenReturn(new ArrayList<>());
 
             // id, title, description, imageUrl, ageRestriction, category,
             // durationMinutes, startTime, basePrice, status, venueId, venueName
@@ -168,20 +167,14 @@ class AdminServiceTest {
             assertThat(response.getStatus()).isEqualTo("ACTIVE");
 
             @SuppressWarnings("unchecked")
-            ArgumentCaptor<Iterable<Ticket>> ticketsCaptor = ArgumentCaptor.forClass(Iterable.class);
-            verify(ticketRepository, times(1)).saveAll(ticketsCaptor.capture());
+            ArgumentCaptor<List<Long>> seatIdsCaptor = ArgumentCaptor.forClass(List.class);
+            verify(ticketAdminService, times(1)).generateTicketsForEvent(
+                eq(1L), eq(createRequest.getBasePrice()), seatIdsCaptor.capture()
+            );
 
-            List<Ticket> tickets = StreamSupport.stream(
-                    ticketsCaptor.getValue().spliterator(), false
-            ).toList();
-
-            assertThat(tickets).hasSize(testSeats.size());
-            assertThat(tickets).allSatisfy(ticket -> {
-                assertThat(ticket.getStatus()).isEqualTo(TicketStatus.AVAILABLE);
-                assertThat(ticket.getPrice()).isEqualByComparingTo(createRequest.getBasePrice());
-                assertThat(ticket.getEventId()).isEqualTo(1L);
-                assertThat(ticket.getSeatId()).isNotNull();
-            });
+            List<Long> seatIds = seatIdsCaptor.getValue();
+            assertThat(seatIds).hasSize(testSeats.size());
+            assertThat(seatIds).containsExactlyElementsOf(testSeats.stream().map(Seat::getId).toList());
         }
     }
 
@@ -196,7 +189,7 @@ class AdminServiceTest {
                 .hasMessageContaining("Venue not found with id: 999");
 
         verify(eventRepository, never()).save(any());
-        verify(ticketRepository, never()).saveAll(any());
+        verify(ticketAdminService, never()).generateTicketsForEvent(anyLong(), any(), any());
         verify(userRepository, never()).findById(any());
         verify(seatRepository, never()).findByVenueId(any());
     }
@@ -212,7 +205,7 @@ class AdminServiceTest {
                 .hasMessageContaining("Admin not found with id: 999");
 
         verify(eventRepository, never()).save(any());
-        verify(ticketRepository, never()).saveAll(any());
+        verify(ticketAdminService, never()).generateTicketsForEvent(anyLong(), any(), any());
         verify(seatRepository, never()).findByVenueId(any());
     }
 
@@ -355,15 +348,12 @@ class AdminServiceTest {
                 .createdBy(testAdmin)
                 .build();
 
-        List<Ticket> emptyTickets = new ArrayList<>();
-        
         when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
-        when(eventRepository.hasBookedTickets(1L)).thenReturn(false);
-        when(ticketRepository.findByEventId(1L)).thenReturn(emptyTickets);
+        when(bookingService.hasBookedTickets(1L)).thenReturn(false);
 
         adminService.deleteEvent(1L);
 
-        verify(ticketRepository).deleteAll(emptyTickets);
+        verify(ticketAdminService).deleteTicketsForEvent(1L);
         verify(eventRepository).deleteById(1L);
     }
 
@@ -382,13 +372,13 @@ class AdminServiceTest {
                 .build();
 
         when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
-        when(eventRepository.hasBookedTickets(1L)).thenReturn(true);
+        when(bookingService.hasBookedTickets(1L)).thenReturn(true);
 
         assertThatThrownBy(() -> adminService.deleteEvent(1L))
                 .isInstanceOf(BusinessConflictException.class)
                 .hasMessageContaining("Cannot delete event with BOOKED tickets");
 
-        verify(ticketRepository, never()).deleteAll(any());
+        verify(ticketAdminService, never()).deleteTicketsForEvent(anyLong());
         verify(eventRepository, never()).deleteById(any());
     }
 
@@ -401,7 +391,7 @@ class AdminServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Event not found with id: 999");
 
-        verify(ticketRepository, never()).deleteAll(any());
+        verify(ticketAdminService, never()).deleteTicketsForEvent(anyLong());
         verify(eventRepository, never()).deleteById(any());
     }
 }

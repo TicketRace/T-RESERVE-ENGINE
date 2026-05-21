@@ -31,11 +31,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
         Pageable pageable
     );
 
-    /**
-     * Проверяет, есть ли у мероприятия оплаченные билеты.
-     * Нужно для защиты от удаления ивента с проданными билетами.*/
-    @Query("SELECT COUNT(t) > 0 FROM Ticket t WHERE t.eventId = :eventId AND t.status = 'BOOKED'")
-    boolean hasBookedTickets(@Param("eventId") Long eventId);
+
 
     /** Мероприятие по ID с площадкой (без LazyInitializationException) */
     @Query("""

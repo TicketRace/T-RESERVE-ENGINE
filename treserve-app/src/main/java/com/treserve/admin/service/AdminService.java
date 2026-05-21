@@ -1,8 +1,8 @@
 package com.treserve.admin.service;
 
 import com.treserve.admin.dto.mapper.AdminMapper;
-import com.treserve.booking.entity.TicketStatus;
-import com.treserve.booking.repository.TicketRepository;
+import com.treserve.booking.service.BookingService;
+import com.treserve.booking.service.TicketAdminService;
 import com.treserve.common.exception.BusinessConflictException;
 import com.treserve.common.exception.ResourceNotFoundException;
 import com.treserve.event.dto.EventCreateRequest;
@@ -21,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,7 +31,8 @@ public class AdminService {
     private final EventRepository eventRepository;
     private final VenueRepository venueRepository;
     private final SeatRepository seatRepository;
-    private final TicketRepository ticketRepository;
+    private final TicketAdminService ticketAdminService;
+    private final BookingService bookingService;
     private final UserRepository userRepository;
     private final AdminMapper adminMapper;
 
@@ -66,21 +66,10 @@ public class AdminService {
 
         event = eventRepository.save(event);
 
-        // Генерация билетов (tickets) для всех мест площадки
+        // Генерация билетов (tickets) для всех мест площадки через TicketAdminService
         List<Seat> seats = seatRepository.findByVenueId(venue.getId());
-        List<com.treserve.booking.entity.Ticket> tickets = new ArrayList<>();
-        
-        for (Seat seat : seats) {
-            com.treserve.booking.entity.Ticket ticket = com.treserve.booking.entity.Ticket.builder()
-                    .eventId(event.getId())
-                    .seatId(seat.getId())
-                    .status(TicketStatus.AVAILABLE)
-                    .price(request.getBasePrice())
-                    .build();
-            tickets.add(ticket);
-        }
-        
-        ticketRepository.saveAll(tickets);
+        List<Long> seatIds = seats.stream().map(Seat::getId).collect(Collectors.toList());
+        ticketAdminService.generateTicketsForEvent(event.getId(), request.getBasePrice(), seatIds);
 
         // ← ИЗМЕНЕНО: используем маппер
         return adminMapper.toEventResponse(event);
@@ -117,13 +106,12 @@ public class AdminService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", eventId));
         
-        if (eventRepository.hasBookedTickets(eventId)) {
+        if (bookingService.hasBookedTickets(eventId)) {
             throw new BusinessConflictException("Cannot delete event with BOOKED tickets");
         }
         
-        // Delete all tickets for this event (findSeatsByEventId returns projections, not entities
-        // — use a simple JPA derived method instead)
-        ticketRepository.deleteAll(ticketRepository.findByEventId(eventId));
+        // Удаление всех билетов для мероприятия через TicketAdminService (быстрый Bulk Delete в БД)
+        ticketAdminService.deleteTicketsForEvent(eventId);
         eventRepository.deleteById(eventId);
     }
 }

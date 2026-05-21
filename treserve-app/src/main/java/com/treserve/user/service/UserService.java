@@ -1,6 +1,5 @@
 package com.treserve.user.service;
 
-import com.treserve.booking.repository.TicketDetail;
 import com.treserve.booking.repository.TicketRepository;
 import com.treserve.user.dto.UserBookingResponse;
 import com.treserve.user.dto.UserProfileResponse;

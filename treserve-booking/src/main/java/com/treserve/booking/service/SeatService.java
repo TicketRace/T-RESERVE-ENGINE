@@ -1,8 +1,9 @@
 package com.treserve.booking.service;
 
 import com.treserve.booking.dto.SeatInfo;
-import com.treserve.booking.repository.SeatInfoRow;
+import com.treserve.booking.port.EventLookup;
 import com.treserve.booking.repository.TicketRepository;
+import com.treserve.common.exception.ResourceNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 public class SeatService {
 
     private final TicketRepository ticketRepository;
+    private final EventLookup eventLookup;
 
     /**
      * Получить карту мест для ивента.
@@ -38,6 +40,11 @@ public class SeatService {
      */
     @Cacheable(value = "seats", key = "#eventId")
     public List<SeatInfo> getSeats(Long eventId) {
+        // Проверяем существование мероприятия перед получением билетов
+        if (!eventLookup.existsById(eventId)) {
+            throw new ResourceNotFoundException("Event", eventId);
+        }
+
         log.debug("Cache MISS for seats:{} — querying PG", eventId);
         return ticketRepository.findSeatsByEventId(eventId).stream()
             .map(r -> new SeatInfo(

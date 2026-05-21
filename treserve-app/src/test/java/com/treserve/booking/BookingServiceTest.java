@@ -42,6 +42,8 @@ class BookingServiceTest {
     private UserLookup userLookup;   // ← интерфейс вместо UserRepository
     @Mock
     private SeatService seatService;
+    @Mock
+    private org.springframework.transaction.support.TransactionTemplate transactionTemplate;
 
     @InjectMocks
     private BookingService bookingService;
@@ -57,6 +59,11 @@ class BookingServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(bookingService, "lockDurationMinutes", 10);
+
+        lenient().when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
+            org.springframework.transaction.support.TransactionCallback<?> callback = invocation.getArgument(0);
+            return callback.doInTransaction(null);
+        });
 
         // AVAILABLE билет
         availableTicket = Ticket.builder()
@@ -82,7 +89,7 @@ class BookingServiceTest {
     @Test
     @DisplayName("tryLock: свободное место → успешная блокировка + expiresAt ≈ now+10min")
     void tryLock_success() {
-        when(ticketRepository.findAvailableForUpdate(EVENT_ID, SEAT_ID))
+        when(ticketRepository.findAvailableForUpdate(eq(EVENT_ID), eq(SEAT_ID), any(Instant.class)))
                 .thenReturn(Optional.of(availableTicket));
         when(userLookup.existsById(USER_ID)).thenReturn(true);
         when(ticketRepository.save(any())).thenReturn(availableTicket);
@@ -109,13 +116,14 @@ class BookingServiceTest {
     @Test
     @DisplayName("tryLock: место не AVAILABLE (уже занято) → SeatAlreadyLockedException")
     void tryLock_alreadyLocked() {
-        when(ticketRepository.findAvailableForUpdate(EVENT_ID, SEAT_ID))
+        when(userLookup.existsById(USER_ID)).thenReturn(true);
+        when(ticketRepository.findAvailableForUpdate(eq(EVENT_ID), eq(SEAT_ID), any(Instant.class)))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bookingService.tryLock(EVENT_ID, SEAT_ID, USER_ID))
                 .isInstanceOf(SeatAlreadyLockedException.class);
 
-        verify(userLookup, never()).existsById(any());
+        verify(userLookup, times(1)).existsById(USER_ID);
         verify(ticketRepository, never()).save(any());
         verify(seatService, never()).evictSeatsCache(any());
     }
@@ -123,13 +131,14 @@ class BookingServiceTest {
     @Test
     @DisplayName("tryLock: PG блокировка (строка занята другой транзакцией) → SeatAlreadyLockedException")
     void tryLock_pgLockContention() {
-        when(ticketRepository.findAvailableForUpdate(EVENT_ID, SEAT_ID))
+        when(userLookup.existsById(USER_ID)).thenReturn(true);
+        when(ticketRepository.findAvailableForUpdate(eq(EVENT_ID), eq(SEAT_ID), any(Instant.class)))
                 .thenThrow(new PessimisticLockingFailureException("FOR UPDATE NOWAIT failed"));
 
         assertThatThrownBy(() -> bookingService.tryLock(EVENT_ID, SEAT_ID, USER_ID))
                 .isInstanceOf(SeatAlreadyLockedException.class);
 
-        verify(userLookup, never()).existsById(any());
+        verify(userLookup, times(1)).existsById(USER_ID);
         verify(ticketRepository, never()).save(any());
         verify(seatService, never()).evictSeatsCache(any());
     }
