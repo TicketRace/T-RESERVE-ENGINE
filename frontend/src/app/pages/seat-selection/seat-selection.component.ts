@@ -6,6 +6,7 @@ import { Seat } from '../../models/seat';
 import { CommonModule } from '@angular/common';
 import { SeatMapComponent } from '../../components/seat-map/seat-map.component';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-seat-selection',
@@ -20,6 +21,7 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
   selectedSeat: Seat | null = null;
   private readonly destroy$ = new Subject<void>();
   groupedSeats: Record<string, Seat[]> = {};
+  private apiUrl = environment.apiUrl;
 
   private updateGroupedSeats(): void {
     const map: Record<string, Seat[]> = {};
@@ -57,14 +59,14 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
     console.log('eventId:', eventId);
 
     this.http
-      .get<EventItem>(`http://localhost:8080/api/events/${eventId}`)
+      .get<EventItem>(`${this.apiUrl}/api/events/${eventId}`)
       .subscribe(event => {
         this.event = event;
         console.log('EVENT:', event);
       });
 
     this.http
-      .get<Seat[]>(`http://localhost:8080/api/events/${eventId}/seats`)
+      .get<Seat[]>(`${this.apiUrl}/api/events/${eventId}/seats`)
       .subscribe({
         next: seats => {
           console.log('SEATS FIRST LOAD:', seats);
@@ -78,7 +80,7 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
       .pipe(
         takeUntil(this.destroy$),
         switchMap(() =>
-          this.http.get<Seat[]>(`http://localhost:8080/api/events/${eventId}/seats`)
+          this.http.get<Seat[]>(`${this.apiUrl}/api/events/${eventId}/seats`)
         )
       )
       .subscribe(seats => {

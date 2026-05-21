@@ -3,6 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-auth',
@@ -40,13 +41,43 @@ export class AuthComponent {
     });
   }
 
+  private extractBackendMessage(err: HttpErrorResponse): string {
+    const e = err.error;
+
+    if (!e) return '';
+
+    if (typeof e === 'string') return e;
+
+    return e.message || e.error || '';
+  }
+
+  private translateError(message: string): string {
+    if (!message) return '';
+
+    if (message.includes('Invalid email or password')) {
+      return 'Неверный email или пароль';
+    }
+
+    if (message.includes('Email already registered')) {
+      return 'Пользователь уже существует';
+    }
+
+    if (message.includes('Invalid data')) {
+      return 'Некорректные данные';
+    }
+
+    return message;
+  }
+
   submit(): void {
+    this.error = '';
+    
     if (this.form.invalid) {
       this.form.markAllAsTouched(); 
       this.error = 'Проверьте корректность данных';
       return;
     }
-
+    
     const { email, password, name } = this.form.value;
 
     const request =
@@ -62,11 +93,29 @@ export class AuthComponent {
           this.router.navigate(['/events']);
         }
       },
-      error: () => {
-        this.error =
-          this.mode === 'login'
-            ? 'Ошибка входа'
-            : 'Ошибка регистрации';
+      error: (err: HttpErrorResponse) => {
+        const backendMessage = this.extractBackendMessage(err);
+
+        if (backendMessage) {
+          this.error = this.translateError(backendMessage);
+          return;
+        }
+
+        if (this.mode === 'login') {
+          if (err.status === 401) {
+            this.error = 'Неверный email или пароль';
+            return;
+          }
+        }
+
+        if (this.mode === 'register') {
+          if (err.status === 409) {
+            this.error = 'Пользователь уже существует';
+            return;
+          }
+        }
+
+        this.error = 'Ошибка сервера';
       },
     });
   }

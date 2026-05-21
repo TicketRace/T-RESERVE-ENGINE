@@ -18,6 +18,9 @@ replay_pid*.log
 !package-lock.json
 !api-docs.json
 !frontend/angular.json
+!frontend/tsconfig.json
+!frontend/tsconfig.app.json
+!frontend/tsconfig.spec.json
 
 # OS
 .DS_Store
