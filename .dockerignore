@@ -1,6 +1,14 @@
-# Build artifacts
+# Build & logs
 target/
 *.jar
+*.log
+replay_pid*.log
+
+# Node & Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
 
 # IDE
 .idea/
@@ -14,8 +22,14 @@ target/
 # Docker
 Dockerfile
 docker-compose.yml
+docker-compose.prod.yml
 .dockerignore
 
 # Docs & notes
 notes/
 *.md
+
+# Инфраструктурные конфиги (не нужны в Java-билде)
+prometheus/
+grafana/
+load-tests/
