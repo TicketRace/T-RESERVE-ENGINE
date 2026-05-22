@@ -91,3 +91,15 @@ server:
   error:
     include-message: always
     include-stacktrace: on_param
+
+# ═══ MinIO (S3-compatible storage) ═══
+minio:
+  endpoint: http://treserve-minio:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket: tickets
+  region: us-east-1
+
+# ═══ PDF Generation ═══
+pdf:
+  base-url: http://localhost:8081/api/tickets

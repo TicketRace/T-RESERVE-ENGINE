@@ -49,4 +49,7 @@ public class Ticket {
 
     @Column(name = "booked_at")
     private Instant bookedAt;
+
+    @Column(name = "pdf_url", length = 512)
+    private String pdfUrl;
 }
