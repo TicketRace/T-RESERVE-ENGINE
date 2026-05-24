@@ -6,6 +6,7 @@ const chromiumExecutablePath = process.env['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH'
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: ['**/real/**'],
   timeout: 30_000,
   expect: {
     timeout: 5_000,

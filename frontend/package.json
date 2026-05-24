@@ -10,7 +10,12 @@
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:headed": "playwright test --headed",
-    "e2e:report": "playwright show-report"
+    "e2e:report": "playwright show-report",
+    "e2e:mocked": "playwright test",
+    "e2e:real": "playwright test -c playwright.real.config.ts",
+    "e2e:real:ui": "playwright test -c playwright.real.config.ts --ui",
+    "e2e:real:headed": "playwright test -c playwright.real.config.ts --headed",
+    "e2e:all": "npm run e2e:mocked && npm run e2e:real"
   },
   "prettier": {
     "printWidth": 100,
