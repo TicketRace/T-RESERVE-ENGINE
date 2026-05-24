@@ -71,6 +71,22 @@ jobs:
         working-directory: frontend
         run: npm run e2e:mocked
 
+      - name: Upload mocked Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-mocked
+          path: frontend/playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload mocked Playwright test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-mocked
+          path: frontend/test-results
+          if-no-files-found: ignore
+
   frontend-real-e2e:
     runs-on: ubuntu-latest
     needs: integration-tests
@@ -126,6 +142,22 @@ jobs:
           E2E_API_URL: http://localhost
           E2E_SKIP_FRONTEND_SERVER: '1'
         run: npm run e2e:real
+
+      - name: Upload real Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-real
+          path: frontend/playwright-report-real
+          if-no-files-found: ignore
+
+      - name: Upload real Playwright test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-real
+          path: frontend/test-results
+          if-no-files-found: ignore
 
       - name: Print production stack logs on failure
         if: failure()

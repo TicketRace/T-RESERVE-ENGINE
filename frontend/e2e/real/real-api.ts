@@ -208,7 +208,7 @@ export async function deleteEventByApi(
     headers: authHeaders(token),
   });
 
-  if (![204, 404, 409].includes(response.status())) {
+  if (![204, 404].includes(response.status())) {
     throw new Error(`Delete event ${eventId} failed with ${response.status()}: ${await response.text()}`);
   }
 }

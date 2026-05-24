@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type APIResponse } from '@playwright/test';
 import {
   apiURL,
   authHeaders,
@@ -7,6 +7,7 @@ import {
   getAvailableSeat,
   registerUserByApi,
   waitForApi,
+  type AuthSession,
   type LockResponse,
 } from './real-api';
 
@@ -15,36 +16,49 @@ test.describe('real backend booking conflicts', () => {
     await waitForApi(request);
   });
 
-  test('allows only one user to lock the same real seat', async ({ request }) => {
+  test('allows only one user to lock the same real seat under concurrent requests', async ({
+    request,
+  }) => {
     const { event, admin } = await createEventByApi(request);
-    const userOne = await registerUserByApi(request);
-    const userTwo = await registerUserByApi(request);
-    const seat = await getAvailableSeat(request, event.id);
+    const createdLocks: Array<{ lock: LockResponse; auth: AuthSession }> = [];
 
-    const firstLock = await request.post(`${apiURL}/api/bookings/lock`, {
-      headers: authHeaders(userOne.auth.token),
-      data: {
-        eventId: event.id,
-        seatId: seat.seatId,
-      },
-    });
-    await expect(firstLock).toBeOK();
-    const firstLockBody = (await firstLock.json()) as LockResponse;
+    try {
+      const [userOne, userTwo] = await Promise.all([
+        registerUserByApi(request),
+        registerUserByApi(request),
+      ]);
+      const seat = await getAvailableSeat(request, event.id);
 
-    const secondLock = await request.post(`${apiURL}/api/bookings/lock`, {
-      headers: authHeaders(userTwo.auth.token),
-      data: {
-        eventId: event.id,
-        seatId: seat.seatId,
-      },
-    });
-    expect(secondLock.status()).toBe(409);
+      const attempts = await Promise.all(
+        [userOne, userTwo].map(async (user) => ({
+          auth: user.auth,
+          response: await request.post(`${apiURL}/api/bookings/lock`, {
+            headers: authHeaders(user.auth.token),
+            data: {
+              eventId: event.id,
+              seatId: seat.seatId,
+            },
+          }),
+        })),
+      );
 
-    const cancel = await request.delete(`${apiURL}/api/bookings/${firstLockBody.lockId}`, {
-      headers: authHeaders(userOne.auth.token),
-    });
-    expect([204, 400, 404]).toContain(cancel.status());
+      const statuses = attempts.map(({ response }) => response.status()).sort((a, b) => a - b);
+      expect(statuses).toEqual([200, 409]);
 
-    await deleteEventByApi(request, event.id, admin.token);
+      const successfulAttempt = attempts.find(({ response }) => response.ok());
+      expect(successfulAttempt).toBeDefined();
+
+      const lock = (await (successfulAttempt!.response as APIResponse).json()) as LockResponse;
+      createdLocks.push({ lock, auth: successfulAttempt!.auth });
+    } finally {
+      for (const { lock, auth } of createdLocks) {
+        const cancel = await request.delete(`${apiURL}/api/bookings/${lock.lockId}`, {
+          headers: authHeaders(auth.token),
+        });
+        expect.soft([204, 400, 404]).toContain(cancel.status());
+      }
+
+      await deleteEventByApi(request, event.id, admin.token);
+    }
   });
 });

@@ -1,6 +1,6 @@
-﻿import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { EventSession } from '../../models/event';
+import { EventItem, EventSession } from '../../models/event';
 import { Seat } from '../../models/seat';
 import { BookingService } from '../../services/booking.service';
 import { CommonModule } from '@angular/common';
@@ -14,6 +14,7 @@ import { CommonModule } from '@angular/common';
 })
 export class PaymentComponent implements OnInit, OnDestroy {
   session: EventSession | null = null;
+  event: EventItem | null = null;
   selectedSeat: Seat | null = null;
 
   lockId: number | null = null;
@@ -21,6 +22,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
 
   private timerInterval: any;
   private readonly LOCK_KEY = 'payment_lock';
+  private eventId: number | null = null;
 
   errorMessage: string | null = null;
   isLoading = false;
@@ -32,15 +34,18 @@ export class PaymentComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    const sessionId = Number(this.route.snapshot.paramMap.get('sessionId'));
+    const eventId = Number(this.route.snapshot.paramMap.get('eventId'));
+    this.eventId = Number.isFinite(eventId) ? eventId : null;
 
     const state = history.state as {
       selectedSeat?: Seat;
       session?: EventSession;
+      event?: EventItem;
     };
 
     this.selectedSeat = state?.selectedSeat ?? null;
     this.session = state?.session ?? null;
+    this.event = state?.event ?? null;
 
     if (!this.selectedSeat) {
       this.router.navigate(['/events']);
@@ -54,18 +59,18 @@ export class PaymentComponent implements OnInit, OnDestroy {
       this.lockId = parsed.lockId;
       this.startTimer(parsed.expiresAt);
     } else {
-      this.createLock(sessionId);
+      this.createLock(eventId);
     }
   }
 
-  private createLock(sessionId: number): void {
+  private createLock(eventId: number): void {
     if (!this.selectedSeat) return;
 
     this.isLoading = true;
     this.errorMessage = null;
 
     this.bookingService
-      .lockSeat(sessionId, this.selectedSeat.seatId)
+      .lockSeat(eventId, this.selectedSeat.seatId)
       .subscribe({
         next: (lock) => {
           this.isLoading = false;
@@ -142,8 +147,10 @@ export class PaymentComponent implements OnInit, OnDestroy {
   goBack(): void {
     window.history.back();
 
+    const eventId = this.event?.id ?? this.session?.eventId ?? this.eventId;
+
     this.router.navigate(
-      ['/event', this.session?.id],
+      ['/event', eventId],
       { state: { reloadSeats: true } }
     );
   }

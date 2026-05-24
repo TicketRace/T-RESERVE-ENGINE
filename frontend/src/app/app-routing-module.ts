@@ -15,7 +15,7 @@ export const routes: Routes = [
   { path: 'events', component: EventsComponent },
   { path: 'event/:id', component: EventDetailsComponent },
   { path: 'event/:id/session/:sessionId/seats', component: SeatSelectionComponent },
-  { path: 'payment/:sessionId', component: PaymentComponent },
+  { path: 'payment/:eventId', component: PaymentComponent },
   { path: 'payment-success', component: PaymentSuccessComponent },
   { path: 'profile', component: ProfileComponent },
   { path: 'login', component: AuthComponent },

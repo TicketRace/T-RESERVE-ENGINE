@@ -48,7 +48,7 @@ const secondEvent = {
 const seats = [
   {
     seatId: 101,
-    seatLabel: 'A1',
+    seatLabel: 'A-1',
     rowLabel: 'A',
     seatNumber: 1,
     status: 'AVAILABLE',
@@ -56,7 +56,7 @@ const seats = [
   },
   {
     seatId: 102,
-    seatLabel: 'A2',
+    seatLabel: 'A-2',
     rowLabel: 'A',
     seatNumber: 2,
     status: 'BOOKED',
@@ -64,7 +64,7 @@ const seats = [
   },
   {
     seatId: 103,
-    seatLabel: 'A3',
+    seatLabel: 'A-3',
     rowLabel: 'A',
     seatNumber: 3,
     status: 'LOCKED',
@@ -132,7 +132,7 @@ export async function mockApi(page: Page, options: MockOptions = {}): Promise<Ap
     }
 
     if (method === 'POST' && path === '/api/auth/register') {
-      return json(route, 200, {
+      return json(route, 201, {
         token: 'new-user-access-token',
         refreshToken: 'new-user-refresh-token',
         user: {
@@ -199,7 +199,7 @@ export async function mockApi(page: Page, options: MockOptions = {}): Promise<Ap
         {
           ticketId: 9001,
           eventTitle: event.title,
-          seatLabel: 'A1',
+          seatLabel: 'A-1',
           status: 'BOOKED',
           price: 800,
           bookedAt: '2026-05-12T19:05:00',

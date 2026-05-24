@@ -94,7 +94,8 @@ describe('PaymentComponent', () => {
   //go back
   it('should navigate back to event page', () => {
     component.session = {
-      id: 5,
+      id: 10,
+      eventId: 5,
     } as any;
 
     spyOn(window.history, 'back');
