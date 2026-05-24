@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -108,6 +109,10 @@ public class BookingService {
             ticket.setStatus(TicketStatus.BOOKED);
             ticket.setBookedAt(Instant.now());
             ticket.setLockExpiresAt(null);
+            
+            if (ticket.getVerifyToken() == null) {
+                ticket.setVerifyToken(UUID.randomUUID());
+            }
 
             ticketRepository.save(ticket);
 
