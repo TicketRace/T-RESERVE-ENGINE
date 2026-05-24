@@ -34,7 +34,13 @@ test.describe('real admin flow', () => {
       await page.getByLabel('Время проведения').fill(futureDateTimeLocal(45));
 
       const venueSelect = page.getByLabel('Место проведения');
-      await expect(venueSelect.locator('option').first()).toBeVisible({ timeout: 15_000 });
+      await expect(venueSelect).toBeEnabled({ timeout: 15_000 });
+      await expect
+        .poll(() => venueSelect.locator('option').count(), {
+          message: 'venue options should be loaded from the real backend',
+          timeout: 15_000,
+        })
+        .toBeGreaterThan(0);
       await venueSelect.selectOption({ index: 0 });
 
       await page.getByLabel('Цена билета').fill('777');

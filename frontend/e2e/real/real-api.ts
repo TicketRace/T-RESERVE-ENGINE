@@ -65,17 +65,20 @@ export function futureDateTimeLocal(daysFromNow = 30): string {
 export async function waitForApi(request: APIRequestContext): Promise<void> {
   for (let attempt = 1; attempt <= 60; attempt += 1) {
     try {
-      const response = await request.get(`${apiURL}/actuator/health`, { timeout: 2_000 });
+      const response = await request.get(`${apiURL}/api/events`, {
+        params: { page: '0', size: '1' },
+        timeout: 2_000,
+      });
       if (response.ok()) return;
     } catch {
-      // Backend may still be starting; retry below.
+      // Backend or nginx may still be starting; retry below.
     }
 
     await new Promise((resolve) => setTimeout(resolve, 1_000));
   }
 
   throw new Error(
-    `Backend API did not become healthy at ${apiURL}. Start the real backend before running e2e:real.`,
+    `Backend API did not become reachable at ${apiURL}/api/events. Start the real backend or production stack before running e2e:real.`,
   );
 }
 

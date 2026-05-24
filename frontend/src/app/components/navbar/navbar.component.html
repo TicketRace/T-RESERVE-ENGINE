@@ -8,7 +8,7 @@
         Мои события
       </a>
 
-      <a *ngIf="!isAdmin" class="nav-link" (click)="goProfile()">
+      <a *ngIf="!isAdmin" class="nav-link" routerLink="/profile">
         Личный кабинет
       </a>
       <span *ngIf="isLoggedIn" class="user-name">{{ userName }}</span>

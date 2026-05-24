@@ -101,39 +101,36 @@ jobs:
         working-directory: frontend
         run: npx playwright install --with-deps chromium
 
-      - name: Start backend dependencies
-        run: docker compose up -d postgres redis rabbitmq
+      - name: Build and start production stack
+        run: docker compose -f docker-compose.prod.yml up -d --build
 
-      - name: Start Spring Boot backend
+      - name: Wait for frontend nginx and proxied API
         run: |
-          mvn --batch-mode --no-transfer-progress -pl treserve-app -am spring-boot:run > backend.log 2>&1 &
-          echo $! > backend.pid
-
-          for i in {1..90}; do
-            if curl -fsS http://localhost:8080/actuator/health; then
+          for i in {1..120}; do
+            if curl -fsS http://localhost/ >/dev/null && \
+               curl -fsS 'http://localhost/api/events?page=0&size=1' >/dev/null; then
               exit 0
             fi
             sleep 2
           done
 
-          echo "Backend did not start in time"
-          cat backend.log
+          echo "Production stack did not become ready in time"
+          docker compose -f docker-compose.prod.yml ps
+          docker compose -f docker-compose.prod.yml logs --no-color
           exit 1
 
       - name: Run real Playwright E2E tests
         working-directory: frontend
         env:
-          E2E_API_URL: http://localhost:8080
+          E2E_BASE_URL: http://localhost
+          E2E_API_URL: http://localhost
+          E2E_SKIP_FRONTEND_SERVER: '1'
         run: npm run e2e:real
 
-      - name: Print backend logs on failure
+      - name: Print production stack logs on failure
         if: failure()
-        run: cat backend.log || true
+        run: docker compose -f docker-compose.prod.yml logs --no-color || true
 
-      - name: Stop backend and infrastructure
+      - name: Stop production stack
         if: always()
-        run: |
-          if [ -f backend.pid ]; then
-            kill "$(cat backend.pid)" || true
-          fi
-          docker compose down -v
+        run: docker compose -f docker-compose.prod.yml down -v
