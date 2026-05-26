@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  # ─── App (Railway private network) ────────────────────────
+  - job_name: treserve-app
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: [ 'treserve-app.railway.internal:8080' ]
+        labels:
+          instance: railway-app

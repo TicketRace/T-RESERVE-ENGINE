@@ -95,8 +95,9 @@ logging:
     com.treserve: DEBUG
     org.springframework.security: DEBUG
 
-# ═══ Error details ═══
+# ═══ Server ═══
 server:
+  port: ${PORT:8080}   # Railway задаёт PORT автоматически; локально — 8080
   error:
     include-message: always
     include-stacktrace: on_param
