@@ -127,5 +127,39 @@ services:
       timeout: 10s
       retries: 5
 
+  # ═══ Prometheus ═══
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: treserve-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=1h'
+    depends_on:
+      - app-1
+      - app-2
+    restart: unless-stopped
+
+  # ═══ Grafana ═══
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: treserve-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
 volumes:
   pg_data:
+  grafana_data:

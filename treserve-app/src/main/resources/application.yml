@@ -73,12 +73,21 @@ springdoc:
     tags-sorter: alpha
     operations-sorter: method
 
-# ═══ Actuator ═══
+# ═══ Actuator + Prometheus ═══
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      instance: ${INSTANCE_ID:local}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true  # p50/p95/p99 latency гистограмма
+      slo:
+        http.server.requests: 50ms,100ms,200ms,500ms,1s
 
 # ═══ Logging ═══
 logging:
