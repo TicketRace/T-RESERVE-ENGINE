@@ -5,7 +5,7 @@ import com.treserve.booking.entity.Ticket;
 import com.treserve.booking.entity.TicketStatus;
 import com.treserve.booking.repository.TicketRepository;
 import com.treserve.common.exception.ResourceNotFoundException;
-import com.treserve.common.exception.SeatAlreadyLockedException;
+import com.treserve.common.exception.TicketAlreadyUsedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,10 +37,9 @@ public class AdminCheckInService {
     }
 
     private CheckInResponse performCheckIn(Ticket ticket) {
-        // Проверяем, не использован ли уже билет — используем SeatAlreadyLockedException для 409
         if (ticket.getStatus() == TicketStatus.USED) {
             log.warn("Ticket {} already used", ticket.getId());
-            throw new SeatAlreadyLockedException("Ticket already used");  // ← будет 409 Conflict
+            throw new TicketAlreadyUsedException("Ticket already used");  // ← 409 Conflict
         }
 
         // Только BOOKED билеты можно отметить
