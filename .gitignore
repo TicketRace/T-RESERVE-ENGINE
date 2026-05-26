@@ -18,6 +18,7 @@ replay_pid*.log
 !package-lock.json
 !api-docs.json
 !frontend/angular.json
+!grafana/**/*.json
 !frontend/tsconfig.json
 !frontend/tsconfig.app.json
 !frontend/tsconfig.spec.json
@@ -25,6 +26,7 @@ replay_pid*.log
 # OS
 .DS_Store
 Thumbs.db
+
 
 # Internal notes (not for git)
 notes/
