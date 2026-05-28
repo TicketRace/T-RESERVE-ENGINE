@@ -6,7 +6,8 @@ scrape_configs:
   # ─── App (Railway private network) ────────────────────────
   - job_name: treserve-app
     metrics_path: /actuator/prometheus
+    scheme: https
     static_configs:
-      - targets: [ 'treserve-app.railway.internal:8080' ]
+      - targets: [ 'treserve-app-production.up.railway.app:443' ]
         labels:
           instance: railway-app
