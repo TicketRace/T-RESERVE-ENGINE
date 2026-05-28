@@ -17,6 +17,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -34,6 +35,10 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final ObjectMapper objectMapper;
+
+    // Разрешенные CORS origins. Для продакшена (например, на Railway) переопределяется через переменную окружения CORS_ALLOWED_ORIGINS
+    @Value("${cors.allowed-origins:http://localhost:4200,http://localhost:5173,http://localhost:3000,http://localhost}")
+    private String corsAllowedOrigins;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -59,8 +64,9 @@ public class SecurityConfig {
                     "/api-docs", "/api-docs/**"
                 ).permitAll()
 
-                // Actuator + Error + Instance info (LB demo)
-                .requestMatchers("/actuator/**", "/error", "/api/instance").permitAll()
+                // Actuator — только health (healthcheck) и prometheus (scraping) публичны
+                .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/prometheus", "/error", "/api/instance").permitAll()
+                .requestMatchers("/actuator/**").hasRole("ADMIN")
 
                 // Admin
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -80,7 +86,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200", "http://localhost:5173", "http://localhost:3000", "http://localhost"));
+        // Читаем из env var — Railway задаёт CORS_ALLOWED_ORIGINS для прода
+        List<String> origins = List.of(corsAllowedOrigins.split(","));
+        config.setAllowedOrigins(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
