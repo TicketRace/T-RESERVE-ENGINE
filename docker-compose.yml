@@ -12,6 +12,7 @@ services:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_RABBITMQ_HOST: rabbitmq
+      MINIO_ENDPOINT: http://treserve-minio:9000
     depends_on:
       postgres:
         condition: service_healthy
