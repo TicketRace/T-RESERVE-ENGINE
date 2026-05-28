@@ -88,16 +88,27 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        // Читаем из env var — Railway задаёт CORS_ALLOWED_ORIGINS для прода
-        List<String> origins = List.of(corsAllowedOrigins.split(","));
-        config.setAllowedOrigins(origins);
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
-        var source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
+        return request -> {
+            CorsConfiguration config = new CorsConfiguration();
+            // Читаем из env var — Railway задаёт CORS_ALLOWED_ORIGINS для прода
+            List<String> origins = new java.util.ArrayList<>(List.of(corsAllowedOrigins.split(",")));
+
+            // Динамически разрешаем запросы с самого бэкенда (например, из Swagger UI)
+            String originHeader = request.getHeader("Origin");
+            String hostHeader = request.getHeader("Host");
+            if (originHeader != null && hostHeader != null) {
+                String host = hostHeader.split(":")[0];
+                if (originHeader.contains(host)) {
+                    origins.add(originHeader);
+                }
+            }
+
+            config.setAllowedOrigins(origins);
+            config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+            config.setAllowedHeaders(List.of("*"));
+            config.setAllowCredentials(true);
+            return config;
+        };
     }
 
     private void writeError(HttpServletResponse response, HttpStatus status, String message) throws IOException {
