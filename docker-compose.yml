@@ -12,6 +12,7 @@ services:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_RABBITMQ_HOST: rabbitmq
+      MINIO_ENDPOINT: http://treserve-minio:9000
     depends_on:
       postgres:
         condition: service_healthy
@@ -68,5 +69,25 @@ services:
       timeout: 10s
       retries: 5
 
+  # ═══ MinIO (S3-compatible storage for PDF tickets) ═══
+  minio:
+    image: minio/minio:latest
+    container_name: treserve-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   pg_data:
+  minio_data:

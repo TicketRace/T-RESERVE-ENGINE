@@ -63,6 +63,9 @@ app:
     default-ttl-seconds: 30
     seats-ttl-seconds: 10
     events-ttl-seconds: 60
+  qr:
+    base-url: https://t-reserve.ru/verify-ticket
+    # base-url: http://localhost:8080/api/tickets/public
 
 # ═══ Swagger ═══
 springdoc:
@@ -100,3 +103,15 @@ server:
   error:
     include-message: always
     include-stacktrace: on_param
+
+# ═══ MinIO (S3-compatible storage) ═══
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: ${MINIO_BUCKET:tickets}
+  region: us-east-1
+
+# ═══ PDF Generation ═══
+pdf:
+  base-url: http://localhost:8081/api/tickets
