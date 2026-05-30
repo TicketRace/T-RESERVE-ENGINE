@@ -89,6 +89,9 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     /** Билеты юзера по статусу */
     List<Ticket> findByUserIdAndStatus(Long userId, TicketStatus status);
 
+    @Query("SELECT e.title FROM Event e WHERE e.id = :eventId")
+    String findEventTitleByEventId(@Param("eventId") Long eventId);
+
     /**
      * Билеты пользователя с деталями ивента и места (native SQL JOIN).
      * Возвращает проекцию TicketDetail без JPA @ManyToOne зависимостей.
