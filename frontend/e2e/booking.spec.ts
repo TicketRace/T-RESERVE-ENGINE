@@ -5,7 +5,7 @@ test.describe('booking flow', () => {
   test('selects an available seat, locks it and completes free payment', async ({ page }) => {
     const api = await mockApi(page);
 
-    await page.goto('/event/1/session/1/seats');
+    await page.goto('/events/1/seats');
 
     await expect(page.getByRole('heading', { name: 'Выберите место' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Место A-1', exact: true })).toBeEnabled();
@@ -32,7 +32,7 @@ test.describe('booking flow', () => {
   test('shows an error when the selected seat cannot be locked', async ({ page }) => {
     await mockApi(page, { lockStatus: 409 });
 
-    await page.goto('/event/1/session/1/seats');
+    await page.goto('/events/1/seats');
     await page.getByRole('button', { name: 'Место A-1', exact: true }).click();
     await page.getByRole('button', { name: 'оплатить' }).click();
 

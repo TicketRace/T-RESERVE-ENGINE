@@ -14,7 +14,7 @@ export const routes: Routes = [
   {path: '', redirectTo: 'login', pathMatch: 'full'},
   { path: 'events', component: EventsComponent },
   { path: 'event/:id', component: EventDetailsComponent },
-  { path: 'event/:id/session/:sessionId/seats', component: SeatSelectionComponent },
+  { path: 'events/:id/seats', component: SeatSelectionComponent },
   { path: 'payment/:eventId', component: PaymentComponent },
   { path: 'payment-success', component: PaymentSuccessComponent },
   { path: 'profile', component: ProfileComponent },

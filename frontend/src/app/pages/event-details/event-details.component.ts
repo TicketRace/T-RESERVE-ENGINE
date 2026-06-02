@@ -50,7 +50,7 @@ export class EventDetailsComponent implements OnInit {
       return;
     }
 
-    this.router.navigate(['/event', this.event.id, 'session', session.id, 'seats']);
+    this.router.navigate(['/events', this.event.id, 'seats']);
   }
 
   selectSessionByEvent(event: any) {

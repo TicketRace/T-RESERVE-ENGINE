@@ -28,7 +28,7 @@ test.describe('real full-stack booking flow', () => {
       await expect(page.getByText(/777/)).toBeVisible();
 
       await page.getByRole('button', { name: 'Купить билеты' }).first().click();
-      await expect(page).toHaveURL(new RegExp(`/event/${event.id}/session/1/seats$`));
+      await expect(page).toHaveURL(new RegExp(`/events/${event.id}/seats$`));
       await expect(page.getByRole('heading', { name: 'Выберите место' })).toBeVisible();
 
       const firstSeat = page.getByRole('button', { name: 'Место A-1', exact: true });
