@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +32,8 @@ public class BookingService {
     private final UserLookup userLookup;
     private final SeatService seatService;
     private final TransactionTemplate transactionTemplate;
+
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Value("${app.booking.lock-duration-minutes:10}")
     private int lockDurationMinutes;
@@ -76,6 +79,7 @@ public class BookingService {
                     seatId, eventId, userId, expiresAt);
 
                 seatService.evictSeatsCache(eventId);
+                seatService.pushSeatsUpdate(eventId);
                 return new LockResponse(ticket.getId(), expiresAt);
             });
         } catch (PessimisticLockingFailureException e) {
@@ -112,6 +116,7 @@ public class BookingService {
             ticketRepository.save(ticket);
 
             seatService.evictSeatsCache(ticket.getEventId());
+            seatService.pushSeatsUpdate(ticket.getEventId());
             log.info("BOOKED ticket {} for user {}", ticketId, userId);
         } catch (PessimisticLockingFailureException e) {
             log.debug("Conflict on confirm ticket {} — seat is currently being processed", ticketId);
@@ -143,6 +148,7 @@ public class BookingService {
             ticketRepository.save(ticket);
 
             seatService.evictSeatsCache(ticket.getEventId());
+            seatService.pushSeatsUpdate(ticket.getEventId());
             log.info("CANCELLED lock on ticket {} by user {}", ticketId, userId);
         } catch (PessimisticLockingFailureException e) {
             log.debug("Conflict on cancel ticket {} — seat is currently being processed", ticketId);
