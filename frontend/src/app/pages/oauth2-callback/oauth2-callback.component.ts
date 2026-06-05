@@ -5,7 +5,10 @@ import { CommonModule } from '@angular/common';
 
 /**
  * Обрабатывает redirect от бэкенда после Google OAuth2.
- * URL: /oauth2/callback?token=...&refreshToken=...
+ * URL: /oauth2/callback#token=...&refreshToken=...
+ *
+ * Используем fragment (#) вместо query params (?):
+ * fragment не отправляется на сервер и не попадает в logs.
  */
 @Component({
   selector: 'app-oauth2-callback',
@@ -47,10 +50,12 @@ export class OAuth2CallbackComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(params => {
-      const token        = params['token'];
-      const refreshToken = params['refreshToken'];
-      const error        = params['error'];
+    // Читаем токены из URL fragment (#token=...&refreshToken=...)
+    this.route.fragment.subscribe(fragment => {
+      const params = new URLSearchParams(fragment ?? '');
+      const token        = params.get('token');
+      const refreshToken = params.get('refreshToken');
+      const error        = params.get('error');
 
       if (error) {
         this.error = 'Ошибка авторизации через Google';
@@ -74,3 +79,4 @@ export class OAuth2CallbackComponent implements OnInit {
     });
   }
 }
+

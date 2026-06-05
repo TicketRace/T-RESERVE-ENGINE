@@ -74,8 +74,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String accessToken  = jwtService.generateAccessToken(user.getId(), user.getEmail(), user.getRole());
         String refreshToken = jwtService.generateRefreshToken(user.getId());
 
+        // Используем URL fragment (#) вместо query params (?):
+        // fragment не попадает в server logs и Referer заголовок → безопаснее для JWT
         String redirectUrl = frontendUrl + "/oauth2/callback"
-            + "?token=" + accessToken
+            + "#token=" + accessToken
             + "&refreshToken=" + refreshToken;
 
         log.info("OAuth2 success for user: {} ({})", user.getEmail(), user.getAuthProvider());
