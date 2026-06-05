@@ -55,7 +55,7 @@ spring:
 app:
   jwt:
     secret: ${JWT_SECRET:t-reserve-super-secret-key-change-in-prod-256-bits-minimum}
-    expiration-ms: 86400000       # 24 hours (access token)
+    expiration-ms: 900000          # 15 min (access token) — ранее 24h, уменьшено для безопасности
     refresh-expiration-ms: 604800000  # 7 days (refresh token)
   booking:
     lock-duration-minutes: 10
@@ -63,6 +63,9 @@ app:
     default-ttl-seconds: 30
     seats-ttl-seconds: 10
     events-ttl-seconds: 60
+  qr:
+    base-url: https://t-reserve.ru/verify-ticket
+    # base-url: http://localhost:8080/api/tickets/public
 
 # ═══ Swagger ═══
 springdoc:
@@ -86,8 +89,26 @@ logging:
     com.treserve: DEBUG
     org.springframework.security: DEBUG
 
-# ═══ Error details ═══
+# ═══ CORS ═══
+# Разрешенные CORS origins. Для продакшена (например, на Railway) переопределяется через переменную окружения CORS_ALLOWED_ORIGINS
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:5173,http://localhost:3000,http://localhost}
+
+# ═══ Server ═══
 server:
+  port: ${PORT:8080}   # Railway задаёт PORT автоматически; локально — 8080
   error:
     include-message: always
-    include-stacktrace: on_param
+    include-stacktrace: never    # never в проде — не светим стектрейсы
+
+# ═══ MinIO (S3-compatible storage) ═══
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: ${MINIO_BUCKET:tickets}
+  region: us-east-1
+
+# ═══ PDF Generation ═══
+pdf:
+  base-url: http://localhost:8081/api/tickets
