@@ -20,8 +20,6 @@ services:
   frontend:
     build: ./frontend
     container_name: treserve-frontend
-    ports:
-      - "80:80"
     depends_on:
       - nginx
     restart: unless-stopped

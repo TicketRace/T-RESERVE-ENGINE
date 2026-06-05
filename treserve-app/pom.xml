@@ -187,7 +187,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
-                            <argLine>-Xmx512m -Dtestcontainers.ryuk.disabled=true -Ddocker.host=${docker.host.override}</argLine>
+                            <argLine>-Xmx512m -Ddocker.host=${docker.host.override}</argLine>
                         </configuration>
                     </plugin>
                 </plugins>

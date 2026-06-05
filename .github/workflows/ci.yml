@@ -145,13 +145,15 @@ jobs:
           EOF
 
       - name: Build and start production stack
-        run: docker compose -f docker-compose.prod.yml -f docker-compose.ci-cache.yml up -d --build
+        run: |
+          sed -i 's/"80:80"/"8081:80"/g' docker-compose.prod.yml
+          docker compose -f docker-compose.prod.yml -f docker-compose.ci-cache.yml up -d --build
 
       - name: Wait for frontend nginx and proxied API
         run: |
           for i in {1..120}; do
-            if curl -fsS http://localhost/ >/dev/null && \
-               curl -fsS 'http://localhost/api/events?page=0&size=1' >/dev/null; then
+            if curl -fsS http://localhost:8081/ >/dev/null && \
+               curl -fsS 'http://localhost:8081/api/events?page=0&size=1' >/dev/null; then
               exit 0
             fi
             sleep 2
@@ -165,8 +167,8 @@ jobs:
       - name: Run real Playwright E2E tests
         working-directory: frontend
         env:
-          E2E_BASE_URL: http://localhost
-          E2E_API_URL: http://localhost
+          E2E_BASE_URL: http://localhost:8081
+          E2E_API_URL: http://localhost:8081
           E2E_SKIP_FRONTEND_SERVER: '1'
         run: npm run e2e:real
 
