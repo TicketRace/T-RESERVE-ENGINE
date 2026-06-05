@@ -73,7 +73,7 @@ public class SeatService {
         List<SeatInfo> seats = getSeats(eventId);
 
         messagingTemplate.convertAndSend(
-            "/topic/seats/" + eventId,
+            "/topic/seats." + eventId,
             seats
         );
 

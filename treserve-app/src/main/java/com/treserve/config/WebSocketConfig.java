@@ -1,6 +1,7 @@
 package com.treserve.config;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 
@@ -12,11 +13,14 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    @Value("${spring.rabbitmq.host:localhost}")
+    private String rabbitmqHost;
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         // RabbitMQ STOMP relay — сообщения доходят до ВСЕХ инстансов
         config.enableStompBrokerRelay("/topic")
-                .setRelayHost("rabbitmq")
+                .setRelayHost(rabbitmqHost)
                 .setRelayPort(61613);
         config.setApplicationDestinationPrefixes("/app");
     }

@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EventSession } from '../../models/event';
 import { Seat } from '../../models/seat';
@@ -13,7 +13,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './payment.component.css',
 })
 export class PaymentComponent implements OnInit, OnDestroy {
-  session: EventSession | null = null;
+  event: any | null = null;
   selectedSeat: Seat | null = null;
 
   lockId: number | null = null;
@@ -36,11 +36,11 @@ export class PaymentComponent implements OnInit, OnDestroy {
 
     const state = history.state as {
       selectedSeat?: Seat;
-      session?: EventSession;
+      event?: any;
     };
 
     this.selectedSeat = state?.selectedSeat ?? null;
-    this.session = state?.session ?? null;
+    this.event = state?.event ?? null;
 
     if (!this.selectedSeat) {
       this.router.navigate(['/events']);
@@ -143,7 +143,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
     window.history.back();
 
     this.router.navigate(
-      ['/event', this.session?.id],
+      ['/events', this.event?.id, 'seats'],
       { state: { reloadSeats: true } }
     );
   }
