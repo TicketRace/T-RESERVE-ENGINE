@@ -11,6 +11,8 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 @SpringBootTest(properties = {
     "spring.flyway.clean-disabled=false",
@@ -51,6 +53,9 @@ public abstract class AbstractPostgresIntegrationTest {
 
     @Autowired
     private RedisConnectionFactory redisConnectionFactory;
+
+    @MockBean
+    protected SimpMessagingTemplate simpMessagingTemplate;
 
     @BeforeEach
     void resetDatabase() {
