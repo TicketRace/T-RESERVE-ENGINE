@@ -39,6 +39,11 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
 
+        // Google-пользователи не имеют пароля — перенаправляем на OAuth2
+        if (user.getPasswordHash() == null || "GOOGLE".equals(user.getAuthProvider())) {
+            throw new IllegalArgumentException("This account uses Google Sign-In. Please use the Google login button.");
+        }
+
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid email or password");
         }

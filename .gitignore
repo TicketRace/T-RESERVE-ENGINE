@@ -29,3 +29,6 @@ Thumbs.db
 # Internal notes (not for git)
 notes/
 node_modules/
+
+# Local dev config (secrets, OAuth2 credentials — never commit)
+**/application-local.yml
