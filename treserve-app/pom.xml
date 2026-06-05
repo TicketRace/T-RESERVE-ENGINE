@@ -146,6 +146,7 @@
             <artifactId>reactor-netty-http</artifactId>
         </dependency>
 
+
         <!-- ═══ PDF Generation (OpenPDF) ═══ -->
         <dependency>
             <groupId>com.github.librepdf</groupId>
@@ -170,6 +171,13 @@
             <groupId>com.google.zxing</groupId>
             <artifactId>javase</artifactId>
             <version>3.5.3</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>rabbitmq</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>
@@ -222,7 +230,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
-                            <argLine>-Xmx512m -Dtestcontainers.ryuk.disabled=true -Ddocker.host=${docker.host.override}</argLine>
+                            <argLine>-Xmx512m -Dtestcontainers.ryuk.disabled=true </argLine>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -230,3 +238,5 @@
         </profile>
     </profiles>
 </project>
+
+

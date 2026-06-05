@@ -77,6 +77,6 @@ public class SeatService {
             seats
         );
 
-        log.debug("WS push seats update for event {}", eventId);
+        log.info("WS push seats update for event {}: {}", eventId, seats);
     }
 }
