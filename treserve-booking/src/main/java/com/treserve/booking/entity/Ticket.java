@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.UUID;
 
 /**
  * Ticket entity — uses plain Long IDs instead of @ManyToOne references.
@@ -49,4 +50,10 @@ public class Ticket {
 
     @Column(name = "booked_at")
     private Instant bookedAt;
+
+    @Column(name = "pdf_url", length = 512)
+    private String pdfUrl;
+
+    @Column(name = "verify_token", unique = true)
+    private UUID verifyToken;
 }

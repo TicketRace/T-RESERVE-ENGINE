@@ -30,6 +30,8 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
 
+RUN apt-get update && apt-get install -y fontconfig
+
 # Non-root пользователь
 RUN groupadd -r treserve && useradd -r -g treserve treserve && \
     chown -R treserve:treserve /app
