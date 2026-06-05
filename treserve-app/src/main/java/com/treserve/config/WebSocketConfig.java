@@ -16,12 +16,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Value("${spring.rabbitmq.host:localhost}")
     private String rabbitmqHost;
 
+    @Value("${websocket.rabbitmq.port:61613}")
+    private int rabbitmqStompPort;
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         // RabbitMQ STOMP relay — сообщения доходят до ВСЕХ инстансов
         config.enableStompBrokerRelay("/topic")
                 .setRelayHost(rabbitmqHost)
-                .setRelayPort(61613);
+                .setRelayPort(rabbitmqStompPort);
         config.setApplicationDestinationPrefixes("/app");
     }
 

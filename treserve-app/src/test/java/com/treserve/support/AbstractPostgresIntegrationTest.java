@@ -30,7 +30,7 @@ public abstract class AbstractPostgresIntegrationTest {
         .withUsername("treserve")
         .withPassword("treserve_dev");
 
-    static final org.testcontainers.containers.RabbitMQContainer RABBITMQ = new org.testcontainers.containers.RabbitMQContainer("rabbitmq:3-management").withPluginsEnabled("rabbitmq_stomp");
+    static final org.testcontainers.containers.RabbitMQContainer RABBITMQ = new org.testcontainers.containers.RabbitMQContainer("rabbitmq:3-management").withPluginsEnabled("rabbitmq_stomp").withExposedPorts(5672, 15672, 61613);
 
     static final GenericContainer<?> REDIS = new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
         .withExposedPorts(6379);
@@ -72,5 +72,7 @@ public abstract class AbstractPostgresIntegrationTest {
         }
     }
 }
+
+
 
 
