@@ -8,5 +8,8 @@ package com.treserve.booking.port;
  * Этот интерфейс — API-граница, которая позволяет вынести booking в микросервис.
  */
 public interface UserLookup {
-    boolean existsById(Long userId);
+    UserInfo findById(Long id);
+    boolean existsById(Long id);
+
+    record UserInfo(Long id, String email, String name) {}
 }

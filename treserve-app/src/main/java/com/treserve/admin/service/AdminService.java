@@ -1,6 +1,9 @@
 package com.treserve.admin.service;
 
+import com.treserve.admin.dto.DashboardResponse;
+import com.treserve.admin.dto.EventStatisticsResponse;
 import com.treserve.admin.dto.mapper.AdminMapper;
+import com.treserve.booking.entity.TicketStatus;
 import com.treserve.booking.service.BookingService;
 import com.treserve.booking.service.TicketAdminService;
 import com.treserve.common.exception.BusinessConflictException;
@@ -16,12 +19,15 @@ import com.treserve.venue.entity.Seat;
 import com.treserve.venue.entity.Venue;
 import com.treserve.venue.repository.SeatRepository;
 import com.treserve.venue.repository.VenueRepository;
+import java.util.ArrayList;
+import java.util.List;
+import com.treserve.booking.repository.TicketRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.math.BigDecimal;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +41,7 @@ public class AdminService {
     private final BookingService bookingService;
     private final UserRepository userRepository;
     private final AdminMapper adminMapper;
+    private final TicketRepository ticketRepository;
 
     public List<EventResponse> getAllEvents() {
         return eventRepository.findAll().stream()
@@ -71,7 +78,6 @@ public class AdminService {
         List<Long> seatIds = seats.stream().map(Seat::getId).collect(Collectors.toList());
         ticketAdminService.generateTicketsForEvent(event.getId(), request.getBasePrice(), seatIds);
 
-        // ← ИЗМЕНЕНО: используем маппер
         return adminMapper.toEventResponse(event);
     }
 
@@ -97,7 +103,6 @@ public class AdminService {
 
         event = eventRepository.save(event);
 
-        // ← ИЗМЕНЕНО: используем маппер
         return adminMapper.toEventResponse(event);
     }
 
@@ -113,5 +118,58 @@ public class AdminService {
         // Удаление всех билетов для мероприятия через TicketAdminService (быстрый Bulk Delete в БД)
         ticketAdminService.deleteTicketsForEvent(eventId);
         eventRepository.deleteById(eventId);
+    }
+
+        public DashboardResponse getDashboard(Long adminId) {
+        // Получаем все мероприятия, созданные этим админом
+        List<Event> events = eventRepository.findByCreatedById(adminId);
+        
+        List<EventStatisticsResponse> eventStats = new ArrayList<>();
+        long totalSold = 0;
+        long totalUsed = 0;
+        BigDecimal totalRev = BigDecimal.ZERO;
+        
+        for (Event event : events) {
+            // Статистика по мероприятию
+            long soldCount = ticketRepository.countByEventIdAndStatus(event.getId(), TicketStatus.BOOKED);
+            long usedCount = ticketRepository.countByEventIdAndStatus(event.getId(), TicketStatus.USED);
+            long totalSeats = seatRepository.countByVenueId(event.getVenue().getId());
+            long availableCount = totalSeats - (soldCount + usedCount);
+            
+            BigDecimal revenue = ticketRepository.sumPriceByEventIdAndStatus(event.getId(), TicketStatus.BOOKED);
+            if (revenue == null) revenue = BigDecimal.ZERO;
+            
+            double sellThroughRate = totalSeats > 0 ? (double) (soldCount + usedCount) / totalSeats * 100 : 0;
+            
+            eventStats.add(EventStatisticsResponse.builder()
+                    .eventId(event.getId())
+                    .title(event.getTitle())
+                    .description(event.getDescription())
+                    .startTime(event.getStartTime())
+                    .venueName(event.getVenue().getName())
+                    .totalSeats(totalSeats)
+                    .soldCount(soldCount)
+                    .usedCount(usedCount)
+                    .availableCount(availableCount)
+                    .totalRevenue(revenue)
+                    .sellThroughRate(Math.round(sellThroughRate * 10) / 10.0)
+                    .build());
+            
+            totalSold += soldCount;
+            totalUsed += usedCount;
+            totalRev = totalRev.add(revenue);
+        }
+        
+        long totalSeatsAll = eventStats.stream().mapToLong(EventStatisticsResponse::getTotalSeats).sum();
+        double overallRate = totalSeatsAll > 0 ? (double) (totalSold + totalUsed) / totalSeatsAll * 100 : 0;
+        
+        return DashboardResponse.builder()
+                .events(eventStats)
+                .totalEvents(events.size())
+                .totalSoldTickets(totalSold)
+                .totalUsedTickets(totalUsed)
+                .totalRevenue(totalRev)
+                .overallSellThroughRate(Math.round(overallRate * 10) / 10.0)
+                .build();
     }
 }
