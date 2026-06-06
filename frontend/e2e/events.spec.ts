@@ -27,7 +27,7 @@ test.describe('events catalog', () => {
 
     await page.getByRole('button', { name: 'Купить билеты' }).first().click();
 
-    await expect(page).toHaveURL(/\/events\/1\/seats$/);
+    await expect(page).toHaveURL(/\/event\/1\/session\/1\/seats$/);
     await expect(page.getByRole('heading', { name: 'Выберите место' })).toBeVisible();
   });
 });

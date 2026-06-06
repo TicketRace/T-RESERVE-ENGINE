@@ -28,7 +28,7 @@ test.describe('real full-stack booking flow', () => {
       await expect(page.getByText(/777/)).toBeVisible();
 
       await page.getByRole('button', { name: 'Купить билеты' }).first().click();
-      await expect(page).toHaveURL(new RegExp(`/events/${event.id}/seats$`));
+      await expect(page).toHaveURL(new RegExp(`/event/${event.id}/session/.*/seats$`));
       await expect(page.getByRole('heading', { name: 'Выберите место' })).toBeVisible();
 
       const firstSeat = page.getByRole('button', { name: 'Место A-1', exact: true });
@@ -37,7 +37,7 @@ test.describe('real full-stack booking flow', () => {
       await expect(page.getByText(/Выбрано мест:\s*1\. A-1/)).toBeVisible();
 
       await page.getByRole('button', { name: 'оплатить' }).click();
-      await expect(page).toHaveURL(new RegExp(`/payment/${event.id}$`));
+      await expect(page).toHaveURL(new RegExp(`/payment/\\d+$`));
       await expect(page.getByRole('heading', { name: 'Оплата выбранных билетов' })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Купить бесплатно' })).toBeEnabled({
         timeout: 15_000,
