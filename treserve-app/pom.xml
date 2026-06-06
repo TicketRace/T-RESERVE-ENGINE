@@ -146,7 +146,6 @@
             <artifactId>reactor-netty-http</artifactId>
         </dependency>
 
-
         <!-- ═══ PDF Generation (OpenPDF) ═══ -->
         <dependency>
             <groupId>com.github.librepdf</groupId>
@@ -167,7 +166,7 @@
             <version>8.5.9</version>
         </dependency>
 
-        <!-- ═══ QR Code generation (ZXing) ═══ --> 
+        <!-- ═══ QR Code generation (ZXing) ═══ -->
         <dependency>
             <groupId>com.google.zxing</groupId>
             <artifactId>core</artifactId>
@@ -179,7 +178,20 @@
             <version>3.5.3</version>
         </dependency>
 
+        <!-- === ДОБАВЛЕНО: Resilience4j для Circuit Breaker === -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+            <version>2.2.0</version>
+        </dependency>
 
+        <!-- === ДОБАВЛЕНО: AOP для работы с аннотациями Resilience4j === -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
+        <!-- === ДОБАВЛЕНО: RabbitMQ для тестов === -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>rabbitmq</artifactId>
@@ -236,7 +248,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
-                            <argLine>-Xmx512m -Dtestcontainers.ryuk.disabled=true </argLine>
+                            <argLine>-Xmx512m -Dtestcontainers.ryuk.disabled=true</argLine>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -244,5 +256,3 @@
         </profile>
     </profiles>
 </project>
-
-
