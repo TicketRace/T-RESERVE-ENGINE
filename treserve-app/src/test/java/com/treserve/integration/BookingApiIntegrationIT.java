@@ -110,8 +110,8 @@ class BookingApiIntegrationIT extends AbstractPostgresIntegrationTest {
                 .header("Authorization", bearer(adminToken())))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.totalEvents").isNumber())
-            .andExpect(jsonPath("$.totalBookings").isNumber())
-            .andExpect(jsonPath("$.revenue").isNumber());
+            .andExpect(jsonPath("$.totalSoldTickets").isNumber())
+            .andExpect(jsonPath("$.totalRevenue").isNumber());
     }
 
     @Test
