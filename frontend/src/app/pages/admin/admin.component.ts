@@ -5,6 +5,7 @@ import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-admin',
@@ -17,6 +18,7 @@ export class AdminComponent implements OnInit {
   user: User | null = null;
   events: AdminEventSummary[] = [];
   showCreatedModal = false;
+  private apiUrl = environment.apiUrl;
 
   constructor(
     private readonly authService: AuthService,
@@ -24,7 +26,7 @@ export class AdminComponent implements OnInit {
   ) {}
 
   loadEvents(): void {
-    this.http.get<any>('http://localhost:8080/api/events')
+    this.http.get<any>(`${this.apiUrl}/api/events`)
       .subscribe(res => {
         this.events = (res.content ?? res).map((e: any) => ({
           id: e.id,
@@ -41,7 +43,7 @@ export class AdminComponent implements OnInit {
     if (!confirmed) return;
 
     this.http.delete(
-      `http://localhost:8080/api/admin/events/${id}`
+      `${this.apiUrl}/api/admin/events/${id}`
     ).subscribe(() => this.loadEvents());
   }
 

@@ -2,6 +2,7 @@
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { AuthResponse, User } from '../models/user';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -9,7 +10,8 @@ import { HttpClient } from '@angular/common/http';
 export class AuthService {
   private readonly currentUserSubject = new BehaviorSubject<User | null>(null);
   readonly currentUser$ = this.currentUserSubject.asObservable();
-
+  private apiUrl = environment.apiUrl;
+  
  constructor(private http: HttpClient) {
   const userJson = localStorage.getItem('user');
 
@@ -20,14 +22,14 @@ export class AuthService {
  
  login(email: string, password: string): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(
-      'http://localhost:8080/api/auth/login',
+      `${this.apiUrl}/api/auth/login`,
       { email, password }
     ).pipe(tap(res => this.persist(res)));
   }
 
  register(email: string, password: string, name: string): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(
-      'http://localhost:8080/api/auth/register',
+      `${this.apiUrl}/api/auth/register`,
       { email, password, name }
     ).pipe(tap(res => this.persist(res)));
   }
@@ -59,7 +61,7 @@ export class AuthService {
     throw new Error('No refresh token');
     }
     return this.http.post<AuthResponse>(
-      'http://localhost:8080/api/auth/refresh',
+      `${this.apiUrl}/api/auth/refresh`,
       { refreshToken }
     ).pipe(
       tap(res => this.persist(res))

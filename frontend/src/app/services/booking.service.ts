@@ -1,24 +1,26 @@
 ﻿import { Injectable } from '@angular/core';
 import { LockResponse } from '../models/booking';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class BookingService {
+  private apiUrl = environment.apiUrl;
   constructor(
     private readonly http: HttpClient
   ) {}
  lockSeat(eventId: number, seatId: number) {
     return this.http.post<LockResponse>(
-      'http://localhost:8080/api/bookings/lock',
+      `${this.apiUrl}/api/bookings/lock`,
       { eventId, seatId }
     );
   }
 
   confirmBooking(lockId: number) {
     return this.http.post(
-      `http://localhost:8080/api/bookings/${lockId}/confirm`,
+      `${this.apiUrl}/api/bookings/${lockId}/confirm`,
       {},
       { responseType: 'text' }
     );
@@ -26,7 +28,7 @@ export class BookingService {
 
   cancelBooking(lockId: number) {
     return this.http.delete(
-      `http://localhost:8080/api/bookings/${lockId}`
+      `${this.apiUrl}/api/bookings/${lockId}`
     );
   }
 }

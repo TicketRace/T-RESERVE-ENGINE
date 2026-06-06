@@ -3,6 +3,7 @@ import { Booking } from '../../models/booking';
 import { User } from '../../models/user';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-profile',
@@ -14,16 +15,17 @@ import { HttpClient } from '@angular/common/http';
 export class ProfileComponent implements OnInit {
   user: User | null = null;
   bookings: Booking[] = [];
+  private apiUrl = environment.apiUrl;
 
   constructor(
   private readonly http: HttpClient,
   ) {}
 
   ngOnInit(): void {
-  this.http.get<User>('http://localhost:8080/api/users/me')
+  this.http.get<User>(`${this.apiUrl}/api/users/me`)
     .subscribe(user => this.user = user);
 
-  this.http.get<Booking[]>('http://localhost:8080/api/users/me/bookings')
+  this.http.get<Booking[]>(`${this.apiUrl}/api/users/me/bookings`)
     .subscribe(bookings => {
     this.bookings = bookings.filter(
       booking => booking.status === 'BOOKED'

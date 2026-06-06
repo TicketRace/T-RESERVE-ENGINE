@@ -5,17 +5,25 @@
 
   <div class="ticket-list" *ngIf="bookings.length; else emptyState">
     <article class="ticket-card" *ngFor="let booking of bookings">
-      <div>
-        <h2>{{ booking.eventTitle }}</h2>
+      <div class="ticket-info">
+        <div class="ticket-header">
+          <h2>{{ booking.eventTitle }}</h2>
+
+          <div class="event-date">
+            {{ booking.eventStartTime | date:'d MMM HH:mm' }}
+          </div>
+        </div>
+
         <p>
           Дата покупки:
-          {{ booking.bookedAt| date:'d MMMM HH:mm' }}</p>
+          {{ booking.bookedAt | date:'d MMMM HH:mm' }}
+        </p>
       </div>
       <button class="action-chip" type="button">Посмотреть билет</button>
     </article>
   </div>
 
   <ng-template #emptyState>
-    <div class="empty-box">Пока билетов нет. Купите билет на странице события.</div>
+    <div class="empty-box">Пока билетов нет.</div>
   </ng-template>
 </section>
