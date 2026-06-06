@@ -64,6 +64,8 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET: tickets
+      MAIL_USERNAME: ${MAIL_USERNAME:-your-email@gmail.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-your-app-password}
       INSTANCE_ID: app-1
     depends_on:
       postgres:
@@ -97,6 +99,8 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET: tickets
+      MAIL_USERNAME: ${MAIL_USERNAME:-your-email@gmail.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-your-app-password}
       INSTANCE_ID: app-2
     depends_on:
       postgres:
