@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import com.treserve.booking.entity.Ticket;
 import com.treserve.booking.entity.TicketStatus;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -74,6 +75,18 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     /** Проверка наличия оплаченных билетов — один COUNT запрос, без загрузки в память */
     boolean existsByEventIdAndStatus(Long eventId, TicketStatus status);
+
+    /**
+     * Получить количество проданных билетов по мероприятию
+     */
+    @Query("SELECT COUNT(t) FROM Ticket t WHERE t.eventId = :eventId AND t.status = :status")
+    long countByEventIdAndStatus(@Param("eventId") Long eventId, @Param("status") TicketStatus status);
+
+    /**
+     * Получить общую выручку по мероприятию (сумма цен BOOKED билетов)
+     */
+    @Query("SELECT COALESCE(SUM(t.price), 0) FROM Ticket t WHERE t.eventId = :eventId AND t.status = :status")
+    BigDecimal sumPriceByEventIdAndStatus(@Param("eventId") Long eventId, @Param("status") TicketStatus status);
 
     /**
      * Safety net: просроченные LOCKED билеты.

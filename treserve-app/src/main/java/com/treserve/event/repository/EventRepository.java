@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
+import java.util.List;
 import com.treserve.event.entity.Event;
 
 import java.util.Optional;
@@ -31,7 +31,10 @@ public interface EventRepository extends JpaRepository<Event, Long> {
         Pageable pageable
     );
 
-
+        /**
+     * Найти все мероприятия, созданные администратором
+     */
+    List<Event> findByCreatedById(Long adminId);
 
     /** Мероприятие по ID с площадкой (без LazyInitializationException) */
     @Query("""

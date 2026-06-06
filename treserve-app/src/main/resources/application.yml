@@ -80,8 +80,8 @@ app:
     seats-ttl-seconds: 10
     events-ttl-seconds: 60
   qr:
-    base-url: https://t-reserve.ru/verify-ticket
-    # base-url: http://localhost:8080/api/tickets/public
+    # base-url: https://t-reserve.ru/verify-ticket
+    base-url: http://localhost:8080/api/tickets/public
   email:
     from: ${MAIL_USERNAME:noreply@t-reserve.ru}
     subject: "Ваш билет на мероприятие"
