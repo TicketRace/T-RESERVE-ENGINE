@@ -60,6 +60,12 @@ public class SecurityConfig {
                 // Публичный просмотр билета по QR-коду (без авторизации)
                 .requestMatchers(HttpMethod.GET, "/api/tickets/public").permitAll()
 
+                // WebSocket endpoint — доступен без авторизации (STOMP handshake)
+                .requestMatchers("/ws/**").permitAll()
+
+                // Публичный просмотр билета по QR-коду (без авторизации)
+                .requestMatchers(HttpMethod.GET, "/api/tickets/public").permitAll()
+
                 // Swagger / OpenAPI
                 .requestMatchers(
                     "/swagger-ui/**", "/swagger-ui.html",

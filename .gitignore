@@ -36,3 +36,7 @@ notes/
 node_modules/
 
 .env
+
+run-backend.ps1
+application-local.yml
+frontend/test-alisa-connection.js

@@ -36,8 +36,10 @@
     "@ng-web-apis/platform": "^5.2.0",
     "@ng-web-apis/resize-observer": "^5.2.0",
     "@ng-web-apis/screen-orientation": "^5.2.0",
+    "@stomp/stompjs": "^7.3.0",
     "@taiga-ui/styles": "^5.4.0",
     "rxjs": "~7.8.0",
+    "sockjs-client": "^1.6.1",
     "taiga-ui": "^5.4.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
@@ -47,6 +49,7 @@
     "@angular/cli": "^20.2.0",
     "@angular/compiler-cli": "^20.2.0",
     "@types/jasmine": "~5.1.0",
+    "@types/sockjs-client": "^1.5.4",
     "jasmine-core": "~5.9.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",

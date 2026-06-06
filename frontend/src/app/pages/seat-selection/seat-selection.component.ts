@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
 import { SeatMapComponent } from '../../components/seat-map/seat-map.component';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { WebSocketService } from '../../services/websocket.service';
 
 @Component({
   selector: 'app-seat-selection',
@@ -51,6 +52,7 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly http: HttpClient,
+    private readonly ws: WebSocketService
   ) {}
 
   ngOnInit(): void {
@@ -76,23 +78,17 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
         error: err => console.error('SEATS ERROR:', err)
       });
 
-    interval(3000)
-      .pipe(
-        takeUntil(this.destroy$),
-        switchMap(() =>
-          this.http.get<Seat[]>(`${this.apiUrl}/api/events/${eventId}/seats`)
-        )
-      )
-      .subscribe(seats => {
-        console.log('SEATS UPDATE:', seats);
-        this.seats = seats;
-        this.updateGroupedSeats();
-      });
-  }
+    this.ws.connect(eventId, (seats) => {
+      console.log('WS UPDATE:', seats);
+      this.seats = seats;
+      this.updateGroupedSeats();
+   });
+ }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.ws.disconnect();
   }
 
   selectSeat(seat: Seat): void {
@@ -109,5 +105,4 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
       },
     });
   }
-  
 }
