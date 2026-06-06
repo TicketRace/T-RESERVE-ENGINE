@@ -18,6 +18,7 @@ import org.testcontainers.utility.DockerImageName;
     "logging.level.com.treserve=INFO",
     "logging.level.org.springframework.security=WARN",
     "management.health.rabbit.enabled=false",
+    "management.health.mail.enabled=false",
     "app.safety-net.enabled=false"
 })
 @ActiveProfiles("it")
