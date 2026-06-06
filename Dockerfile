@@ -30,15 +30,14 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends fontconfig fonts-dejavu && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y fontconfig
 
 # Non-root пользователь
 RUN groupadd -r treserve && useradd -r -g treserve treserve && \
     chown -R treserve:treserve /app
 
 # Копирование извлеченных слоев Spring Boot по отдельности.
+# Тяжелые зависимости идут первыми — они кэшируются Docker.
 COPY --from=build --chown=treserve:treserve /app/treserve-app/target/dependencies/ ./
 COPY --from=build --chown=treserve:treserve /app/treserve-app/target/spring-boot-loader/ ./
 COPY --from=build --chown=treserve:treserve /app/treserve-app/target/snapshot-dependencies/ ./

@@ -125,8 +125,8 @@ minio:
   access-key: ${MINIO_ACCESS_KEY:minioadmin}
   secret-key: ${MINIO_SECRET_KEY:minioadmin}
   bucket: ${MINIO_BUCKET:tickets}
-  region: us-east-1
+  region: ${MINIO_REGION:us-east-1}
 
 # ═══ PDF Generation ═══
 pdf:
-  base-url: http://localhost:8081/api/tickets
+  base-url: ${PDF_BASE_URL:http://localhost:8081/api/tickets}
