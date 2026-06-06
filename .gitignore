@@ -34,3 +34,5 @@ load-tests/results/summary.json
 # Internal notes (not for git)
 notes/
 node_modules/
+
+.env
