@@ -1,20 +1,19 @@
 import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 import { Injectable, NgZone } from '@angular/core';
 import { Seat } from '../models/seat';
 import { environment } from '../../environments/environment';
 
 /**
- * Строим WebSocket URL:
- * - Dev:  берём из environment.wsUrl ('ws://localhost:8080')
- * - Prod: строим из window.location — wss:// для HTTPS, ws:// для HTTP.
- *         Так Railway URL подхватывается автоматически без хардкода.
+ * Строим SockJS HTTP URL для fallback:
+ * - Dev:  берём из environment.apiUrl ('http://localhost:8080')
+ * - Prod: строим из window.location
  */
-function getWsUrl(): string {
-  if (environment.wsUrl) {
-    return environment.wsUrl;
+function getSockJsUrl(): string {
+  if (environment.apiUrl) {
+    return `${environment.apiUrl}/ws`;
   }
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${protocol}//${window.location.host}`;
+  return `${window.location.protocol}//${window.location.host}/ws`;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -25,13 +24,15 @@ export class WebSocketService {
 
   connect(eventId: number, onSeatsUpdate: (seats: Seat[]) => void) {
     if (this.client) {
-        this.client.deactivate();
-      }
+      this.client.deactivate();
+    }
     this.client = new Client({
-      brokerURL: `${getWsUrl()}/ws/websocket`,
+      // SockJS автоматически попытается использовать WebSocket,
+      // а если не выйдет (прокси блокирует) — переключится на HTTP Polling
+      webSocketFactory: () => new SockJS(getSockJsUrl()) as any,
       reconnectDelay: 5000,
       onConnect: () => {
-        console.log('STOMP CONNECTED!');
+        console.log('STOMP CONNECTED (with SockJS fallback)!');
         this.client.subscribe(`/topic/seats.${eventId}`, (message) => {
           const data = JSON.parse(message.body);
           this.ngZone.run(() => {
@@ -39,7 +40,7 @@ export class WebSocketService {
           });
         });
       },
-      onWebSocketError: (err) => console.error('WS ERROR:', err),
+      onWebSocketError: (err) => console.error('WS/SockJS ERROR:', err),
       onStompError: (err) => console.error('STOMP ERROR:', err)
     });
     this.client.activate();
