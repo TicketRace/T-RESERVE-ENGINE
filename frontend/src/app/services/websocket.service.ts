@@ -20,7 +20,7 @@ function getSockJsUrl(): string {
 export class WebSocketService {
   private client!: Client;
 
-  constructor(private ngZone: NgZone) {}
+  constructor(private ngZone: NgZone) { }
 
   connect(eventId: number, onSeatsUpdate: (seats: Seat[]) => void) {
     if (this.client) {
@@ -29,7 +29,10 @@ export class WebSocketService {
     this.client = new Client({
       // SockJS автоматически попытается использовать WebSocket,
       // а если не выйдет (прокси блокирует) — переключится на HTTP Polling
-      webSocketFactory: () => new SockJS(getSockJsUrl()) as any,
+      // webSocketFactory: () => new SockJS(getSockJsUrl()) as any,
+      webSocketFactory: () => new SockJS(getSockJsUrl(), null, {
+        transports: ['websocket', 'xhr-streaming', 'xhr-polling']
+      }) as any,
       reconnectDelay: 5000,
       onConnect: () => {
         console.log('STOMP CONNECTED (with SockJS fallback)!');
@@ -50,3 +53,4 @@ export class WebSocketService {
     this.client?.deactivate();
   }
 }
+
