@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EventItem, EventSession } from '../../models/event';
 import { CommonModule } from '@angular/common';
@@ -38,8 +38,8 @@ export class EventDetailsComponent implements OnInit {
       {
         id: 1,
         eventId: event.id,
-        price: 800,
-        startsAt: '2026-05-12T19:00:00'
+        price: event.basePrice,
+        startsAt: event.startTime,
       }
     ];
   });
@@ -50,7 +50,7 @@ export class EventDetailsComponent implements OnInit {
       return;
     }
 
-    this.router.navigate(['/event', this.event.id, 'session', session.id, 'seats']);
+    this.router.navigate(['/events', this.event.id, 'seats']);
   }
 
   selectSessionByEvent(event: any) {

@@ -37,7 +37,7 @@ public class SecurityConfig {
     private final ObjectMapper objectMapper;
 
     // Разрешенные CORS origins. Для продакшена (например, на Railway) переопределяется через переменную окружения CORS_ALLOWED_ORIGINS
-    @Value("${cors.allowed-origins:http://localhost:4200,http://localhost:5173,http://localhost:3000,http://localhost}")
+    @Value("${cors.allowed-origins:http://localhost:4200,http://localhost:5173,http://localhost:3000,http://localhost,http://localhost:8081}")
     private String corsAllowedOrigins;
 
     @Bean
