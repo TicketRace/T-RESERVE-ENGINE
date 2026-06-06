@@ -11,8 +11,6 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 @SpringBootTest(properties = {
     "spring.flyway.clean-disabled=false",
@@ -31,15 +29,12 @@ public abstract class AbstractPostgresIntegrationTest {
         .withUsername("treserve")
         .withPassword("treserve_dev");
 
-    static final org.testcontainers.containers.RabbitMQContainer RABBITMQ = new org.testcontainers.containers.RabbitMQContainer("rabbitmq:3-management").withPluginsEnabled("rabbitmq_stomp").withExposedPorts(5672, 15672, 61613);
-
     static final GenericContainer<?> REDIS = new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
         .withExposedPorts(6379);
 
     static {
         POSTGRES.start();
         REDIS.start();
-        RABBITMQ.start();
     }
 
     @DynamicPropertySource
@@ -50,9 +45,6 @@ public abstract class AbstractPostgresIntegrationTest {
         registry.add("spring.datasource.driver-class-name", POSTGRES::getDriverClassName);
         registry.add("spring.data.redis.host", REDIS::getHost);
         registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
-        registry.add("spring.rabbitmq.host", RABBITMQ::getHost);
-        registry.add("spring.rabbitmq.port", RABBITMQ::getAmqpPort);
-        registry.add("websocket.rabbitmq.port", () -> RABBITMQ.getMappedPort(61613));
     }
 
     @Autowired
@@ -60,9 +52,6 @@ public abstract class AbstractPostgresIntegrationTest {
 
     @Autowired
     private RedisConnectionFactory redisConnectionFactory;
-
-    
-    
 
     @BeforeEach
     void resetDatabase() {
@@ -73,7 +62,3 @@ public abstract class AbstractPostgresIntegrationTest {
         }
     }
 }
-
-
-
-
