@@ -35,7 +35,7 @@ export class WebSocketService {
       }) as any,
       reconnectDelay: 5000,
       onConnect: () => {
-        console.log('STOMP CONNECTED (with SockJS fallback)!');
+        console.log('STOMP CONNECTED!');
         this.client.subscribe(`/topic/seats.${eventId}`, (message) => {
           const data = JSON.parse(message.body);
           this.ngZone.run(() => {
