@@ -8,7 +8,7 @@ test.describe('authentication', () => {
     await page.goto('/login');
     await page.getByPlaceholder('Email').fill('user@test.com');
     await page.getByPlaceholder('Пароль').fill('secret123');
-    await page.getByRole('button', { name: 'Войти' }).click();
+    await page.getByRole('button', { name: 'Войти', exact: true }).click();
 
     await expect(page).toHaveURL(/\/events$/);
     await expect(page.getByText('Анна Каренина')).toBeVisible();
@@ -23,7 +23,7 @@ test.describe('authentication', () => {
     await page.goto('/login');
     await page.getByPlaceholder('Email').fill('wrong@test.com');
     await page.getByPlaceholder('Пароль').fill('badpass');
-    await page.getByRole('button', { name: 'Войти' }).click();
+    await page.getByRole('button', { name: 'Войти', exact: true }).click();
 
     await expect(page.getByText('Неверный email или пароль')).toBeVisible();
     await expect(page).toHaveURL(/\/login$/);

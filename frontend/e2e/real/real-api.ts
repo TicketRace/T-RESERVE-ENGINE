@@ -131,7 +131,7 @@ export async function loginThroughUi(
   await page.goto('/login');
   await page.getByPlaceholder('Email').fill(email);
   await page.getByPlaceholder('Пароль').fill(password);
-  await page.getByRole('button', { name: 'Войти' }).click();
+  await page.getByRole('button', { name: 'Войти', exact: true }).click();
   await expect(page).toHaveURL(expectedPath, { timeout: 15_000 });
 }
 
