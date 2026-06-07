@@ -21,7 +21,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
     "logging.level.org.springframework.security=WARN",
     "management.health.rabbit.enabled=false",
     "management.health.mail.enabled=false",
-    "app.safety-net.enabled=false"
+    "app.safety-net.enabled=false",
+    "spring.security.oauth2.client.registration.google.client-id=mock-client-id",
+    "spring.security.oauth2.client.registration.google.client-secret=mock-client-secret"
 })
 @ActiveProfiles("it")
 public abstract class AbstractPostgresIntegrationTest {

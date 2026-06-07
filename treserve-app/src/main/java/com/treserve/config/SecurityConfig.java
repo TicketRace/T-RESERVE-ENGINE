@@ -3,6 +3,7 @@ package com.treserve.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -31,20 +32,27 @@ import java.util.Map;
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final ObjectMapper objectMapper;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final CookieOAuth2AuthorizationRequestRepository cookieAuthRepo;
 
     // Разрешенные CORS origins. Для продакшена (например, на Railway) переопределяется через переменную окружения CORS_ALLOWED_ORIGINS
     @Value("${cors.allowed-origins:http://localhost:4200,http://localhost:5173,http://localhost:3000,http://localhost,http://localhost:8081}")
     private String corsAllowedOrigins;
+
+    @Value("${app.frontend-url:http://localhost:4200}")
+    private String frontendUrl;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            // STATELESS: OAuth2 flow использует CookieOAuth2AuthorizationRequestRepository для хранения state параметра в куках.
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) ->
@@ -56,15 +64,15 @@ public class SecurityConfig {
                 // Public
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
-                
+
                 // Публичный просмотр билета по QR-коду (без авторизации)
                 .requestMatchers(HttpMethod.GET, "/api/tickets/public").permitAll()
+
+                // OAuth2 — Spring обрабатывает эти пути сам
+                .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
 
                 // WebSocket endpoint — доступен без авторизации (STOMP handshake)
                 .requestMatchers("/ws/**").permitAll()
-
-                // Публичный просмотр билета по QR-коду (без авторизации)
-                .requestMatchers(HttpMethod.GET, "/api/tickets/public").permitAll()
 
                 // Swagger / OpenAPI
                 .requestMatchers(
@@ -82,6 +90,17 @@ public class SecurityConfig {
 
                 // Authenticated
                 .anyRequest().authenticated()
+            )
+            // OAuth2 Login — Google redirect flow
+            .oauth2Login(oauth2 -> oauth2
+                .authorizationEndpoint(auth -> auth
+                    .authorizationRequestRepository(cookieAuthRepo)
+                )
+                .successHandler(oAuth2SuccessHandler)
+                .failureHandler((req, res, ex) -> {
+                    log.warn("OAuth2 login failed: {}", ex.getMessage());
+                    res.sendRedirect(frontendUrl + "/login?error=oauth2");
+                })
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .build();

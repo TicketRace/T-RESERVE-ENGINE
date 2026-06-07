@@ -35,8 +35,8 @@ load-tests/results/summary.json
 notes/
 node_modules/
 
+# Local dev config (secrets, OAuth2 credentials — never commit)
+**/application-local.yml
 .env
-
 run-backend.ps1
-application-local.yml
 frontend/test-alisa-connection.js

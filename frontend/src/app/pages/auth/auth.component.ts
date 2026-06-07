@@ -124,4 +124,7 @@ export class AuthComponent {
     this.hidePassword = !this.hidePassword;
   }
 
+  googleLogin(): void {
+    this.authService.googleLogin();
+  }
 }
