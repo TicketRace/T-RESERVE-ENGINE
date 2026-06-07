@@ -118,14 +118,19 @@ export class PaymentComponent implements OnInit, OnDestroy {
   }
 
   payFree(): void {
-    if (!this.lockId) return;
+    if (!this.lockId || this.isLoading) return;
+    
+    this.isLoading = true;
+    this.errorMessage = null;
 
     this.bookingService.confirmBooking(this.lockId).subscribe({
       next: () => {
+        this.isLoading = false;
         sessionStorage.removeItem(this.LOCK_KEY);
         this.router.navigate(['/payment-success']);
       },
       error: () => {
+        this.isLoading = false;
         this.errorMessage = 'Ошибка оплаты';
       },
     });
