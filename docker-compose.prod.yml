@@ -66,6 +66,8 @@ services:
       MINIO_BUCKET: tickets
       MAIL_USERNAME: ${MAIL_USERNAME:-your-email@gmail.com}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-your-app-password}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-mock-client-id}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-mock-client-secret}
       INSTANCE_ID: app-1
     depends_on:
       postgres:
@@ -101,6 +103,8 @@ services:
       MINIO_BUCKET: tickets
       MAIL_USERNAME: ${MAIL_USERNAME:-your-email@gmail.com}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-your-app-password}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-mock-client-id}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-mock-client-secret}
       INSTANCE_ID: app-2
     depends_on:
       postgres:

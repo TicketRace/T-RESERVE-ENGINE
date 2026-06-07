@@ -17,6 +17,8 @@ services:
       MAIL_PASSWORD: esasmnebngcmpmsk
       SPRING_MAIL_USERNAME: treserveengine@gmail.com
       SPRING_MAIL_PASSWORD: esasmnebngcmpmsk
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-mock-client-id}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-mock-client-secret}
     depends_on:
       postgres:
         condition: service_healthy
