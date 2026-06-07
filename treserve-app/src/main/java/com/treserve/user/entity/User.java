@@ -21,7 +21,8 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(name = "password_hash", nullable = false)
+    // nullable — Google-пользователи не имеют пароля
+    @Column(name = "password_hash")
     private String passwordHash;
 
     @Column(length = 100)
@@ -30,6 +31,19 @@ public class User {
     @Column(length = 20)
     @Builder.Default
     private String role = "USER";
+
+    /** LOCAL = email/пароль, GOOGLE = OAuth2 */
+    @Column(name = "auth_provider", length = 20)
+    @Builder.Default
+    private String authProvider = "LOCAL";
+
+    /** Google sub claim — уникальный ID пользователя у Google */
+    @Column(name = "provider_id")
+    private String providerId;
+
+    /** URL аватарки из Google профиля */
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
 
     @Version
     private Long version;

@@ -85,6 +85,7 @@ public class BookingService {
                     seatId, eventId, userId, expiresAt);
 
                 seatService.evictSeatsCache(eventId);
+                seatService.pushSeatsUpdate(eventId);
                 return new LockResponse(ticket.getId(), expiresAt);
             });
         } catch (PessimisticLockingFailureException e) {
@@ -125,6 +126,7 @@ public class BookingService {
             ticketRepository.save(ticket);
 
             seatService.evictSeatsCache(ticket.getEventId());
+            seatService.pushSeatsUpdate(ticket.getEventId());
             log.info("BOOKED ticket {} for user {}", ticketId, userId);
 
             sendTicketEmail(ticket, userId);
@@ -184,6 +186,7 @@ public class BookingService {
             ticketRepository.save(ticket);
 
             seatService.evictSeatsCache(ticket.getEventId());
+            seatService.pushSeatsUpdate(ticket.getEventId());
             log.info("CANCELLED lock on ticket {} by user {}", ticketId, userId);
         } catch (PessimisticLockingFailureException e) {
             log.debug("Conflict on cancel ticket {} — seat is currently being processed", ticketId);

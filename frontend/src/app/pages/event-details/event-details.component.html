@@ -1,6 +1,6 @@
-﻿<section class="shell details-page" *ngIf="event as data">
+<section class="shell details-page" *ngIf="event as data">
   <div class="title-card">
-    <p>{{ data.category }} {{ data.ageRestriction }} {{ data.venue.name }}</p>
+    <p>{{ data.category }} {{ data.ageRestriction }} {{ data.venue?.name || data.venueName }}</p>
     <h1>{{ data.title }}</h1>
     <div 
       class="poster"
@@ -21,6 +21,7 @@
 
     <div class="date-row" *ngFor="let session of sessions">
       <span>{{ session.startsAt | date:'d MMMM HH:mm' }}</span>
+      <span>{{ session.price | number:'1.0-0' }} ₽</span>
 
       <button
         class="action-chip"

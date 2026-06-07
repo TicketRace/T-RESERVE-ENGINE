@@ -13,10 +13,12 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_RABBITMQ_HOST: rabbitmq
       MINIO_ENDPOINT: http://treserve-minio:9000
-      MAIL_USERNAME: treserveengine@gmail.com
-      MAIL_PASSWORD: esasmnebngcmpmsk
-      SPRING_MAIL_USERNAME: treserveengine@gmail.com
-      SPRING_MAIL_PASSWORD: esasmnebngcmpmsk
+      MAIL_USERNAME: ${MAIL_USERNAME:-treserveengine@gmail.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-your-app-password}
+      SPRING_MAIL_USERNAME: ${MAIL_USERNAME:-treserveengine@gmail.com}
+      SPRING_MAIL_PASSWORD: ${MAIL_PASSWORD:-your-app-password}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-mock-client-id}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-mock-client-secret}
     depends_on:
       postgres:
         condition: service_healthy
@@ -64,6 +66,9 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+      - "61613:61613"
+    command: >
+      sh -c "rabbitmq-plugins enable --offline rabbitmq_stomp && rabbitmq-server"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest

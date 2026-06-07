@@ -42,3 +42,7 @@ Thumbs.db
 # Browser temp files
 .tmp-chrome/
 .tmp-edge/
+# Playwright
+/playwright-report/
+/test-results/
+/playwright-report-real/

@@ -9,6 +9,7 @@ import { AdminComponent } from './pages/admin/admin.component';
 import { AdminCreateEventComponent } from './pages/admin-create-event/admin-create-event.component';
 import { AdminVenueBuilderComponent } from './pages/admin-venue-builder/admin-venue-builder.component';
 import { AuthComponent } from './pages/auth/auth.component';
+import { OAuth2CallbackComponent } from './pages/oauth2-callback/oauth2-callback.component';
 
 export const routes: Routes = [
   {path: '', redirectTo: 'login', pathMatch: 'full'},
@@ -24,5 +25,7 @@ export const routes: Routes = [
   { path: 'admin/create', component: AdminCreateEventComponent },
   //{ path: 'admin/venue-builder', component: AdminVenueBuilderComponent },
   { path: 'admin/create/:id', component: AdminCreateEventComponent },
+  // OAuth2 callback — сюда редиректит бэкенд после Google авторизации
+  { path: 'oauth2/callback', component: OAuth2CallbackComponent },
   { path: '**', redirectTo: 'events' }
-];
+];

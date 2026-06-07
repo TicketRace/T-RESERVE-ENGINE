@@ -1,4 +1,4 @@
-﻿<article class="event-card" (click)="openEvent()">
+<article class="event-card" (click)="openEvent()">
   <div class="event-poster" [style.background-image]="event.imageUrl ? 'url(' + event.imageUrl + ')' : 'none'"></div>
   <div class="event-copy">
     <div class="event-line">
@@ -7,6 +7,6 @@
     </div>
     <h3>{{ event.title }}</h3>
     <p *ngIf="event.description">{{ event.description }}</p>
-    <span class="meta">{{ event.venue.name }}</span>
+    <span class="meta">{{ event.venue?.name || event.venueName }}</span>
   </div>
 </article>
