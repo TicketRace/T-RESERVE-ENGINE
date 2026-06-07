@@ -190,8 +190,8 @@ jobs:
 
       - name: Print production stack logs on failure
         if: failure()
-        run: docker compose -f docker-compose.prod.yml -f docker-compose.ci-cache.yml logs --no-color || true
+        run: docker compose -f docker-compose.prod.yml logs --no-color || true
 
       - name: Stop production stack
         if: always()
-        run: docker compose -f docker-compose.prod.yml -f docker-compose.ci-cache.yml down -v
+        run: docker compose -f docker-compose.prod.yml down -v
