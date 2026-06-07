@@ -41,7 +41,7 @@ public class SecurityConfig {
     private final CookieOAuth2AuthorizationRequestRepository cookieAuthRepo;
 
     // Разрешенные CORS origins. Для продакшена (например, на Railway) переопределяется через переменную окружения CORS_ALLOWED_ORIGINS
-    @Value("${cors.allowed-origins:http://localhost:4200,http://localhost:5173,http://localhost:3000,http://localhost}")
+    @Value("${cors.allowed-origins:http://localhost:4200,http://localhost:5173,http://localhost:3000,http://localhost,http://localhost:8081}")
     private String corsAllowedOrigins;
 
     @Value("${app.frontend-url:http://localhost:4200}")
@@ -70,6 +70,9 @@ public class SecurityConfig {
 
                 // OAuth2 — Spring обрабатывает эти пути сам
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+
+                // WebSocket endpoint — доступен без авторизации (STOMP handshake)
+                .requestMatchers("/ws/**").permitAll()
 
                 // Swagger / OpenAPI
                 .requestMatchers(

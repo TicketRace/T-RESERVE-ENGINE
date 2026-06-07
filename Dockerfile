@@ -30,7 +30,9 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y fontconfig
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends fontconfig fonts-dejavu && \
+    rm -rf /var/lib/apt/lists/*
 
 # Non-root пользователь
 RUN groupadd -r treserve && useradd -r -g treserve treserve && \

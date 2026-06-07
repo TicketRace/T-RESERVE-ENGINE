@@ -22,6 +22,10 @@ import java.util.UUID;
 
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.treserve.booking.pdf.PdfGenerator;
+import com.treserve.booking.notification.EmailSender;
+import com.treserve.booking.event.EventTitleProvider;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -32,6 +36,10 @@ public class BookingService {
     private final UserLookup userLookup;
     private final SeatService seatService;
     private final TransactionTemplate transactionTemplate;
+
+    private final PdfGenerator pdfGenerator;
+    private final EmailSender emailSender;
+    private final EventTitleProvider eventTitleProvider;
 
     @Value("${app.booking.lock-duration-minutes:10}")
     private int lockDurationMinutes;
@@ -77,6 +85,7 @@ public class BookingService {
                     seatId, eventId, userId, expiresAt);
 
                 seatService.evictSeatsCache(eventId);
+                seatService.pushSeatsUpdate(eventId);
                 return new LockResponse(ticket.getId(), expiresAt);
             });
         } catch (PessimisticLockingFailureException e) {
@@ -117,12 +126,41 @@ public class BookingService {
             ticketRepository.save(ticket);
 
             seatService.evictSeatsCache(ticket.getEventId());
+            seatService.pushSeatsUpdate(ticket.getEventId());
             log.info("BOOKED ticket {} for user {}", ticketId, userId);
+
+            sendTicketEmail(ticket, userId);
+
         } catch (PessimisticLockingFailureException e) {
             log.debug("Conflict on confirm ticket {} — seat is currently being processed", ticketId);
             throw new SeatAlreadyLockedException("Ticket is currently locked by another process, please try again");
         }
     }
+
+    private void sendTicketEmail(Ticket ticket, Long userId) {
+        log.info("=== USING UPDATED VERSION WITH PDF DISABLED ===");
+        try {
+            // Получаем пользователя через порт UserLookup
+            var userInfo = userLookup.findById(userId);
+            if (userInfo == null) {
+                log.warn("User {} not found, cannot send email for ticket {}", userId, ticket.getId());
+                return;
+            }
+
+            // Получаем название мероприятия через интерфейс EventTitleProvider
+            String eventTitle = eventTitleProvider.getEventTitle(ticket.getEventId());
+            
+            // Отправляем email 
+            byte[] pdfBytes = pdfGenerator.generatePdf(ticket);
+            emailSender.sendTicketEmail(userInfo.email(), userInfo.name(), pdfBytes, ticket.getId(), eventTitle);
+            
+            log.info("Ticket email sent to {} for ticket {}", userInfo.email(), ticket.getId());
+        } catch (Exception e) {
+            // Не бросаем исключение — бронирование уже подтверждено
+            log.error("Failed to send email for ticket {}: {}", ticket.getId(), e.getMessage(), e);
+        }
+    }
+
 
     /**
      * Ручная отмена блокировки.
@@ -148,6 +186,7 @@ public class BookingService {
             ticketRepository.save(ticket);
 
             seatService.evictSeatsCache(ticket.getEventId());
+            seatService.pushSeatsUpdate(ticket.getEventId());
             log.info("CANCELLED lock on ticket {} by user {}", ticketId, userId);
         } catch (PessimisticLockingFailureException e) {
             log.debug("Conflict on cancel ticket {} — seat is currently being processed", ticketId);

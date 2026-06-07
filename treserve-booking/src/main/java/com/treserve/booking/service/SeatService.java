@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 /**
  * Сервис карты мест с Redis кэшем.
@@ -30,7 +31,7 @@ public class SeatService {
 
     private final TicketRepository ticketRepository;
     private final EventLookup eventLookup;
-
+    private final SimpMessagingTemplate messagingTemplate;
     /**
      * Получить карту мест для ивента.
      * Кэшируется в Redis с TTL 10 сек (настроено в RedisCacheConfig).
@@ -65,5 +66,17 @@ public class SeatService {
     @CacheEvict(value = "seats", key = "#eventId")
     public void evictSeatsCache(Long eventId) {
         log.debug("Cache EVICT for seats:{}", eventId);
+    }
+
+    @CacheEvict(value = "seats", key = "#eventId", beforeInvocation = true)
+    public void pushSeatsUpdate(Long eventId) {
+        List<SeatInfo> seats = getSeats(eventId);
+
+        messagingTemplate.convertAndSend(
+            "/topic/seats." + eventId,
+            seats
+        );
+
+        log.info("WS push seats update for event {}: {}", eventId, seats);
     }
 }

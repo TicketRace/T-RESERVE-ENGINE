@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import com.treserve.booking.entity.Ticket;
 import com.treserve.booking.entity.TicketStatus;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -76,6 +77,18 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     boolean existsByEventIdAndStatus(Long eventId, TicketStatus status);
 
     /**
+     * Получить количество проданных билетов по мероприятию
+     */
+    @Query("SELECT COUNT(t) FROM Ticket t WHERE t.eventId = :eventId AND t.status = :status")
+    long countByEventIdAndStatus(@Param("eventId") Long eventId, @Param("status") TicketStatus status);
+
+    /**
+     * Получить общую выручку по мероприятию (сумма цен BOOKED билетов)
+     */
+    @Query("SELECT COALESCE(SUM(t.price), 0) FROM Ticket t WHERE t.eventId = :eventId AND t.status = :status")
+    BigDecimal sumPriceByEventIdAndStatus(@Param("eventId") Long eventId, @Param("status") TicketStatus status);
+
+    /**
      * Safety net: просроченные LOCKED билеты.
      * event_id доступен напрямую — JOIN FETCH больше не нужен.
      */
@@ -88,6 +101,9 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     /** Билеты юзера по статусу */
     List<Ticket> findByUserIdAndStatus(Long userId, TicketStatus status);
+
+    @Query("SELECT e.title FROM Event e WHERE e.id = :eventId")
+    String findEventTitleByEventId(@Param("eventId") Long eventId);
 
     /**
      * Билеты пользователя с деталями ивента и места (native SQL JOIN).
