@@ -1,0 +1,1315 @@
+{
+  "info": {
+    "_postman_id": "150bc70f-df30-46d2-b82b-37c70ac2e147",
+    "name": "T-RESERVE ENGINE API Tests",
+    "description": "Postman коллекция для ручного и smoke-тестирования T-RESERVE ENGINE.\n\nКак запускать:\n1. Поднять проект: `docker compose up`.\n2. Импортировать эту коллекцию.\n3. Запустить папки по порядку: Auth -> Public Events -> Booking -> User Profile -> Admin -> Negative Cases.\n\nSeed credentials:\n- USER: `user@treserve.com` / `user123`\n- ADMIN: `admin@treserve.com` / `admin123`\n\nВажные переменные сохраняются автоматически: `accessToken`, `refreshToken`, `adminAccessToken`, `eventId`, `seatId`, `lockId`, `createdEventId`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 System",
+      "description": "Health-check и OpenAPI endpoints.",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/actuator/health",
+            "description": "Проверяет, что приложение отвечает."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.test('Application is UP', () => pm.expect(data.status).to.eql('UP'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "OpenAPI JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api-docs",
+            "description": "SpringDoc OpenAPI JSON."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.test('OpenAPI document', () => pm.expect(data).to.have.property('openapi'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 Auth",
+      "description": "Регистрация, логин, refresh token.",
+      "item": [
+        {
+          "name": "Register random USER",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "description": "Создаёт нового пользователя с уникальным email и сохраняет его токены в collection variables.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{newUserEmail}}\",\n  \"password\": \"password123\",\n  \"name\": \"Postman User\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const email = `postman_${Date.now()}_${Math.floor(Math.random() * 10000)}@test.com`;",
+                  "pm.collectionVariables.set('newUserEmail', email);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200/201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const data = pm.response.json();",
+                  "pm.test('Auth response contains tokens and user', () => {",
+                  "  pm.expect(data).to.have.property('token');",
+                  "  pm.expect(data).to.have.property('refreshToken');",
+                  "  pm.expect(data).to.have.property('user');",
+                  "  pm.expect(data.user).to.have.property('role');",
+                  "});",
+                  "pm.collectionVariables.set('accessToken', data.token);",
+                  "pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "pm.collectionVariables.set('userId', String(data.user.id));",
+                  "pm.collectionVariables.set('userRole', data.user.role);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login seed USER",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Логин seed-пользователя. Перезаписывает `accessToken` и `refreshToken`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200/201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const data = pm.response.json();",
+                  "pm.test('Auth response contains tokens and user', () => {",
+                  "  pm.expect(data).to.have.property('token');",
+                  "  pm.expect(data).to.have.property('refreshToken');",
+                  "  pm.expect(data).to.have.property('user');",
+                  "  pm.expect(data.user).to.have.property('role');",
+                  "});",
+                  "pm.collectionVariables.set('accessToken', data.token);",
+                  "pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "pm.collectionVariables.set('userId', String(data.user.id));",
+                  "pm.collectionVariables.set('userRole', data.user.role);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh USER token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh",
+            "description": "Обновляет USER access token через refresh token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200/201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const data = pm.response.json();",
+                  "pm.test('Auth response contains tokens and user', () => {",
+                  "  pm.expect(data).to.have.property('token');",
+                  "  pm.expect(data).to.have.property('refreshToken');",
+                  "  pm.expect(data).to.have.property('user');",
+                  "  pm.expect(data.user).to.have.property('role');",
+                  "});",
+                  "pm.collectionVariables.set('accessToken', data.token);",
+                  "pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "pm.collectionVariables.set('userId', String(data.user.id));",
+                  "pm.collectionVariables.set('userRole', data.user.role);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login seed ADMIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Логин seed-админа. Сохраняет `adminAccessToken` и `adminRefreshToken`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.test('Admin auth response contains tokens', () => {",
+                  "  pm.expect(data).to.have.property('token');",
+                  "  pm.expect(data).to.have.property('refreshToken');",
+                  "  pm.expect(data.user.role).to.eql('ADMIN');",
+                  "});",
+                  "pm.collectionVariables.set('adminAccessToken', data.token);",
+                  "pm.collectionVariables.set('adminRefreshToken', data.refreshToken);",
+                  "pm.collectionVariables.set('adminId', String(data.user.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid login should return 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Негативная проверка логина с неверным паролем. В текущей реализации AuthService выбрасывает IllegalArgumentException, GlobalExceptionHandler возвращает 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"wrong-password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "const data = pm.response.json();",
+                  "pm.test('Error body contains status', () => pm.expect(data.status).to.eql(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Public Events",
+      "description": "Публичные endpoints мероприятий и карты мест.",
+      "item": [
+        {
+          "name": "List events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/events?page=0&size=20",
+            "description": "Получает список активных мероприятий и сохраняет первый `eventId`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.test('Paged response contains content', () => pm.expect(data).to.have.property('content'));",
+                  "if (Array.isArray(data.content) && data.content.length > 0) {",
+                  "  pm.collectionVariables.set('eventId', String(data.content[0].id));",
+                  "  pm.collectionVariables.set('eventTitle', data.content[0].title);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search events by category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/events?category=CINEMA&page=0&size=10",
+            "description": "Фильтр публичного каталога по категории."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.test('Content is array', () => pm.expect(data.content).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search events by text",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/events?search=Inter&page=0&size=10",
+            "description": "Поиск мероприятий по тексту в названии."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.test('Content is array', () => pm.expect(data.content).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get event by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/events/{{eventId}}",
+            "description": "Получает детали мероприятия, включая venue."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.test('Event has id and venue', () => { pm.expect(data.id).to.exist; pm.expect(data.venue).to.exist; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get event seats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/events/{{eventId}}/seats",
+            "description": "Получает карту мест и сохраняет первое/второе AVAILABLE место в `seatId` и `cancelSeatId`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const seats = pm.response.json();",
+                  "pm.test('Seats response is array', () => pm.expect(seats).to.be.an('array'));",
+                  "const available = seats.filter(s => s.status === 'AVAILABLE');",
+                  "pm.test('There is at least one available seat', () => pm.expect(available.length).to.be.above(0));",
+                  "if (available[0]) pm.collectionVariables.set('seatId', String(available[0].seatId));",
+                  "if (available[1]) pm.collectionVariables.set('cancelSeatId', String(available[1].seatId));",
+                  "else if (available[0]) pm.collectionVariables.set('cancelSeatId', String(available[0].seatId));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Booking Flow",
+      "description": "Основной пользовательский flow: lock -> confirm, плюс cancel.",
+      "item": [
+        {
+          "name": "Lock available seat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/bookings/lock",
+            "description": "Блокирует выбранное место. Требует `accessToken`, `eventId`, `seatId`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": {{eventId}},\n  \"seatId\": {{seatId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.test('Lock response contains lockId and expiresAt', () => { pm.expect(data.lockId).to.exist; pm.expect(data.expiresAt).to.exist; });",
+                  "pm.collectionVariables.set('lockId', String(data.lockId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirm booking",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/bookings/{{lockId}}/confirm",
+            "description": "Подтверждает лок/бронирование. После этого ticket переходит в BOOKED.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Body says booking confirmed', () => pm.expect(pm.response.text()).to.include('Booking confirmed'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get seats after confirm",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/events/{{eventId}}/seats",
+            "description": "Проверяет, что подтверждённое место стало BOOKED, и выбирает новое AVAILABLE место для cancel-flow."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const seats = pm.response.json();",
+                  "const booked = seats.find(s => String(s.seatId) === pm.collectionVariables.get('seatId'));",
+                  "if (booked) pm.test('Confirmed seat is BOOKED', () => pm.expect(booked.status).to.eql('BOOKED'));",
+                  "const available = seats.filter(s => s.status === 'AVAILABLE');",
+                  "pm.test('There is another available seat for cancel flow', () => pm.expect(available.length).to.be.above(0));",
+                  "if (available[0]) pm.collectionVariables.set('cancelSeatId', String(available[0].seatId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lock seat for cancel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/bookings/lock",
+            "description": "Создаёт отдельный LOCKED ticket для проверки ручной отмены.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": {{eventId}},\n  \"seatId\": {{cancelSeatId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.test('Cancel lock response contains lockId', () => pm.expect(data.lockId).to.exist);",
+                  "pm.collectionVariables.set('cancelLockId', String(data.lockId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel lock",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/bookings/{{cancelLockId}}",
+            "description": "Отменяет LOCKED ticket и возвращает место в AVAILABLE.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Try lock already BOOKED seat should return 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/bookings/lock",
+            "description": "Пытается повторно заблокировать уже подтверждённое место. Ожидается конфликт.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": {{eventId}},\n  \"seatId\": {{seatId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));",
+                  "const data = pm.response.json();",
+                  "pm.test('Conflict body contains error', () => pm.expect(data).to.have.property('error'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lock without auth should return 401",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/bookings/lock",
+            "description": "Защищённый endpoint без Bearer token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": {{eventId}},\n  \"seatId\": {{cancelSeatId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 User Profile",
+      "description": "Профиль и история бронирований пользователя.",
+      "item": [
+        {
+          "name": "Get my profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/users/me",
+            "description": "Получает профиль текущего USER.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.test('Profile contains USER role', () => pm.expect(data.role).to.eql('USER'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get my bookings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/users/me/bookings",
+            "description": "История LOCKED + BOOKED билетов пользователя.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.test('Bookings response is array', () => pm.expect(data).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get my profile without auth should return 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/users/me",
+            "description": "Проверка отсутствия авторизации."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 Admin",
+      "description": "ADMIN endpoints. Перед запуском выполнить `Login seed ADMIN`.",
+      "item": [
+        {
+          "name": "Admin dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/dashboard",
+            "description": "Возвращает mock-статистику dashboard.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.test('Dashboard has counters', () => { pm.expect(data).to.have.property('totalEvents'); pm.expect(data).to.have.property('totalBookings'); pm.expect(data).to.have.property('revenue'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin list events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/events",
+            "description": "Список всех мероприятий для админ-панели.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.test('Response is array', () => pm.expect(data).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin list venues",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/venues",
+            "description": "Список площадок. Endpoint защищён через @PreAuthorize ADMIN.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.test('Response is array', () => pm.expect(data).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin create event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/events",
+            "description": "Создаёт тестовое мероприятие на seed venueId=1. ID сохраняется в `createdEventId`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman Test Event\",\n  \"description\": \"Created from Postman collection\",\n  \"venueId\": 1,\n  \"startTime\": \"{{adminEventStartTime}}\",\n  \"basePrice\": 777.0,\n  \"imageUrl\": \"https://example.com/postman-test.jpg\",\n  \"ageRestriction\": \"12+\",\n  \"category\": \"CONCERT\",\n  \"durationMinutes\": 90\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const start = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();",
+                  "pm.collectionVariables.set('adminEventStartTime', start);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const data = pm.response.json();",
+                  "pm.test('Created event has id', () => pm.expect(data.id).to.exist);",
+                  "pm.collectionVariables.set('createdEventId', String(data.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin update created event",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/events/{{createdEventId}}",
+            "description": "Обновляет созданное Postman-мероприятие.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman Test Event Updated\",\n  \"description\": \"Updated from Postman collection\",\n  \"status\": \"ACTIVE\",\n  \"startTime\": \"{{adminEventStartTime}}\",\n  \"basePrice\": 888.0,\n  \"imageUrl\": \"https://example.com/postman-test-updated.jpg\",\n  \"ageRestriction\": \"16+\",\n  \"category\": \"THEATER\",\n  \"durationMinutes\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.test('Title was updated', () => pm.expect(data.title).to.eql('Postman Test Event Updated'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin delete created event",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/events/{{createdEventId}}",
+            "description": "Удаляет созданное Postman-мероприятие. Должно пройти, потому что BOOKED билетов нет.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER cannot access admin dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/dashboard",
+            "description": "Негативная проверка ролей: USER получает 403.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 Negative / Validation Cases",
+      "description": "Ошибки валидации, 404, 409, role checks.",
+      "item": [
+        {
+          "name": "Register invalid email/password should return 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "description": "Проверка bean validation.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"not-an-email\",\n  \"password\": \"123\",\n  \"name\": \"Bad User\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "const data = pm.response.json();",
+                  "pm.test('Validation error body', () => { pm.expect(data.status).to.eql(400); pm.expect(data.error).to.exist; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh with access token should return 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh",
+            "description": "Проверяет, что /refresh принимает только refresh token, а не access token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{accessToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "const data = pm.response.json();",
+                  "pm.test('Invalid token type error', () => pm.expect(data.error).to.include('Invalid token type'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get non-existing event should return 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/events/999999999",
+            "description": "Проверка ResourceNotFoundException."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "const data = pm.response.json();",
+                  "pm.test('Not found body contains error', () => pm.expect(data).to.have.property('error'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirm without auth should return 401",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/bookings/{{lockId}}/confirm",
+            "description": "Подтверждение брони без токена."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create admin event as USER should return 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/events",
+            "description": "Проверка доступа USER к admin endpoint.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Forbidden Event\",\n  \"description\": \"Should not be created\",\n  \"venueId\": 1,\n  \"startTime\": \"{{adminEventStartTime}}\",\n  \"basePrice\": 100.0,\n  \"category\": \"CONCERT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "userEmail",
+      "value": "user@treserve.com",
+      "type": "string"
+    },
+    {
+      "key": "userPassword",
+      "value": "user123",
+      "type": "string"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@treserve.com",
+      "type": "string"
+    },
+    {
+      "key": "adminPassword",
+      "value": "admin123",
+      "type": "string"
+    },
+    {
+      "key": "eventId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "seatId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "lockId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cancelSeatId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cancelLockId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "createdEventId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "newUserEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminEventStartTime",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.variables.get('baseUrl')) {",
+          "  pm.collectionVariables.set('baseUrl', 'http://localhost:8080');",
+          "}"
+        ]
+      }
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-﻿<div class="seat-zone">
+<div class="seat-zone">
   <div class="screen">сцена</div>
     <div class="seat-row" *ngFor="let row of groupedSeats | keyvalue: sortRows">
 
@@ -6,32 +6,33 @@
         {{ row.key }}
       </div>
 
-    <div class="row-scale" >
-      <div class="row-seats">
-        <button
-          *ngFor="let seat of row.value"
-          class="seat-tile"
-          type="button"
+    <div class="row-seats">
+      <button
+        *ngFor="let seat of row.value"
+        class="seat-tile"
+        type="button"
 
-          [title]="
-              seat.status === 'BOOKED'
+        [title]="
+          seat.status === 'AVAILABLE'
+              ? 'Место доступно'
+              : seat.status === 'BOOKED'
                 ? 'Место куплено'
                 : seat.status === 'LOCKED'
                   ? 'Место временно забронировано'
                   : ''
-            "
-            
-          [class.available]="seat.status === 'AVAILABLE'"
-          [class.locked]="seat.status === 'LOCKED'"
-          [class.booked]="seat.status === 'BOOKED'"
-          [class.selected]="selectedSeatId === seat.seatId"
-          [disabled]="seat.status !== 'AVAILABLE'"
-          (click)="onSeatClick(seat)"
-        >
-          {{ seat.seatNumber }}
-        </button>
+          "
+          
+        [class.available]="seat.status === 'AVAILABLE'"
+        [class.locked]="seat.status === 'LOCKED'"
+        [class.booked]="seat.status === 'BOOKED'"
+        [class.selected]="selectedSeatId === seat.seatId"
+        [attr.aria-label]="'Место ' + seat.seatLabel"
+        [disabled]="seat.status !== 'AVAILABLE'"
+        (click)="onSeatClick(seat)"
+      >
+        {{ seat.seatNumber }}
+      </button>
 
-      </div>
     </div>
   </div>
 </div>

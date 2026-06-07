@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EventCardComponent } from '../../components/event-card/event-card.component';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-events',
@@ -19,7 +20,7 @@ export class EventsComponent implements OnInit {
   loading = true;
   search = '';
   notification: string | null = null;
-  
+  private apiUrl = environment.apiUrl;
 
   constructor(
     private readonly http: HttpClient,
@@ -56,7 +57,7 @@ export class EventsComponent implements OnInit {
   }
 
   private fetchEvents(): void {
-    this.http.get<any>('http://localhost:8080/api/events?page=0&size=20')
+    this.http.get<any>(`${this.apiUrl}/api/events?page=0&size=20`)
       .subscribe({
       next: (res) => {
         this.events = res.content;

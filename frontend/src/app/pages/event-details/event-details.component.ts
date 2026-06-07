@@ -1,8 +1,9 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EventItem, EventSession } from '../../models/event';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-event-details',
@@ -14,6 +15,7 @@ import { HttpClient } from '@angular/common/http';
 export class EventDetailsComponent implements OnInit {
   event: EventItem | null = null;
   sessions: EventSession[] = [];
+  private apiUrl = environment.apiUrl;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -28,7 +30,7 @@ export class EventDetailsComponent implements OnInit {
       return;
     }
     
-    this.http.get<EventItem>(`http://localhost:8080/api/events/${id}`)
+    this.http.get<EventItem>(`${this.apiUrl}/api/events/${id}`)
   .subscribe(event => {
     this.event = event;
 
@@ -36,8 +38,8 @@ export class EventDetailsComponent implements OnInit {
       {
         id: 1,
         eventId: event.id,
-        price: 800,
-        startsAt: '2026-05-12T19:00:00'
+        price: event.basePrice,
+        startsAt: event.startTime,
       }
     ];
   });

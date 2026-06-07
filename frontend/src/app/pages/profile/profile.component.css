@@ -42,10 +42,39 @@
   color: var(--muted-600);
 }
 
+.event-date {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #202025;
+  white-space:  normal;
+}
+
+.ticket-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  width: 100%;
+}
+
+.ticket-header h2 {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
 @media (max-width: 760px) {
   .profile-head,
   .ticket-card {
     flex-direction: column;
     align-items: flex-start;
+    justify-content: flex-start;
   }
 }

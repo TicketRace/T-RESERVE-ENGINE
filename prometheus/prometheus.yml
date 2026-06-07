@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 5s       # собираем метрики каждые 5 секунд
+  evaluation_interval: 5s
+
+scrape_configs:
+  # ─── App Instance 1 ───────────────────────────────────
+  - job_name: treserve-app-1
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: [ 'app-1:8080' ]
+        labels:
+          instance: app-1
+
+  # ─── App Instance 2 ───────────────────────────────────
+  - job_name: treserve-app-2
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: [ 'app-2:8080' ]
+        labels:
+          instance: app-2

@@ -17,11 +17,26 @@ replay_pid*.log
 !package.json
 !package-lock.json
 !api-docs.json
+!frontend/angular.json
+!grafana/**/*.json
+!frontend/tsconfig.json
+!frontend/tsconfig.app.json
+!frontend/tsconfig.spec.json
 
 # OS
 .DS_Store
 Thumbs.db
 
+# k6 результаты (генерируются автоматически)
+load-tests/results/*.json
+load-tests/results/summary.json
+
 # Internal notes (not for git)
 notes/
 node_modules/
+
+# Local dev config (secrets, OAuth2 credentials — never commit)
+**/application-local.yml
+.env
+run-backend.ps1
+frontend/test-alisa-connection.js
