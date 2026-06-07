@@ -89,7 +89,7 @@ jobs:
           if-no-files-found: ignore
 
   frontend-real-e2e:
-    if: github.event_name == 'workflow_dispatch' || contains(fromJSON('["develop", "main", "feat/e2e-tests"]'), github.ref_name) || github.head_ref == 'feat/e2e-tests'
+    if: github.event_name == 'workflow_dispatch' || contains(fromJSON('["develop", "main", "feat/e2e-tests"]'), github.ref_name) || contains(fromJSON('["develop", "feat/e2e-tests"]'), github.head_ref)
     runs-on: ubuntu-latest
     needs: integration-tests
 
