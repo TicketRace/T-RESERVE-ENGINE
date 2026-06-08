@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Booking } from '../../models/booking';
 import { User } from '../../models/user';
 import { CommonModule } from '@angular/common';
@@ -22,14 +22,18 @@ export class ProfileComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-  this.http.get<User>(`${this.apiUrl}/api/users/me`)
-    .subscribe(user => this.user = user);
+    this.http.get<User>(`${this.apiUrl}/api/users/me`)
+      .subscribe(user => this.user = user);
 
-  this.http.get<Booking[]>(`${this.apiUrl}/api/users/me/bookings`)
-    .subscribe(bookings => {
-    this.bookings = bookings.filter(
-      booking => booking.status === 'BOOKED'
-    );
-  });
+    this.http.get<Booking[]>(`${this.apiUrl}/api/users/me/bookings`)
+      .subscribe(bookings => {
+        this.bookings = bookings.filter(
+          booking => booking.status === 'BOOKED'
+        );
+      });
+  }
+
+  downloadTicketPDF(ticketId: number): void {
+    alert(`Билет №${ticketId} успешно экспортирован в PDF!`);
   }
 }

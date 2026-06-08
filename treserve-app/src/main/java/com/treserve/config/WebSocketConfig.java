@@ -24,14 +24,18 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // RabbitMQ STOMP relay — сообщения доходят до ВСЕХ инстансов
         config.enableStompBrokerRelay("/topic")
                 .setRelayHost(rabbitmqHost)
-                .setRelayPort(rabbitmqStompPort);
+                .setRelayPort(rabbitmqStompPort)
+                .setClientLogin("guest")
+                .setClientPasscode("guest")
+                .setSystemLogin("guest")
+                .setSystemPasscode("guest");
         config.setApplicationDestinationPrefixes("/app");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-            .setAllowedOriginPatterns("*")
-            .withSockJS();
+                .setAllowedOriginPatterns("*")
+                .withSockJS();
     }
 }

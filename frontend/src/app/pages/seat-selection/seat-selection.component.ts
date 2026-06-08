@@ -1,5 +1,5 @@
-﻿import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, interval, switchMap, takeUntil } from 'rxjs';
 import { EventItem } from '../../models/event';
 import { Seat } from '../../models/seat';
@@ -7,12 +7,13 @@ import { CommonModule } from '@angular/common';
 import { SeatMapComponent } from '../../components/seat-map/seat-map.component';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../../services/auth.service';
 import { WebSocketService } from '../../services/websocket.service';
 
 @Component({
   selector: 'app-seat-selection',
   standalone: true,
-  imports: [CommonModule, SeatMapComponent],
+  imports: [CommonModule, SeatMapComponent, RouterLink],
   templateUrl: './seat-selection.component.html',
   styleUrl: './seat-selection.component.css',
 })
@@ -52,6 +53,7 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly http: HttpClient,
+    private readonly authService: AuthService,
     private readonly ws: WebSocketService
   ) {}
 
@@ -82,8 +84,8 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
       console.log('WS UPDATE:', seats);
       this.seats = seats;
       this.updateGroupedSeats();
-   });
- }
+    });
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -95,14 +97,34 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
     this.selectedSeat = seat;
   }
 
+  get isLoggedIn(): boolean {
+    return this.authService.isLoggedIn();
+  }
+
   proceed(): void {
     if (!this.selectedSeat) return;
 
-    this.router.navigate(['/payment', this.event?.id], {
-      state: {
+    if (this.isLoggedIn) {
+      this.router.navigate(['/payment', this.event?.id], {
+        state: {
+          selectedSeat: this.selectedSeat,
+          event: this.event,
+        },
+      });
+    } else {
+      // Save pending seat selection before login redirect
+      sessionStorage.setItem('pending_seat_selection', JSON.stringify({
         selectedSeat: this.selectedSeat,
         event: this.event,
-      },
-    });
+      }));
+
+      this.router.navigate(['/login'], {
+        queryParams: { 
+          returnUrl: `/payment/${this.event?.id}`,
+          message: 'Для продолжения бронирования и покупки билетов, пожалуйста, авторизуйтесь.'
+        }
+      });
+    }
   }
+  
 }

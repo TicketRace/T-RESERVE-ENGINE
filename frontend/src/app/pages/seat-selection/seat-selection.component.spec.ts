@@ -1,18 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SeatSelectionComponent } from './seat-selection.component';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { HttpClient } from '@angular/common/http';
 import { Seat } from '../../models/seat';
-import { HttpTestingController } from '@angular/common/http/testing';
 import { WebSocketService } from '../../services/websocket.service';
 
 describe('SeatSelectionComponent', () => {
   let component: SeatSelectionComponent;
   let fixture: ComponentFixture<SeatSelectionComponent>;
   let router: jasmine.SpyObj<Router>;
+  let wsSpy: jasmine.SpyObj<WebSocketService>;
   let httpMock: HttpTestingController;
-  let wsSpy: jasmine.SpyObj<any>;
 
   const mockSeats: Seat[] = [
     {
@@ -47,6 +46,7 @@ describe('SeatSelectionComponent', () => {
         HttpClientTestingModule,
       ],
       providers: [
+        HttpClient,
         {
           provide: ActivatedRoute,
           useValue: {
@@ -175,5 +175,23 @@ describe('SeatSelectionComponent', () => {
 
     expect(component.seats.length).toBe(2);
     expect(component.groupedSeats['A'][0].seatNumber).toBe(1);
+  });
+
+  //destroy
+  it('should complete destroy$ on destroy', () => {
+    const nextSpy = spyOn(
+      (component as any).destroy$,
+      'next'
+    );
+
+    const completeSpy = spyOn(
+      (component as any).destroy$,
+      'complete'
+    );
+
+    component.ngOnDestroy();
+
+    expect(nextSpy).toHaveBeenCalled();
+    expect(completeSpy).toHaveBeenCalled();
   });
 });

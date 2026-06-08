@@ -13,7 +13,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './payment.component.css',
 })
 export class PaymentComponent implements OnInit, OnDestroy {
-  event: any | null = null;
+  session: EventSession | null = null;
   selectedSeat: Seat | null = null;
 
   lockId: number | null = null;
@@ -36,14 +36,29 @@ export class PaymentComponent implements OnInit, OnDestroy {
 
     const state = history.state as {
       selectedSeat?: Seat;
-      event?: any;
+      session?: EventSession;
     };
 
     this.selectedSeat = state?.selectedSeat ?? null;
-    this.event = state?.event ?? null;
+    this.session = (state?.session ?? (state as any)?.event) ?? null;
+
+    // Restore pending seat selection if we were redirected from the login page
+    if (!this.selectedSeat) {
+      const saved = sessionStorage.getItem('pending_seat_selection');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          this.selectedSeat = parsed.selectedSeat;
+          this.session = parsed.event || parsed.session;
+          sessionStorage.removeItem('pending_seat_selection');
+        } catch (e) {
+          console.error('Failed to parse pending seat selection', e);
+        }
+      }
+    }
 
     if (!this.selectedSeat) {
-      this.router.navigate(['/events']);
+      this.router.navigate(['/']);
       return;
     }
 
@@ -80,7 +95,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
 
           if (err.status === 409) {
             this.errorMessage = 'Место уже занято';
-            setTimeout(() => this.router.navigate(['/events']), 2000);
+            setTimeout(() => this.router.navigate(['/']), 2000);
           } else {
             this.errorMessage = 'Ошибка бронирования';
           }
@@ -99,7 +114,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
         clearInterval(this.timerInterval);
         sessionStorage.removeItem(this.LOCK_KEY);
 
-        this.router.navigate(['/events'], {
+        this.router.navigate(['/'], {
           state: { message: 'Время бронирования истекло' },
         });
         return;
@@ -118,19 +133,14 @@ export class PaymentComponent implements OnInit, OnDestroy {
   }
 
   payFree(): void {
-    if (!this.lockId || this.isLoading) return;
-    
-    this.isLoading = true;
-    this.errorMessage = null;
+    if (!this.lockId) return;
 
     this.bookingService.confirmBooking(this.lockId).subscribe({
       next: () => {
-        this.isLoading = false;
         sessionStorage.removeItem(this.LOCK_KEY);
         this.router.navigate(['/payment-success']);
       },
       error: () => {
-        this.isLoading = false;
         this.errorMessage = 'Ошибка оплаты';
       },
     });
@@ -148,7 +158,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
     window.history.back();
 
     this.router.navigate(
-      ['/events', this.event?.id, 'seats'],
+      ['/event', this.session?.id],
       { state: { reloadSeats: true } }
     );
   }

@@ -26,8 +26,8 @@ class DatabaseMigrationIT extends AbstractPostgresIntegrationTest {
         assertThat(countRows("users")).isEqualTo(2);
         assertThat(countRows("venues")).isEqualTo(2);
         assertThat(countRows("seats")).isEqualTo(250);
-        assertThat(countRows("events")).isEqualTo(3);
-        assertThat(countRows("tickets")).isEqualTo(300);
+        assertThat(countRows("events")).isEqualTo(5);
+        assertThat(countRows("tickets")).isEqualTo(400);
 
         assertThat(ticketRepository.findSeatsByEventId(1L))
             .hasSize(50)

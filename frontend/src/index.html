@@ -2,18 +2,22 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
+  <script>window.global = window;</script>
   <title>T-Reserve Frontend</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Angular mock frontend for ticket booking flows">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body ontouchstart="">
   <script>
-    if (typeof global === 'undefined') {
-      window.global = window;
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light-theme');
     }
   </script>
-</head>
-<body>
   <app-root></app-root>
 </body>
 </html>
