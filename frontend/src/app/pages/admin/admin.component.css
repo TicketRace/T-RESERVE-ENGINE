@@ -1,3 +1,8 @@
+.admin-page {
+  padding-top: 120px;
+  padding-bottom: 60px;
+}
+
 .admin-top {
   display: flex;
   justify-content: space-between;
@@ -39,21 +44,34 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  padding: 1rem;
+  padding: 1.5rem;
   border-radius: 16px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(234, 247, 54, 0.3);
+  transform: translateY(-2px);
 }
 
 .event-main h2 {
   margin: 0;
   font-size: clamp(1.4rem, 2.2vw, 2rem);
+  color: #ffffff;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .event-main span {
   display: block;
-  margin-top: 0.3rem;
-  opacity: 0.7;
+  margin-top: 0.4rem;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 1rem;
+  font-weight: 500;
 }
 
 .admin-actions {
@@ -62,32 +80,34 @@
 }
 
 .icon-btn {
-  width: 42px;
-  height: 42px;
+  width: 46px;
+  height: 46px;
   border-radius: 12px;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
   cursor: pointer;
-  font-size: 1.2rem;
   display: grid;
   place-items: center;
-  transition: 0.2s;
+  transition: all 0.2s ease;
 }
 
 .icon-btn.edit:hover {
-  background: #eff596;
-  color: #fff;
+  background: rgba(234, 247, 54, 0.15);
+  border-color: rgba(234, 247, 54, 0.4);
+  color: #eaf736;
   transform: scale(1.05);
 }
 
 .icon-btn.delete:hover {
-  background: #ff3b3b;
-  color: #fff;
+  background: rgba(255, 59, 59, 0.15);
+  border-color: rgba(255, 59, 59, 0.4);
+  color: #ff3b3b;
   transform: scale(1.05);
 }
 
 .icon-btn:hover {
   transform: scale(1.05);
-  opacity: 0.9;
 }
 
 @media (max-width: 960px) {
@@ -100,4 +120,42 @@
     width: 100%;
     justify-content: flex-end;
   }
+}
+
+/* Light Theme Overrides */
+:host-context(body.light-theme) .admin-row {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+:host-context(body.light-theme) .admin-row:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+:host-context(body.light-theme) .event-main h2 {
+  color: var(--ink-900);
+}
+
+:host-context(body.light-theme) .event-main span {
+  color: var(--muted-600);
+}
+
+:host-context(body.light-theme) .icon-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: var(--ink-700);
+}
+
+:host-context(body.light-theme) .icon-btn.edit:hover {
+  background: rgba(188, 160, 92, 0.15); /* warm gold tint */
+  border-color: rgba(188, 160, 92, 0.4);
+  color: var(--lime-400); /* gold */
+}
+
+:host-context(body.light-theme) .icon-btn.delete:hover {
+  background: rgba(255, 59, 59, 0.15);
+  border-color: rgba(255, 59, 59, 0.4);
+  color: #ff3b3b;
 }

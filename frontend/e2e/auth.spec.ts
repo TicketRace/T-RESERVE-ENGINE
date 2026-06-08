@@ -10,10 +10,9 @@ test.describe('authentication', () => {
     await page.getByPlaceholder('Пароль').fill('secret123');
     await page.getByRole('button', { name: 'Войти', exact: true }).click();
 
-    await expect(page).toHaveURL(/\/events$/);
+    await expect(page).toHaveURL(/\/$/);
     await expect(page.getByText('Анна Каренина')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Личный кабинет' })).toBeVisible();
-    await expect(page.getByText('Тестовый пользователь')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Account' })).toBeVisible();
     expect(api.loginRequests).toEqual([{ email: 'user@test.com', password: 'secret123' }]);
   });
 

@@ -1,29 +1,76 @@
-﻿<section class="shell profile-page">
-  <div class="profile-head">
-    <h1>Ваши билеты</h1>
+<section class="shell profile-page animate-fade-in" *ngIf="user">
+  <div class="profile-header-card">
+    <div class="user-profile-details">
+      <img [src]="'https://api.dicebear.com/8.x/notionists/svg?seed=' + user.email + '&backgroundColor=cfa856,4ce6c6'" alt="Avatar" class="user-avatar-large">
+      <div class="user-meta">
+        <h1>Личный кабинет</h1>
+        <p class="user-email">📧 {{ user.email }}</p>
+      </div>
+    </div>
   </div>
 
-  <div class="ticket-list" *ngIf="bookings.length; else emptyState">
-    <article class="ticket-card" *ngFor="let booking of bookings">
-      <div class="ticket-info">
-        <div class="ticket-header">
-          <h2>{{ booking.eventTitle }}</h2>
+  <div class="tickets-section">
+    <h2>Мои билеты</h2>
 
-          <div class="event-date">
-            {{ booking.eventStartTime | date:'d MMM HH:mm' }}
+    <div *ngIf="bookings.length === 0" class="empty-state">
+      <span class="empty-icon">🎟️</span>
+      <h3>У вас пока нет купленных билетов</h3>
+      <p>Купленные билеты на события будут отображаться здесь.</p>
+      <button class="action-chip explore-btn" routerLink="/">Найти события</button>
+    </div>
+
+    <div class="tickets-grid" *ngIf="bookings.length > 0">
+      <div class="ticket-card" *ngFor="let booking of bookings">
+        <!-- Main ticket portion -->
+        <div class="ticket-main">
+          <div class="ticket-event-info">
+            <span class="ticket-tag">АКТИВНЫЙ БИЛЕТ</span>
+            <h3>{{ booking.eventTitle }}</h3>
+            <div class="ticket-details-grid">
+              <div class="ticket-detail">
+                <span class="td-label">Дата сеанса</span>
+                <span class="td-val">{{ booking.eventStartTime | date:'d MMMM yyyy, HH:mm' }}</span>
+              </div>
+              <div class="ticket-detail">
+                <span class="td-label">Место</span>
+                <span class="td-val font-highlight">{{ booking.seatLabel }}</span>
+              </div>
+              <div class="ticket-detail">
+                <span class="td-label">Номер заказа</span>
+                <span class="td-val font-mono">#TR-{{ booking.ticketId }}</span>
+              </div>
+              <div class="ticket-detail">
+                <span class="td-label">Цена</span>
+                <span class="td-val font-highlight">{{ booking.price }} ₽</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <p>
-          Дата покупки:
-          {{ booking.bookedAt | date:'d MMMM HH:mm' }}
-        </p>
-      </div>
-      <button class="action-chip" type="button">Посмотреть билет</button>
-    </article>
-  </div>
+        <!-- Perforated separator -->
+        <div class="ticket-separator">
+          <div class="cutout top"></div>
+          <div class="perforated-line"></div>
+          <div class="cutout bottom"></div>
+        </div>
 
-  <ng-template #emptyState>
-    <div class="empty-box">Пока билетов нет.</div>
-  </ng-template>
+        <!-- Ticket tab portion -->
+        <div class="ticket-tab">
+          <div class="qr-container">
+            <div class="simulated-qr">
+              <div class="qr-corner top-left"></div>
+              <div class="qr-corner top-right"></div>
+              <div class="qr-corner bottom-left"></div>
+              <div class="qr-center-dot"></div>
+            </div>
+            <span class="qr-label">Сканировать на входе</span>
+          </div>
+          
+          <button class="download-pdf-btn" (click)="downloadTicketPDF(booking.ticketId)">
+            Скачать PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>

@@ -1,4 +1,4 @@
-﻿import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, HostListener } from '@angular/core';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { Subject, filter, takeUntil } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
@@ -15,6 +15,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
   isLoggedIn = false;
   isAdmin = false;
   userName = '';
+  isLightTheme = false;
+  
+  // Scroll & glassy backdrop states
+  private lastScrollY = 0;
+  isHidden = false;
+  isScrolledOrSubpage = false;
+  
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -23,10 +30,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // Detect theme class on body
+    this.isLightTheme = document.body.classList.contains('light-theme');
+
     this.authService.currentUser$.pipe(takeUntil(this.destroy$)).subscribe((user) => {
       this.isLoggedIn = Boolean(user);
       this.isAdmin = user?.role === 'ADMIN';
-      this.userName = user?.name ?? '';
+      this.userName = user?.email ? user.email.split('@')[0] : (user?.name || '');
     });
 
     this.router.events
@@ -34,7 +44,51 @@ export class NavbarComponent implements OnInit, OnDestroy {
         filter((event) => event instanceof NavigationEnd),
         takeUntil(this.destroy$),
       )
-      .subscribe();
+      .subscribe(() => {
+        this.isHidden = false;
+        const currentScrollY = window.scrollY;
+        const isRootPage = this.router.url === '/' || this.router.url === '';
+        this.isScrolledOrSubpage = !isRootPage || currentScrollY > 80;
+      });
+
+    // Initial check
+    const currentScrollY = window.scrollY;
+    const isRootPage = this.router.url === '/' || this.router.url === '';
+    this.isScrolledOrSubpage = !isRootPage || currentScrollY > 80;
+  }
+
+  @HostListener('window:scroll', [])
+  onWindowScroll(): void {
+    const currentScrollY = window.scrollY;
+    
+    // Hide navbar if scrolling down past 100px threshold
+    if (currentScrollY > this.lastScrollY && currentScrollY > 100) {
+      this.isHidden = true;
+    } else if (currentScrollY < this.lastScrollY || currentScrollY <= 50) {
+      // Show navbar if scrolling up or near the top
+      this.isHidden = false;
+    }
+    
+    this.lastScrollY = currentScrollY;
+    
+    // Glassy background ONLY on subpages OR when scrolled past the top on the root page
+    const isRootPage = this.router.url === '/' || this.router.url === '';
+    this.isScrolledOrSubpage = !isRootPage || currentScrollY > 80;
+  }
+
+  toggleTheme(): void {
+    this.isLightTheme = !this.isLightTheme;
+    if (this.isLightTheme) {
+      document.body.classList.add('light-theme');
+      localStorage.setItem('theme', 'light');
+    } else {
+      document.body.classList.remove('light-theme');
+      localStorage.setItem('theme', 'dark');
+    }
+  }
+
+  goLogin(): void {
+    this.router.navigate(['/login']);
   }
 
   ngOnDestroy(): void {
@@ -50,10 +104,25 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.isAdmin = false;
     this.userName = '';
 
-    this.router.navigate(['/login']);
+    this.router.navigate(['/']);
+  }
+
+  goHome(): void {
+    if (this.router.url === '/') {
+      const el = document.getElementById('events-catalog');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } else {
+      this.router.navigate(['/']);
+    }
   }
 
   goProfile(): void {
-    this.router.navigate(['/profile']);
+    if (this.isAdmin) {
+      this.router.navigate(['/admin']);
+    } else {
+      this.router.navigate(['/profile']);
+    }
   }
 }
