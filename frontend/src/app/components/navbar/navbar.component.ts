@@ -47,13 +47,15 @@ export class NavbarComponent implements OnInit, OnDestroy {
       .subscribe(() => {
         this.isHidden = false;
         const currentScrollY = window.scrollY;
-        const isRootPage = this.router.url === '/' || this.router.url === '';
+        const basePath = this.router.url.split(/[?#]/)[0];
+        const isRootPage = basePath === '/' || basePath === '';
         this.isScrolledOrSubpage = !isRootPage || currentScrollY > 80;
       });
 
     // Initial check
     const currentScrollY = window.scrollY;
-    const isRootPage = this.router.url === '/' || this.router.url === '';
+    const basePath = this.router.url.split(/[?#]/)[0];
+    const isRootPage = basePath === '/' || basePath === '';
     this.isScrolledOrSubpage = !isRootPage || currentScrollY > 80;
   }
 
@@ -72,7 +74,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.lastScrollY = currentScrollY;
     
     // Glassy background ONLY on subpages OR when scrolled past the top on the root page
-    const isRootPage = this.router.url === '/' || this.router.url === '';
+    const basePath = this.router.url.split(/[?#]/)[0];
+    const isRootPage = basePath === '/' || basePath === '';
     this.isScrolledOrSubpage = !isRootPage || currentScrollY > 80;
   }
 
