@@ -53,7 +53,7 @@ test.describe('real full-stack booking flow', () => {
       await page.getByRole('link', { name: 'Перейти в личный кабинет' }).click();
       await expect(page).toHaveURL(/\/profile$/);
       await expect(page.getByText(event.title)).toBeVisible({ timeout: 15_000 });
-      await expect(page.getByText(/Дата покупки:/)).toBeVisible();
+      await expect(page.getByText(/Номер заказа/)).toBeVisible();
     } finally {
       // After confirmation the public admin API intentionally rejects deleting events with BOOKED tickets.
       // The CI job runs this suite against a disposable Docker volume and removes it with `docker compose down -v`.
