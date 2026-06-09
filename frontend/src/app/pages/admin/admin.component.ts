@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AdminEventSummary } from '../../models/event';
 import { User } from '../../models/user';
 import { AuthService } from '../../services/auth.service';
@@ -9,7 +9,7 @@ import { environment } from '../../../environments/environment';
 import { FormsModule } from '@angular/forms';
 import { AdminCheckInService } from '../../services/admin-checkin.service';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import {CheckInResponse} from '../../models/models/checkInResponse';
+import {CheckInResponse} from '../../models/checkInResponse';
 
 @Component({
   selector: 'app-admin',
@@ -137,6 +137,8 @@ export class AdminComponent implements OnInit {
     }, 300);
   }
 
+  lastScannedToken: string | null = null;
+
   onScanSuccess(decodedText: string) {
     let token = decodedText.trim();
 
@@ -150,6 +152,10 @@ export class AdminComponent implements OnInit {
       token = parsed.token ?? token;
     } catch {}
 
+    // Предотвращение двойного сканирования одного и того же QR кода.
+    if (this.lastScannedToken === token) return;
+    this.lastScannedToken = token;
+
     this.checkinService.checkInByToken(token).subscribe({
       next: (res) => {
         this.checkInResult = res;
@@ -159,7 +165,6 @@ export class AdminComponent implements OnInit {
         this.showNotification(
             err.error?.message || 'Ошибка сканирования'
           );
-        this.closeScanner();
       }
     });
   }
@@ -168,6 +173,7 @@ export class AdminComponent implements OnInit {
     this.scanner?.clear();
     this.scanner = null;
     this.showScanner = false;
+    this.lastScannedToken = null;
   }
 
   ngOnDestroy() {

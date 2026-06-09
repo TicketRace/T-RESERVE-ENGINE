@@ -1,11 +1,11 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Booking } from '../../models/booking';
 import { User } from '../../models/user';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { TicketService } from '../../services/ticket.service';
-import { TicketPublicResponse } from '../../models/models/ticket-public-response';
+import { TicketPublicResponse } from '../../models/ticket-public-response';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
