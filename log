@@ -1,0 +1,210 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] T-RESERVE ENGINE (parent)                                          [pom]
+[INFO] T-RESERVE Common                                                   [jar]
+[INFO] T-RESERVE Booking                                                  [jar]
+[INFO] T-RESERVE Application                                              [jar]
+[INFO] 
+[INFO] -------------------< com.treserve:t-reserve-engine >--------------------
+[INFO] Building T-RESERVE ENGINE (parent) 0.1.0-SNAPSHOT                  [1/4]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ t-reserve-engine ---
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ t-reserve-engine ---
+[INFO] argLine set to -javaagent:/home/k0taka/.m2/repository/org/jacoco/org.jacoco.agent/0.8.12/org.jacoco.agent-0.8.12-runtime.jar=destfile=/home/k0taka/Documents/T-RESERVE-ENGINE/target/jacoco.exec
+[INFO] 
+[INFO] --- jacoco:0.8.12:report (report) @ t-reserve-engine ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO] 
+[INFO] --------------------< com.treserve:treserve-common >--------------------
+[INFO] Building T-RESERVE Common 0.1.0-SNAPSHOT                           [2/4]
+[INFO]   from treserve-common/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ treserve-common ---
+[INFO] Deleting /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-common/target
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ treserve-common ---
+[INFO] argLine set to -javaagent:/home/k0taka/.m2/repository/org/jacoco/org.jacoco.agent/0.8.12/org.jacoco.agent-0.8.12-runtime.jar=destfile=/home/k0taka/Documents/T-RESERVE-ENGINE/treserve-common/target/jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ treserve-common ---
+[INFO] skip non existing resourceDirectory /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-common/src/main/resources
+[INFO] skip non existing resourceDirectory /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-common/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ treserve-common ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 5 source files with javac [debug release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ treserve-common ---
+[INFO] skip non existing resourceDirectory /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-common/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ treserve-common ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ treserve-common ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ treserve-common ---
+[INFO] Building jar: /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-common/target/treserve-common-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- jacoco:0.8.12:report (report) @ treserve-common ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO] 
+[INFO] -------------------< com.treserve:treserve-booking >--------------------
+[INFO] Building T-RESERVE Booking 0.1.0-SNAPSHOT                          [3/4]
+[INFO]   from treserve-booking/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ treserve-booking ---
+[INFO] Deleting /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-booking/target
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ treserve-booking ---
+[INFO] argLine set to -javaagent:/home/k0taka/.m2/repository/org/jacoco/org.jacoco.agent/0.8.12/org.jacoco.agent-0.8.12-runtime.jar=destfile=/home/k0taka/Documents/T-RESERVE-ENGINE/treserve-booking/target/jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ treserve-booking ---
+[INFO] skip non existing resourceDirectory /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-booking/src/main/resources
+[INFO] skip non existing resourceDirectory /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-booking/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ treserve-booking ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 19 source files with javac [debug release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ treserve-booking ---
+[INFO] skip non existing resourceDirectory /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-booking/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ treserve-booking ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 3 source files with javac [debug release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ treserve-booking ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.treserve.booking.service.SeatServiceTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.348 s -- in com.treserve.booking.service.SeatServiceTest
+[INFO] Running com.treserve.booking.service.SafetyNetSchedulerTest
+18:14:21.177 [main] INFO com.treserve.booking.service.SafetyNetScheduler -- SafetyNet: released 3 expired locks
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.103 s -- in com.treserve.booking.service.SafetyNetSchedulerTest
+[INFO] Running com.treserve.booking.service.TicketAdminServiceTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in com.treserve.booking.service.TicketAdminServiceTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ treserve-booking ---
+[INFO] Building jar: /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-booking/target/treserve-booking-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- jacoco:0.8.12:report (report) @ treserve-booking ---
+[INFO] Loading execution data file /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-booking/target/jacoco.exec
+[INFO] Analyzed bundle 'T-RESERVE Booking' with 13 classes
+[INFO] 
+[INFO] ---------------------< com.treserve:treserve-app >----------------------
+[INFO] Building T-RESERVE Application 0.1.0-SNAPSHOT                      [4/4]
+[INFO]   from treserve-app/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ treserve-app ---
+[INFO] Deleting /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-app/target
+[INFO] 
+[INFO] --- jacoco:0.8.12:prepare-agent (default) @ treserve-app ---
+[INFO] argLine set to -javaagent:/home/k0taka/.m2/repository/org/jacoco/org.jacoco.agent/0.8.12/org.jacoco.agent-0.8.12-runtime.jar=destfile=/home/k0taka/Documents/T-RESERVE-ENGINE/treserve-app/target/jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ treserve-app ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 9 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ treserve-app ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 63 source files with javac [debug release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ treserve-app ---
+[INFO] skip non existing resourceDirectory /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-app/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ treserve-app ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 16 source files with javac [debug release 21] to target/test-classes
+[INFO] /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-app/src/test/java/com/treserve/support/AbstractPostgresIntegrationTest.java: /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-app/src/test/java/com/treserve/support/AbstractPostgresIntegrationTest.java uses or overrides a deprecated API.
+[INFO] /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-app/src/test/java/com/treserve/support/AbstractPostgresIntegrationTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ treserve-app ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.treserve.ticket.service.PublicTicketServiceTest
+18:14:28.913 [main] INFO com.treserve.ticket.service.PublicTicketService -- Public access to ticket 100 via token 22222222-2222-2222-2222-222222222222
+18:14:29.097 [main] INFO com.treserve.ticket.service.PublicTicketService -- Public access to ticket 100 via token 22222222-2222-2222-2222-222222222222
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.478 s -- in com.treserve.ticket.service.PublicTicketServiceTest
+[INFO] Running com.treserve.ticket.service.TicketDownloadServiceTest
+18:14:29.282 [main] INFO com.treserve.ticket.service.TicketDownloadService -- Generating PDF for ticket 10
+18:14:29.287 [main] INFO com.treserve.ticket.service.TicketDownloadService -- Another thread already saved PDF for ticket 10
+18:14:29.323 [main] INFO com.treserve.ticket.service.TicketDownloadService -- PDF already exists for ticket 10, downloading from storage
+18:14:29.324 [main] ERROR com.treserve.ticket.service.TicketDownloadService -- Failed to download PDF from storage, will regenerate: Failed to download PDF from storage
+18:14:29.324 [main] INFO com.treserve.ticket.service.TicketDownloadService -- Generating PDF for ticket 10
+18:14:29.346 [main] INFO com.treserve.ticket.service.TicketDownloadService -- PDF already exists for ticket 10, downloading from storage
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.198 s -- in com.treserve.ticket.service.TicketDownloadServiceTest
+[INFO] Running com.treserve.auth.service.JwtServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.899 s -- in com.treserve.auth.service.JwtServiceTest
+[INFO] Running com.treserve.auth.service.AuthServiceTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.350 s -- in com.treserve.auth.service.AuthServiceTest
+[INFO] Running com.treserve.admin.service.AdminCheckInServiceTest
+18:14:30.624 [main] INFO com.treserve.admin.service.AdminCheckInService -- Ticket 100 checked in successfully
+18:14:30.638 [main] INFO com.treserve.admin.service.AdminCheckInService -- Ticket 100 checked in successfully
+18:14:30.646 [main] WARN com.treserve.admin.service.AdminCheckInService -- Ticket 100 already used
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in com.treserve.admin.service.AdminCheckInServiceTest
+[INFO] Running com.treserve.admin.AdminServiceTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.381 s -- in com.treserve.admin.AdminServiceTest
+[INFO] Running com.treserve.booking.BookingServiceTest
+18:14:31.215 [main] INFO com.treserve.booking.service.BookingService -- CANCELLED lock on ticket 10 by user 1
+18:14:31.238 [main] INFO com.treserve.booking.service.BookingService -- BOOKED ticket 10 for user 1
+18:14:31.238 [main] INFO com.treserve.booking.service.BookingService -- === USING UPDATED VERSION WITH PDF DISABLED ===
+18:14:31.238 [main] WARN com.treserve.booking.service.BookingService -- User 1 not found, cannot send email for ticket 10
+18:14:31.281 [main] INFO com.treserve.booking.service.BookingService -- BOOKED ticket 10 for user 1
+18:14:31.281 [main] INFO com.treserve.booking.service.BookingService -- === USING UPDATED VERSION WITH PDF DISABLED ===
+18:14:31.281 [main] WARN com.treserve.booking.service.BookingService -- User 1 not found, cannot send email for ticket 10
+18:14:31.286 [main] INFO com.treserve.booking.service.BookingService -- LOCKED seat 1 for event 1 by user 1 (expires 2026-06-09T13:24:31.286510223Z)
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.246 s -- in com.treserve.booking.BookingServiceTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 52, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ treserve-app ---
+[INFO] Building jar: /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-app/target/treserve-app-0.1.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- spring-boot:3.3.5:repackage (repackage) @ treserve-app ---
+[INFO] Replacing main artifact /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-app/target/treserve-app-0.1.0-SNAPSHOT.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-app/target/treserve-app-0.1.0-SNAPSHOT.jar.original
+[INFO] 
+[INFO] --- failsafe:3.2.5:integration-test (default) @ treserve-app ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jacoco:0.8.12:report (report) @ treserve-app ---
+[INFO] Loading execution data file /home/k0taka/Documents/T-RESERVE-ENGINE/treserve-app/target/jacoco.exec
+[INFO] Analyzed bundle 'T-RESERVE Application' with 67 classes
+[INFO] 
+[INFO] --- failsafe:3.2.5:verify (default) @ treserve-app ---
+[INFO] Tests are skipped.
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for T-RESERVE ENGINE (parent) 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] T-RESERVE ENGINE (parent) .......................... SUCCESS [  0.246 s]
+[INFO] T-RESERVE Common ................................... SUCCESS [  1.653 s]
+[INFO] T-RESERVE Booking .................................. SUCCESS [  6.661 s]
+[INFO] T-RESERVE Application .............................. SUCCESS [ 10.850 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  19.744 s
+[INFO] Finished at: 2026-06-09T18:14:32+05:00
+[INFO] ------------------------------------------------------------------------

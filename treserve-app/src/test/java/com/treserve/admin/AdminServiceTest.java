@@ -1,9 +1,12 @@
 package com.treserve.admin;
 
+import com.treserve.admin.dto.DashboardResponse;
+import com.treserve.admin.dto.EventStatisticsResponse;
 import com.treserve.admin.dto.mapper.AdminMapper;
 import com.treserve.admin.service.AdminService;
 import com.treserve.booking.service.BookingService;
 import com.treserve.booking.service.TicketAdminService;
+import com.treserve.booking.repository.TicketRepository;
 import com.treserve.common.exception.BusinessConflictException;
 import com.treserve.common.exception.ResourceNotFoundException;
 import com.treserve.event.entity.Event;
@@ -63,6 +66,9 @@ class AdminServiceTest {
 
     @Mock
     private AdminMapper adminMapper;
+
+    @Mock
+    private TicketRepository ticketRepository;
 
     @InjectMocks
     private AdminService adminService;
@@ -394,4 +400,85 @@ class AdminServiceTest {
         verify(ticketAdminService, never()).deleteTicketsForEvent(anyLong());
         verify(eventRepository, never()).deleteById(any());
     }
+
+    // ==================== getDashboard ====================
+
+    @Test
+    @DisplayName("getDashboard: считает агрегаты и округляет процент продаж до 1 знака")
+    void getDashboard_countsEventAndOverallStatistics() {
+        Venue venue = Venue.builder()
+                .id(10L)
+                .name("Зал статистики")
+                .rowsCount(2)
+                .colsCount(5)
+                .build();
+        Event event = Event.builder()
+                .id(77L)
+                .title("Отчётный концерт")
+                .description("Продажи")
+                .venue(venue)
+                .startTime(NOW.plusSeconds(3600))
+                .basePrice(BigDecimal.valueOf(1000))
+                .build();
+        when(eventRepository.findByCreatedById(1L)).thenReturn(List.of(event));
+        when(ticketRepository.countByEventIdAndStatus(77L, com.treserve.booking.entity.TicketStatus.BOOKED)).thenReturn(3L);
+        when(ticketRepository.countByEventIdAndStatus(77L, com.treserve.booking.entity.TicketStatus.USED)).thenReturn(2L);
+        when(seatRepository.countByVenueId(10L)).thenReturn(8L);
+        when(ticketRepository.sumPriceByEventIdAndStatus(77L, com.treserve.booking.entity.TicketStatus.BOOKED))
+                .thenReturn(new BigDecimal("3000.00"));
+
+        DashboardResponse dashboard = adminService.getDashboard(1L);
+
+        assertThat(dashboard.getTotalEvents()).isEqualTo(1);
+        assertThat(dashboard.getTotalSoldTickets()).isEqualTo(3);
+        assertThat(dashboard.getTotalUsedTickets()).isEqualTo(2);
+        assertThat(dashboard.getTotalRevenue()).isEqualByComparingTo("3000.00");
+        assertThat(dashboard.getOverallSellThroughRate()).isEqualTo(62.5);
+        assertThat(dashboard.getEvents()).hasSize(1);
+        EventStatisticsResponse stats = dashboard.getEvents().get(0);
+        assertThat(stats.getEventId()).isEqualTo(77L);
+        assertThat(stats.getTotalSeats()).isEqualTo(8);
+        assertThat(stats.getSoldCount()).isEqualTo(3);
+        assertThat(stats.getUsedCount()).isEqualTo(2);
+        assertThat(stats.getAvailableCount()).isEqualTo(3);
+        assertThat(stats.getTotalRevenue()).isEqualByComparingTo("3000.00");
+        assertThat(stats.getSellThroughRate()).isEqualTo(62.5);
+    }
+
+    @Test
+    @DisplayName("getDashboard: null revenue и zero seats безопасно дают 0")
+    void getDashboard_whenRevenueIsNullAndNoSeats_usesZeroes() {
+        Venue venue = Venue.builder()
+                .id(11L)
+                .name("Пустой зал")
+                .rowsCount(0)
+                .colsCount(0)
+                .build();
+        Event event = Event.builder()
+                .id(88L)
+                .title("Без мест")
+                .description("Нет продаж")
+                .venue(venue)
+                .startTime(NOW.plusSeconds(3600))
+                .basePrice(BigDecimal.ZERO)
+                .build();
+        when(eventRepository.findByCreatedById(1L)).thenReturn(List.of(event));
+        when(ticketRepository.countByEventIdAndStatus(88L, com.treserve.booking.entity.TicketStatus.BOOKED)).thenReturn(0L);
+        when(ticketRepository.countByEventIdAndStatus(88L, com.treserve.booking.entity.TicketStatus.USED)).thenReturn(0L);
+        when(seatRepository.countByVenueId(11L)).thenReturn(0L);
+        when(ticketRepository.sumPriceByEventIdAndStatus(88L, com.treserve.booking.entity.TicketStatus.BOOKED))
+                .thenReturn(null);
+
+        DashboardResponse dashboard = adminService.getDashboard(1L);
+
+        assertThat(dashboard.getTotalRevenue()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(dashboard.getOverallSellThroughRate()).isZero();
+        assertThat(dashboard.getEvents()).singleElement()
+                .satisfies(stats -> {
+                    assertThat(stats.getTotalRevenue()).isEqualByComparingTo(BigDecimal.ZERO);
+                    assertThat(stats.getSellThroughRate()).isZero();
+                    assertThat(stats.getAvailableCount()).isZero();
+                });
+    }
+
 }

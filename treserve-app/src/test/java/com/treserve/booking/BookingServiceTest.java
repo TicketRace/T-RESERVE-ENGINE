@@ -24,6 +24,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -113,6 +114,21 @@ class BookingServiceTest {
         verify(seatService).evictSeatsCache(EVENT_ID);
     }
 
+
+
+    @Test
+    @DisplayName("tryLock: неизвестный пользователь → ResourceNotFoundException без транзакции")
+    void tryLock_userNotFound() {
+        when(userLookup.existsById(USER_ID)).thenReturn(false);
+
+        assertThatThrownBy(() -> bookingService.tryLock(EVENT_ID, SEAT_ID, USER_ID))
+                .isInstanceOf(ResourceNotFoundException.class);
+
+        verify(transactionTemplate, never()).execute(any());
+        verify(ticketRepository, never()).findAvailableForUpdate(any(), any(), any());
+        verify(seatService, never()).evictSeatsCache(any());
+    }
+
     @Test
     @DisplayName("tryLock: место не AVAILABLE (уже занято) → SeatAlreadyLockedException")
     void tryLock_alreadyLocked() {
@@ -157,9 +173,27 @@ class BookingServiceTest {
         assertThat(lockedTicket.getStatus()).isEqualTo(TicketStatus.BOOKED);
         assertThat(lockedTicket.getLockExpiresAt()).isNull();
         assertThat(lockedTicket.getBookedAt()).isNotNull();
+        assertThat(lockedTicket.getVerifyToken()).isNotNull();
         assertThat(lockedTicket.getUserId()).isEqualTo(USER_ID);
         verify(ticketRepository).save(lockedTicket);
         verify(seatService).evictSeatsCache(EVENT_ID);
+    }
+
+
+
+    @Test
+    @DisplayName("confirm: существующий verifyToken не перегенерируется")
+    void confirm_keepsExistingVerifyToken() {
+        UUID existingToken = UUID.fromString("33333333-3333-3333-3333-333333333333");
+        lockedTicket.setVerifyToken(existingToken);
+        when(ticketRepository.findByIdForUpdate(TICKET_ID))
+                .thenReturn(Optional.of(lockedTicket));
+        when(ticketRepository.save(any())).thenReturn(lockedTicket);
+
+        bookingService.confirm(TICKET_ID, USER_ID);
+
+        assertThat(lockedTicket.getVerifyToken()).isEqualTo(existingToken);
+        verify(ticketRepository).save(lockedTicket);
     }
 
     @Test
@@ -279,4 +313,18 @@ class BookingServiceTest {
         verify(ticketRepository, never()).save(any());
         verify(seatService, never()).evictSeatsCache(any());
     }
+
+    // ─── hasBookedTickets ─────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("hasBookedTickets: делегирует проверку BOOKED билетов в репозиторий")
+    void hasBookedTickets_delegatesBookedStatusCheck() {
+        when(ticketRepository.existsByEventIdAndStatus(EVENT_ID, TicketStatus.BOOKED)).thenReturn(true);
+
+        boolean result = bookingService.hasBookedTickets(EVENT_ID);
+
+        assertThat(result).isTrue();
+        verify(ticketRepository).existsByEventIdAndStatus(EVENT_ID, TicketStatus.BOOKED);
+    }
+
 }
