@@ -1,0 +1,65 @@
+<app-hero (explore)="scrollToEvents()"></app-hero>
+
+<div class="shell main-content" id="events-catalog">
+  <div *ngIf="notification" class="notification">
+    {{ notification }}
+  </div>
+
+  <div class="section-header animate-fade-in">
+    <h2>Ближайшие события</h2>
+    <p class="section-subtitle">Выбирайте лучшие шоу, концерты и спектакли с интерактивным бронированием мест.</p>
+  </div>
+
+  <!-- Categories Filter & Search -->
+  <div class="filters-row animate-fade-in">
+    <div class="categories-container">
+      <div class="category-chip" 
+           [class.active]="selectedCategory === ''" 
+           (click)="selectCategory('')">
+        Все события
+      </div>
+      <div class="category-chip" 
+           [class.active]="selectedCategory === 'Спектакль'" 
+           (click)="selectCategory('Спектакль')">
+        Спектакли
+      </div>
+      <div class="category-chip" 
+           [class.active]="selectedCategory === 'Концерт'" 
+           (click)="selectCategory('Концерт')">
+        Концерты
+      </div>
+    </div>
+
+    <div class="search-box">
+      <input [(ngModel)]="search" type="text" placeholder="Поиск по названию или площадке..." (input)="onSearch()" />
+    </div>
+  </div>
+
+  <!-- Events Grid / Skeletons -->
+  <div class="grid-list animate-fade-in" *ngIf="!loading; else loadingState">
+    <app-event-card
+      *ngFor="let event of filteredEvents; trackBy: trackEventId"
+      [event]="event"
+      (open)="openEvent($event)"
+    ></app-event-card>
+    
+    <div class="no-results" *ngIf="filteredEvents.length === 0">
+      <div class="no-results-icon">🎟️</div>
+      <h3>Ничего не найдено</h3>
+      <p>Попробуйте изменить поисковый запрос или выбрать другую категорию</p>
+    </div>
+  </div>
+</div>
+
+<ng-template #loadingState>
+  <div class="grid-list">
+    <div class="skeleton-card" *ngFor="let i of [1,2,3,4,5,6]">
+      <div class="skeleton skeleton-img"></div>
+      <div class="skeleton-copy">
+        <div class="skeleton skeleton-line short"></div>
+        <div class="skeleton skeleton-line"></div>
+        <div class="skeleton skeleton-line medium"></div>
+      </div>
+    </div>
+  </div>
+</ng-template>

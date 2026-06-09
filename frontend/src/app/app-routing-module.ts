@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { EventsComponent } from './pages/events/events.component';
+import { HomeComponent } from './pages/home/home.component';
 import { EventDetailsComponent } from './pages/event-details/event-details.component';
 import { SeatSelectionComponent } from './pages/seat-selection/seat-selection.component';
 import { PaymentComponent } from './pages/payment/payment.component';
@@ -10,22 +10,20 @@ import { AdminCreateEventComponent } from './pages/admin-create-event/admin-crea
 import { AdminVenueBuilderComponent } from './pages/admin-venue-builder/admin-venue-builder.component';
 import { AuthComponent } from './pages/auth/auth.component';
 import { OAuth2CallbackComponent } from './pages/oauth2-callback/oauth2-callback.component';
+import { authGuard } from './services/auth.guard';
 
 export const routes: Routes = [
-  {path: '', redirectTo: 'login', pathMatch: 'full'},
-  { path: 'events', component: EventsComponent },
+  { path: '', component: HomeComponent },
   { path: 'event/:id', component: EventDetailsComponent },
   { path: 'event/:id/session/:sessionId/seats', component: SeatSelectionComponent },
-  { path: 'payment/:sessionId', component: PaymentComponent },
-  { path: 'payment-success', component: PaymentSuccessComponent },
-  { path: 'profile', component: ProfileComponent },
+  { path: 'payment/:sessionId', component: PaymentComponent, canActivate: [authGuard] },
+  { path: 'payment-success', component: PaymentSuccessComponent, canActivate: [authGuard] },
+  { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
   { path: 'login', component: AuthComponent },
   { path: 'register', component: AuthComponent },
-  { path: 'admin', component: AdminComponent },
-  { path: 'admin/create', component: AdminCreateEventComponent },
-  //{ path: 'admin/venue-builder', component: AdminVenueBuilderComponent },
-  { path: 'admin/create/:id', component: AdminCreateEventComponent },
-  // OAuth2 callback — сюда редиректит бэкенд после Google авторизации
+  { path: 'admin', component: AdminComponent, canActivate: [authGuard] },
+  { path: 'admin/create', component: AdminCreateEventComponent, canActivate: [authGuard] },
+  { path: 'admin/create/:id', component: AdminCreateEventComponent, canActivate: [authGuard] },
   { path: 'oauth2/callback', component: OAuth2CallbackComponent },
-  { path: '**', redirectTo: 'events' }
-];
+  { path: '**', redirectTo: '' }
+];

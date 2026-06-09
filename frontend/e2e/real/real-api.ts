@@ -126,7 +126,7 @@ export async function loginThroughUi(
   page: Page,
   email: string,
   password: string,
-  expectedPath: RegExp = /\/(events|admin)$/,
+  expectedPath: string | RegExp = '/',
 ): Promise<void> {
   await page.goto('/login');
   await page.getByPlaceholder('Email').fill(email);

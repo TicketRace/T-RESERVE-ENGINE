@@ -5,7 +5,7 @@ test.describe('events catalog', () => {
   test('filters events by the search input', async ({ page }) => {
     await mockApi(page);
 
-    await page.goto('/events');
+    await page.goto('/');
 
     await expect(page.getByText('Анна Каренина')).toBeVisible();
     await expect(page.getByText('Мцыри')).toBeVisible();
@@ -19,15 +19,15 @@ test.describe('events catalog', () => {
   test('opens event details and starts seat selection', async ({ page }) => {
     await mockApi(page);
 
-    await page.goto('/events');
+    await page.goto('/');
     await page.getByText('Анна Каренина').click();
 
     await expect(page).toHaveURL(/\/event\/1$/);
     await expect(page.getByRole('heading', { name: 'Анна Каренина' })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Купить билеты' }).first().click();
+    await page.getByRole('button', { name: 'Выбрать' }).first().click();
 
     await expect(page).toHaveURL(/\/event\/1\/session\/1\/seats$/);
-    await expect(page.getByRole('heading', { name: 'Выберите место' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Выбор мест' })).toBeVisible();
   });
 });

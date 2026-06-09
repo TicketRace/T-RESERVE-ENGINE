@@ -29,8 +29,8 @@ test.describe('real admin flow', () => {
       await page.getByLabel('Название события').fill(title);
       await page.getByLabel('Описание').fill('Проверка полного E2E через реальный backend.');
       await page.getByLabel('Категория').fill('E2E');
-      await page.getByLabel('Возрастное ограничение').fill('12+');
-      await page.getByLabel('Длительность').fill('90');
+      await page.getByLabel('Возраст').fill('12+');
+      await page.getByLabel('Длительность (мин)').fill('90');
       await page.getByLabel('Время проведения').fill(futureDateTimeLocal(45));
 
       const venueSelect = page.getByLabel('Место проведения');
@@ -43,9 +43,9 @@ test.describe('real admin flow', () => {
         .toBeGreaterThan(0);
       await venueSelect.selectOption({ index: 0 });
 
-      await page.getByLabel('Цена билета').fill('777');
+      await page.getByLabel('Цена (₽)').fill('777');
 
-      await page.getByRole('button', { name: 'Сохранить событие' }).click();
+      await page.getByRole('button', { name: 'Сохранить' }).click();
       await expect(page).toHaveURL(/\/admin$/, { timeout: 15_000 });
       await expect(page.getByText(title)).toBeVisible({ timeout: 15_000 });
 

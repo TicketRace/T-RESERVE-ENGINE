@@ -18,32 +18,32 @@ test.describe('real full-stack booking flow', () => {
 
       await loginThroughUi(page, user.email, user.password);
 
-      await page.goto('/events');
+      await page.goto('/');
       await page.getByPlaceholder('Поиск').fill(event.title);
       await expect(page.getByText(event.title)).toBeVisible({ timeout: 15_000 });
 
       await page.getByText(event.title).click();
       await expect(page).toHaveURL(new RegExp(`/event/${event.id}$`));
       await expect(page.getByRole('heading', { name: event.title })).toBeVisible();
-      await expect(page.getByText(/777/)).toBeVisible();
+      await expect(page.getByText(/777/).first()).toBeVisible();
 
-      await page.getByRole('button', { name: 'Купить билеты' }).first().click();
+      await page.getByRole('button', { name: 'Выбрать' }).first().click();
       await expect(page).toHaveURL(new RegExp(`/event/${event.id}/session/.*/seats$`));
-      await expect(page.getByRole('heading', { name: 'Выберите место' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Выбор мест' })).toBeVisible();
 
-      const firstSeat = page.getByRole('button', { name: 'Место A-1', exact: true });
+      const firstSeat = page.getByRole('button', { name: '1', exact: true }).first();
       await expect(firstSeat).toBeEnabled({ timeout: 15_000 });
       await firstSeat.click();
-      await expect(page.getByText(/Выбрано мест:\s*1\. A-1/)).toBeVisible();
+      await expect(page.getByText(/Выбранное место:\s*A-1/)).toBeVisible();
 
-      await page.getByRole('button', { name: 'оплатить' }).click();
+      await page.getByRole('button', { name: 'Перейти к оплате' }).click();
       await expect(page).toHaveURL(new RegExp(`/payment/\\d+$`));
-      await expect(page.getByRole('heading', { name: 'Оплата выбранных билетов' })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Купить бесплатно' })).toBeEnabled({
+      await expect(page.getByRole('heading', { name: 'Ваш заказ' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Подтвердить и оплатить' })).toBeEnabled({
         timeout: 15_000,
       });
 
-      await page.getByRole('button', { name: 'Купить бесплатно' }).click();
+      await page.getByRole('button', { name: 'Подтвердить и оплатить' }).click();
       bookingCompleted = true;
       await expect(page).toHaveURL(/\/payment-success$/);
       await expect(
@@ -53,7 +53,7 @@ test.describe('real full-stack booking flow', () => {
       await page.getByRole('link', { name: 'Перейти в личный кабинет' }).click();
       await expect(page).toHaveURL(/\/profile$/);
       await expect(page.getByText(event.title)).toBeVisible({ timeout: 15_000 });
-      await expect(page.getByText(/Дата покупки:/)).toBeVisible();
+      await expect(page.getByText(/Номер заказа/)).toBeVisible();
     } finally {
       // After confirmation the public admin API intentionally rejects deleting events with BOOKED tickets.
       // The CI job runs this suite against a disposable Docker volume and removes it with `docker compose down -v`.

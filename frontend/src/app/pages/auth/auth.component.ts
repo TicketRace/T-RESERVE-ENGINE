@@ -17,6 +17,7 @@ export class AuthComponent {
   mode: 'login' | 'register' = 'login';
 
   error = '';
+  infoMessage = '';
   hidePassword = true;
 
   constructor(
@@ -38,6 +39,10 @@ export class AuthComponent {
       this.mode = url[0].path === 'register' ? 'register' : 'login';
       this.error = '';
       this.form.reset();
+    });
+
+    this.route.queryParams.subscribe(params => {
+      this.infoMessage = params['message'] || '';
     });
   }
 
@@ -90,7 +95,8 @@ export class AuthComponent {
         if (response.user.role === 'ADMIN') {
           this.router.navigate(['/admin']);
         } else {
-          this.router.navigate(['/events']);
+          const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/';
+          this.router.navigateByUrl(returnUrl);
         }
       },
       error: (err: HttpErrorResponse) => {
@@ -124,7 +130,8 @@ export class AuthComponent {
     this.hidePassword = !this.hidePassword;
   }
 
-  googleLogin(): void {
+  loginWithGoogle(): void {
     this.authService.googleLogin();
   }
+
 }

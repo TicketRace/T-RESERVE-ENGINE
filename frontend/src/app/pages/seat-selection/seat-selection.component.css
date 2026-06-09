@@ -1,53 +1,148 @@
 .seat-page {
-  padding: 1rem 0 3rem;
+  padding: 5rem 0 1rem;
 }
 
-.header-line,
-.seat-page h1,
-.bottom-row p {
-  margin: 0 0 2rem;
-  font-size: clamp(1.8rem, 3vw, 2.5rem);
+.back-link {
+  background: none;
+  border: none;
+  color: var(--ink-700);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.5rem;
+  transition: color 0.2s ease;
 }
 
-.board-card {
+.back-link:hover {
+  color: var(--lime-400);
+}
+
+.header-line {
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  position: relative;
-  padding: 2rem 2rem 3rem;
-  border-radius: 36px;
-  background: rgba(233, 230, 245, 0.8);
-  box-shadow: 0 28px 50px rgba(34, 28, 78, 0.12);
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.header-line h1 {
+  font-family: var(--font-family-body);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ink-900);
+  margin: 0;
+}
+
+.event-mini-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted-600);
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.mini-title {
+  font-weight: 600;
+  color: var(--ink-700);
+}
+
+.mini-divider {
+  opacity: 0.5;
+}
+
+/* Seating Card container */
+.board-card {
+  background: var(--bg-secondary);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow: hidden;
 }
 
-.seat-price {
-  position: static;
-  margin-top: 1.5rem;
-  text-align: center;
-  font-size: 1.2rem;
-}
-
+/* Bottom summary row */
 .bottom-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
-  margin-top: 2rem;
+  background: var(--bg-secondary);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 1rem 1.5rem;
+  border-radius: 20px;
+  margin-top: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  gap: 1.5rem;
+}
+
+.selected-seat-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.details-label {
+  font-size: 0.85rem;
+  color: var(--ink-700);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.details-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ink-900);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.details-value.empty {
+  color: var(--ink-700);
+  font-weight: 500;
+  font-style: italic;
+  font-size: 1.1rem;
+}
+
+.seat-price-chip {
+  font-size: 0.95rem;
+  background: rgba(168, 162, 244, 0.15);
+  color: var(--violet-700);
+  padding: 0.15rem 0.5rem;
+  border-radius: 8px;
+  font-family: var(--font-family-tech);
 }
 
 .pay-button {
-  min-width: 214px;
-  min-height: 48px;
-  border-radius: 18px;
-  background: #a8a2f4;
-  font-size: 2rem;
-  cursor: pointer;
+  min-width: 200px;
+  font-size: 1.1rem;
+  border: none;
 }
 
-@media (max-width: 900px) {
+.pay-button[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+  background: var(--muted-600);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+@media (max-width: 768px) {
+  .seat-page {
+    padding: 6rem 0 5rem;
+  }
   .bottom-row {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    padding: 1.2rem;
+    gap: 1.2rem;
+  }
+  .pay-button {
+    width: 100%;
   }
 }

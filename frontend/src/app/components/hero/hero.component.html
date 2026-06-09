@@ -1,0 +1,92 @@
+<!-- Core Layer: Holds the live high-performance WebGL Raymarching Canvas -->
+<div class="core-container" id="core-layer">
+  <canvas #canvas3d id="core-3d-canvas"></canvas>
+</div>
+
+<!-- UI Layer: Exact replica layout from reference screenshot -->
+<div class="ui-layer" id="ui-layer-main">
+  <!-- Elegant spacer to clear the global sticky HUD navbar -->
+  <div class="hud-header-spacer" style="height: 80px; width: 100%;"></div>
+  
+  <main class="hud-main">
+    <!-- Centered Header Title -->
+    <div class="title-container">
+      <h1 class="main-title">
+        <span class="text-gold">HIGH-LOAD READY: </span> <span class="text-white">ATOMIC BOOKING CORE</span>
+      </h1>
+    </div>
+    
+    <!-- Mobile Nodes Interactive Canvas (Hidden on desktop) -->
+    <canvas #canvasMobile id="mobile-nodes-canvas"></canvas>
+
+    <!-- Right-side panel stack -->
+    <div class="panels-container-right">
+      <!-- Panel 1: Live active session metrics -->
+      <div class="glass-panel" id="panel-live">
+        <div class="panel-header">
+          <h3>LIVE NOW</h3>
+        </div>
+        
+        <div class="panel-content">
+          <!-- Volumetric core waveform visualizer with embedded session counter -->
+          <div class="visualizer-container">
+            <div class="visualizer-core" style="cursor: pointer" (click)="triggerEasterEgg()">
+              <div class="inner-glow"></div>
+              <span class="count-value-embedded" id="val-sessions">{{ activeSessions }}</span>
+            </div>
+            <div class="wave-ring ring-1"></div>
+            <div class="wave-ring ring-2"></div>
+            <div class="wave-ring ring-3"></div>
+            <div class="wave-ring ring-4"></div>
+            <!-- Orbiting quantum micro-particles -->
+            <div class="orbit-path path-1">
+              <div class="orbit-spark spark-1"></div>
+            </div>
+            <div class="orbit-path path-2">
+              <div class="orbit-spark spark-2"></div>
+            </div>
+          </div>
+          
+          <div class="session-counter-bottom">
+            active booking sessions
+          </div>
+        </div>
+      </div>
+      
+      <!-- Panel 2: Live ticket sales & countdown timer -->
+      <div class="glass-panel" id="panel-next">
+        <div class="panel-header">
+          <h3>NEXT EVENT</h3>
+        </div>
+        
+        <div class="panel-content">
+          <div class="movie-title">Movie: <span class="font-500">Avengers: Doomsday</span></div>
+          
+          <div class="countdown-row">
+            <span class="clock-icon">🕒</span>
+            <span class="countdown-value" id="val-countdown">{{ countdownText }}</span>
+            <span class="countdown-label">until start</span>
+          </div>
+          
+          <div class="capacity-bar-container">
+            <div class="capacity-blocks" id="capacity-blocks">
+              <span *ngFor="let i of [1,2,3,4,5,6,7,8,9,10]" 
+                    class="block" 
+                    [class.filled]="i <= filledBlocksCount">
+              </span>
+            </div>
+            <span class="capacity-label" id="val-sold">{{ capacityPercentage }}% sold</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Premium Matte Gold Button nested below the stack -->
+      <div class="button-wrapper">
+        <button class="gold-btn" id="btn-buy-ticket" (click)="buyTicket()" [style.opacity]="isTransmitting ? '0.7' : '1'">
+          {{ btnBuyText }} <span class="arrow" *ngIf="!isTransmitting">→</span>
+        </button>
+      </div>
+    </div>
+  </main>
+
+
