@@ -1,4 +1,7 @@
 <section class="shell admin-page">
+  <div class="notification" *ngIf="notification">
+    {{ notification }}
+  </div>
   <div class="admin-top animate-fade-in">
     <h1>Ваши события</h1>
     <a routerLink="/admin/create" class="action-chip" style="font-size: 1rem; padding: 0.75rem 1.25rem;">
@@ -8,7 +11,14 @@
       </svg>
       Добавить событие
     </a>
-  </div> 
+    <button class="action-chip" (click)="openCheckIn()">
+      Проверка id билета
+    </button>
+
+    <button class="action-chip" (click)="startScanner()">
+      QR Сканер
+    </button>
+  </div>
   <div class="admin-list animate-slide-up">
     <div class="admin-row" *ngFor="let event of events">
       <div class="event-main">
@@ -38,6 +48,42 @@
     <div class="created-card">
       <h3>Событие добавлено</h3>
       <button type="button">Закрыть</button>
+    </div>
+  </div>
+  <div class="created-modal" *ngIf="showCheckIn">
+    <div class="created-card">
+
+      <h2>Check-in</h2>
+
+      <h4>По ID билета</h4>
+      <input type="number" [(ngModel)]="ticketId" placeholder="Ticket ID" />
+      <button (click)="checkInById()">Подтвердить</button>
+
+      <hr />
+
+      <h4>По QR токену</h4>
+      <input type="text" [(ngModel)]="token" placeholder="QR token" />
+      <button (click)="checkInByToken()">Сканировать</button>
+
+      <hr />
+
+      <div *ngIf="checkInMessage" class="checkin-result">
+        <pre>{{ checkInMessage }}</pre>
+      </div>
+
+      <button (click)="closeCheckIn()">Закрыть</button>
+
+    </div>
+  </div>
+  <div class="created-modal" *ngIf="showScanner">
+    <div class="created-card">
+
+      <h2>QR Scanner</h2>
+
+      <div id="qr-reader" style="width: 100%"></div>
+
+      <button (click)="closeScanner()">Закрыть</button>
+
     </div>
   </div>
 </section>

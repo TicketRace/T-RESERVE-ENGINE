@@ -6,11 +6,15 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { FormsModule } from '@angular/forms';
+import { AdminCheckInService } from '../../services/admin-checkin.service';
+import { Html5QrcodeScanner } from 'html5-qrcode';
+import {CheckInResponse} from '../../models/models/checkInResponse';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, RouterLink], 
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.css',
 })
@@ -20,9 +24,20 @@ export class AdminComponent implements OnInit {
   showCreatedModal = false;
   private apiUrl = environment.apiUrl;
 
+  ticketId!: number;
+  token!: string;
+  checkInResult: CheckInResponse | null = null;
+  showCheckIn = false;
+  showScanner = false;
+  scanner: Html5QrcodeScanner | null = null;
+  loading = false;
+  checkInMessage: string | null = null;
+  notification: string | null = null;
+
   constructor(
     private readonly authService: AuthService,
     private readonly http: HttpClient,
+    private readonly checkinService: AdminCheckInService
   ) {}
 
   loadEvents(): void {
@@ -50,5 +65,142 @@ export class AdminComponent implements OnInit {
   ngOnInit(): void {
     this.user = this.authService.snapshot();
     this.loadEvents();
+  }
+
+  openCheckIn() {
+    this.showCheckIn = true;
+  }
+
+  closeCheckIn() {
+    this.showCheckIn = false;
+    this.checkInResult = null;
+    this.checkInMessage = null;
+  }
+
+  checkInById() {
+    this.loading = true;
+
+    this.checkinService.checkInById(this.ticketId).subscribe({
+      next: (res) => {
+        this.checkInResult = res;
+        this.checkInMessage = this.formatCheckInResponse(res);
+        this.loading = false;
+      },
+      error: (err) => {
+        const normalized = this.normalizeError(err);
+
+        this.checkInResult = normalized;
+        this.checkInMessage = this.formatCheckInResponse(normalized);
+        this.loading = false;
+      }
+    });
+  }
+
+  checkInByToken() {
+    this.loading = true;
+
+    this.checkinService.checkInByToken(this.token).subscribe({
+      next: (res) => {
+        this.checkInResult = res;
+        this.checkInMessage = this.formatCheckInResponse(res);
+        this.loading = false;
+      },
+      error: (err) => {
+        this.showNotification(
+          err.error?.message || 'Ошибка сканирования'
+        );
+
+        this.loading = false;
+      }
+    });
+  }
+
+  startScanner() {
+    this.showScanner = true;
+
+    setTimeout(() => {
+      this.scanner = new Html5QrcodeScanner(
+        "qr-reader",
+        {
+          fps: 10,
+          qrbox: 250,
+        },
+        false
+      );
+
+      this.scanner.render(
+        (decodedText) => {
+          this.onScanSuccess(decodedText);
+        },
+        () => {}
+      );
+    }, 300);
+  }
+
+  onScanSuccess(decodedText: string) {
+    let token = decodedText.trim();
+
+    try {
+      const url = new URL(token);
+      token = url.searchParams.get('token') ?? token;
+    } catch {}
+
+    try {
+      const parsed = JSON.parse(token);
+      token = parsed.token ?? token;
+    } catch {}
+
+    this.checkinService.checkInByToken(token).subscribe({
+      next: (res) => {
+        this.checkInResult = res;
+        this.checkInMessage = this.formatCheckInResponse(res);
+      },
+      error: (err) => {
+        this.showNotification(
+            err.error?.message || 'Ошибка сканирования'
+          );
+        this.closeScanner();
+      }
+    });
+  }
+
+  closeScanner() {
+    this.scanner?.clear();
+    this.scanner = null;
+    this.showScanner = false;
+  }
+
+  ngOnDestroy() {
+    this.scanner?.clear();
+  }
+
+  private formatCheckInResponse(res: CheckInResponse): string {
+    if (!res) return 'Нет ответа';
+
+    if (res.status === 'SUCCESS') {
+      return `Успешная проверка\nБилет: ${res.ticketId}\nСообщение: ${res.message}`;
+    }
+
+    if (res.status === 'ALREADY_USED' || res.message?.includes('used')) {
+      return `Билет уже использован\nБилет: ${res.ticketId}`;
+    }
+
+    return `Ошибка: ${res.message ?? 'Неизвестная ошибка'}`;
+  }
+
+  private normalizeError(err: any): CheckInResponse {
+    return {
+      status: err?.error?.status ?? 'ERROR',
+      ticketId: err?.error?.ticketId ?? this.ticketId,
+      message: err?.error?.message ?? 'Ошибка сервера',
+    };
+  }
+
+  showNotification(message: string) {
+    this.notification = message;
+
+    setTimeout(() => {
+      this.notification = null;
+    }, 3000);
   }
 }
