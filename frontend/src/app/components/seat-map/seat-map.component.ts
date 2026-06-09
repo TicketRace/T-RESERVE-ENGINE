@@ -1,4 +1,4 @@
-﻿import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Seat } from '../../models/seat';
 import { CommonModule } from '@angular/common';
 import { KeyValue } from '@angular/common';
@@ -12,7 +12,7 @@ import { KeyValue } from '@angular/common';
 })
 export class SeatMapComponent {
   @Input() groupedSeats: Record<string, Seat[]> = {};
-  @Input() selectedSeatId: number | null = null;
+  @Input() selectedSeatIds: Set<number> = new Set();
   @Output() readonly seatSelected = new EventEmitter<Seat>();
 
   onSeatClick(seat: Seat): void {

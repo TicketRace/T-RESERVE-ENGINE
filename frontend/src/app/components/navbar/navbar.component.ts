@@ -111,13 +111,25 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   goHome(): void {
-    if (this.router.url === '/') {
-      const el = document.getElementById('events-catalog');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    } else {
+    if (this.router.url !== '/') {
       this.router.navigate(['/']);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  goEvents(): void {
+    const basePath = this.router.url.split(/[?#]/)[0];
+    if (basePath === '/' || basePath === '') {
+      const el = document.getElementById('events-catalog');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      this.router.navigate(['/']).then(() => {
+        setTimeout(() => {
+          const el = document.getElementById('events-catalog');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      });
     }
   }
 
