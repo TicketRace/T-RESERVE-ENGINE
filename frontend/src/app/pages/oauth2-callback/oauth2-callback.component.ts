@@ -71,7 +71,7 @@ export class OAuth2CallbackComponent implements OnInit {
         if (user?.role === 'ADMIN') {
           this.router.navigate(['/admin']);
         } else {
-          this.router.navigate(['/events']);
+          this.router.navigate(['/profile']);
         }
       } else {
         this.router.navigate(['/login']);
