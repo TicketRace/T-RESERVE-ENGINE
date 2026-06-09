@@ -16,7 +16,7 @@ test.describe('booking flow', () => {
     await expect(page.getByRole('button', { name: '2', exact: true })).toBeDisabled();
 
     await page.getByRole('button', { name: '1', exact: true }).click();
-    await expect(page.getByText(/Выбранное место:\s*A-1/)).toBeVisible();
+    await expect(page.getByText(/Выбранные места:\s*A-1/)).toBeVisible();
 
     await page.getByRole('button', { name: 'Перейти к оплате' }).click();
 
@@ -44,6 +44,6 @@ test.describe('booking flow', () => {
     await page.getByRole('button', { name: 'Перейти к оплате' }).click();
 
     await expect(page).toHaveURL(/\/payment\/1$/);
-    await expect(page.getByText('Место уже занято')).toBeVisible();
+    await expect(page.getByText('Все выбранные места уже заняты.')).toBeVisible();
   });
 });

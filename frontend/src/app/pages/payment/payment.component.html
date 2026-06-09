@@ -6,22 +6,24 @@
   <div class="payment-layout">
     <div class="order-summary-card">
       <h2>Ваш заказ</h2>
-      <div class="summary-details" *ngIf="selectedSeat">
+      <div class="summary-details" *ngIf="selectedSeats.length > 0">
         <div class="summary-row">
           <span class="sum-label">Событие</span>
           <span class="sum-val">{{ session?.startsAt ? (session?.startsAt | date:'d MMMM, HH:mm') : 'Сеанс' }}</span>
         </div>
         <div class="summary-row">
-          <span class="sum-label">Место</span>
-          <span class="sum-val">{{ selectedSeat.seatLabel }}</span>
+          <span class="sum-label">Места</span>
+          <span class="sum-val">
+            <span *ngFor="let s of selectedSeats; let last = last">{{ s.seatLabel }}<span *ngIf="!last">, </span></span>
+          </span>
         </div>
         <div class="summary-row total">
           <span class="sum-label">Итого к оплате</span>
-          <span class="sum-val highlight">{{ selectedSeat.price }} ₽</span>
+          <span class="sum-val highlight">{{ getTotalPrice() }} ₽</span>
         </div>
       </div>
 
-      <div class="timer-box" *ngIf="lockId">
+      <div class="timer-box" *ngIf="lockedSeats.length > 0 && !showConflictDialog">
         <span class="timer-icon">⏳</span>
         <div class="timer-text">
           <div class="timer-val">{{ expiresLabel }}</div>
@@ -39,19 +41,36 @@
 
       <div *ngIf="isLoading" class="loader-box">
         <div class="spinner"></div>
-        <span>Бронируем место...</span>
+        <span>Бронируем...</span>
       </div>
 
-      <div class="payment-actions-wrapper" *ngIf="!isLoading">
+      <div class="payment-actions-wrapper" *ngIf="!isLoading && !showConflictDialog">
         <p class="pay-hint">Тестовый режим оплаты. Платеж проводится без списания реальных средств.</p>
         <button
           class="action-chip payment-action"
           type="button"
           (click)="payFree()"
-          [disabled]="isLoading || !lockId"
+          [disabled]="isLoading || lockedSeats.length === 0"
         >
           Подтвердить и оплатить
         </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="conflict-overlay animate-fade-in" *ngIf="showConflictDialog">
+    <div class="conflict-dialog">
+      <h3>Ой, некоторые места уже заняты</h3>
+      <p>Кто-то успел забронировать их быстрее:</p>
+      <div class="failed-seats">
+        <span *ngFor="let f of failedSeats" class="failed-seat-chip">{{ f.seatLabel }}</span>
+      </div>
+      <p>Остальные <b>{{ lockedSeats.length }}</b> мест(а) забронированы за вами.</p>
+      <p>Хотите продолжить покупку?</p>
+      
+      <div class="conflict-actions">
+        <button type="button" class="btn-cancel" (click)="cancelPartialBooking()">Нет, отменить всё</button>
+        <button type="button" class="btn-accept" (click)="acceptPartialBooking()">Да, купить оставшиеся</button>
       </div>
     </div>
   </div>
