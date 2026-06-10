@@ -9,9 +9,11 @@
  *   5. Завершение: рампдаун 30 сек
  *
  * Запуск:
- *   Локальный (лёгкий):   k6 run -e LOCAL=true load-tests/k6-load-test.js
- *   Docker-compose (полный): k6 run load-tests/k6-load-test.js
- *   Кастомный URL:        k6 run -e BASE_URL=http://myserver load-tests/k6-load-test.js
+ *   Все тесты (полный режим):   k6 run load-tests/k6-load-test.js
+ *   Только race condition:      k6 run -e SCENARIO=race load-tests/k6-load-test.js
+ *   Только mixed flow:          k6 run -e SCENARIO=mixed load-tests/k6-load-test.js
+ *   Локальный (лёгкий):         k6 run -e LOCAL=true load-tests/k6-load-test.js
+ *   Кастомный URL:              k6 run -e BASE_URL=http://myserver load-tests/k6-load-test.js
  */
 
 import http from 'k6/http';
@@ -19,7 +21,7 @@ import { check, sleep, group } from 'k6';
 import { Counter, Rate, Trend } from 'k6/metrics';
 
 // ─── Конфигурация окружения ────────────────────────────────────────────────────
-const BASE_URL = __ENV.BASE_URL || 'http://localhost';
+const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080';
 const IS_LOCAL = __ENV.LOCAL === 'true';
 // LOCAL=true → лёгкий режим для локальной разработки (1 инстанс, нет Redis)
 // По умолчанию → полная нагрузка для docker-compose стека
@@ -31,34 +33,46 @@ const errorRate    = new Rate('error_rate');
 const lockDuration = new Trend('booking_lock_duration_ms', true);
 
 // ─── Нагрузочные параметры ────────────────────────────────────────────────────
-export const options = IS_LOCAL
-  ? {
-      // Лёгкий режим: 1 инстанс без Redis
-      stages: [
-        { duration: '30s', target: 10 },
-        { duration: '1m',  target: 20 },
-        { duration: '30s', target: 0  },
-      ],
-      thresholds: {
-        'http_req_duration': ['p(99)<3000'],
-        'error_rate':        ['rate<0.05'],
-      },
-    }
-  : {
-      // Полный режим: docker-compose (2 инстанса + Redis + RabbitMQ)
-      stages: [
-        { duration: '30s', target: 50  },
-        { duration: '2m',  target: 50  },
-        { duration: '30s', target: 100 },
-        { duration: '1m',  target: 100 },
-        { duration: '30s', target: 0   },
-      ],
-      thresholds: {
-        'http_req_duration':             ['p(99)<2000'],   // 2s — реалистично для нагрузки
-        'error_rate':                    ['rate<0.02'],    // 2% — с учётом 409 конфликтов
-        'http_req_duration{name:seats}': ['p(95)<1000'],  // 1s для карты мест
-      },
-    };
+const TARGET_SCENARIO = __ENV.SCENARIO || 'all'; // 'all', 'mixed', 'race'
+
+let activeScenarios = {};
+let activeThresholds = {};
+
+if (TARGET_SCENARIO === 'all' || TARGET_SCENARIO === 'mixed') {
+  activeScenarios.mixed_flow = {
+    executor: 'ramping-vus',
+    startVUs: 0,
+    // Лёгкий режим: 1 инстанс без Redis. 
+    // Полный режим: docker-compose (2 инстанса + Redis + RabbitMQ)
+    stages: IS_LOCAL
+      ? [ { duration: '30s', target: 10 }, { duration: '1m', target: 20 }, { duration: '30s', target: 0 } ]
+      : [ { duration: '30s', target: 50 }, { duration: '2m', target: 50 }, { duration: '30s', target: 100 }, { duration: '1m', target: 100 }, { duration: '30s', target: 0 } ],
+    exec: 'mixedFlow',
+  };
+  activeThresholds['http_req_duration'] = IS_LOCAL ? ['p(99)<3000'] : ['p(99)<1000'];
+  activeThresholds['error_rate'] = IS_LOCAL ? ['rate<0.05'] : ['rate<0.01'];
+  if (!IS_LOCAL) {
+    activeThresholds['http_req_duration{name:seats}'] = ['p(95)<500'];
+  }
+}
+
+if ((TARGET_SCENARIO === 'all' && !IS_LOCAL) || TARGET_SCENARIO === 'race') {
+  activeScenarios.race_condition = {
+    executor: 'shared-iterations',
+    vus: 1000,
+    iterations: 1000,
+    maxDuration: '10s',
+    exec: 'raceCondition',
+  };
+  activeThresholds['http_req_duration{name:lock}'] = ['p(99)<50'];
+  activeThresholds['booking_lock_success{scenario:race_condition}'] = ['count===1'];
+  activeThresholds['booking_lock_conflict{scenario:race_condition}'] = ['count===999'];
+}
+
+export const options = {
+  scenarios: activeScenarios,
+  thresholds: activeThresholds,
+};
 
 // ─── Логин один раз перед всеми тестами ───────────────────────────────────────
 // setup() запускается один раз, возвращает данные доступные всем VU
@@ -71,18 +85,18 @@ export function setup() {
 
   const ok = check(res, {
     'setup: login 200': r => r.status === 200,
-    'setup: has token': r => r.json('token') !== null,  // ответ содержит "token", не "accessToken"
+    'setup: has token': r => r.json('token') !== null, // ответ содержит "token"
   });
 
   if (!ok) {
     console.error(`Логин провалился: ${res.status} ${res.body}`);
   }
 
-  return { token: res.json('token') };  // исправлено: было accessToken
+  return { token: res.json('token') }; // пробрасываем токен для всех VU
 }
 
-// ─── Основной сценарий ────────────────────────────────────────────────────────
-export default function (data) {
+// ─── Сценарий 1: Смешанная нагрузка (поиск, карта мест, бронь) ───────────────
+export function mixedFlow(data) {
   // Используем токен из setup() — без логина на каждую итерацию
   const headers = {
     'Content-Type': 'application/json',
@@ -117,7 +131,12 @@ export default function (data) {
   // ─ 3. Попытка блокировки места (POST) — pessimistic locking ─
   group('lock seat', () => {
     const eventId = Math.floor(Math.random() * 3) + 1;
-    const seatId  = Math.floor(Math.random() * 50) + 1;
+    let seatId;
+    if (eventId === 3) {
+      seatId = Math.floor(Math.random() * 200) + 51; // 51-250
+    } else {
+      seatId = Math.floor(Math.random() * 50) + 1; // 1-50
+    }
 
     const start = Date.now();
     const res = http.post(
@@ -131,17 +150,17 @@ export default function (data) {
       lockSuccess.add(1);
       errorRate.add(false);
 
-      // ─ 4. Подтверждение бронирования ─
+      // ─ 4. Отмена бронирования (чтобы не портить seed БД) ─
       const lockId = res.json('lockId');
       if (lockId) {
         sleep(0.2);
-        const confirmRes = http.post(
-          `${BASE_URL}/api/bookings/${lockId}/confirm`,
-          '',  // пустое тело, не null
-          { headers, tags: { name: 'confirm' } }
+        const cancelRes = http.del(
+          `${BASE_URL}/api/bookings/${lockId}`,
+          null,
+          { headers, tags: { name: 'cancel' } }
         );
-        check(confirmRes, { 'confirm ok': r => r.status === 200 || r.status === 204 });
-        errorRate.add(confirmRes.status >= 500); // только 5xx — ошибки, 4xx — бизнес-логика
+        check(cancelRes, { 'cancel ok': r => r.status === 200 || r.status === 204 });
+        errorRate.add(cancelRes.status >= 500); // только 5xx — ошибки, 4xx — бизнес-логика
       }
     } else if (res.status === 409) {
       // Место уже занято — это нормально при высокой нагрузке
@@ -155,6 +174,36 @@ export default function (data) {
   });
 
   sleep(0.8);
+}
+
+// ─── Сценарий 2: Гонка данных (Race Condition 1000 VU) ───────────────────────
+export function raceCondition(data) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${data.token}`,
+  };
+
+  // Все 1000 пользователей одновременно ломятся на Event 1, Seat 1
+  const eventId = 1;
+  const seatId = 1;
+
+  const start = Date.now();
+  const res = http.post(
+    `${BASE_URL}/api/bookings/lock`,
+    JSON.stringify({ eventId, seatId }),
+    { headers, tags: { name: 'lock' } }
+  );
+  lockDuration.add(Date.now() - start);
+
+  if (res.status === 200) {
+    lockSuccess.add(1, { scenario: 'race_condition' });
+    errorRate.add(false);
+  } else if (res.status === 409) {
+    lockConflict.add(1, { scenario: 'race_condition' });
+    errorRate.add(false);
+  } else {
+    errorRate.add(true);
+  }
 }
 
 // ─── Итоговый отчёт ───────────────────────────────────────────────────────────

@@ -71,10 +71,11 @@ Dashboard: **T-RESERVE — High Load Monitor**
 
 ## Что тестируем
 
+В тесте 2 сценария (`mixed_flow` и `race_condition`):
 1. `GET /api/events` — просмотр событий (высокая нагрузка)
 2. `GET /api/events/{id}/seats` — карта мест (Redis кэш hit rate)
-3. `POST /api/bookings/lock` — pessimistic locking под нагрузкой
-4. `POST /api/bookings/{id}/confirm` — подтверждение брони
+3. `POST /api/bookings/lock` — pessimistic locking под нагрузкой (проверка 1000 VU на 1 место, 1 победитель, 999 409-конфликтов)
+4. `POST /api/bookings/{id}/cancel` — отмена брони (чтобы не портить seed данные БД)
 
 ---
 
