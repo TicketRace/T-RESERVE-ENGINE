@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.transaction.support.TransactionTemplate;
@@ -64,6 +65,14 @@ public class BookingService {
         // Проверяем существование пользователя ВНЕ транзакции базы данных
         if (!userLookup.existsById(userId)) {
             throw new ResourceNotFoundException("User", userId);
+        }
+
+        // Проверяем лимит (макс 5 билетов на мероприятие)
+        long currentTickets = ticketRepository.countByEventIdAndUserIdAndStatusIn(
+            eventId, userId, List.of(TicketStatus.LOCKED, TicketStatus.BOOKED)
+        );
+        if (currentTickets >= 5) {
+            throw new ForbiddenOperationException("Вы можете забронировать не более 5 билетов на одно мероприятие");
         }
 
         try {

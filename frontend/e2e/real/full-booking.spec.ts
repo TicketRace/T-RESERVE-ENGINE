@@ -34,7 +34,7 @@ test.describe('real full-stack booking flow', () => {
       const firstSeat = page.getByRole('button', { name: '1', exact: true }).first();
       await expect(firstSeat).toBeEnabled({ timeout: 15_000 });
       await firstSeat.click();
-      await expect(page.getByText(/Выбранное место:\s*A-1/)).toBeVisible();
+      await expect(page.getByText(/Выбранные места:\s*A-1/)).toBeVisible();
 
       await page.getByRole('button', { name: 'Перейти к оплате' }).click();
       await expect(page).toHaveURL(new RegExp(`/payment/\\d+$`));

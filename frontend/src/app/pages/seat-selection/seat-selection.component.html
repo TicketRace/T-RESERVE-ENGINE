@@ -13,26 +13,29 @@
   <div class="board-card">
     <app-seat-map
       [groupedSeats]="groupedSeats"
-      [selectedSeatId]="selectedSeat?.seatId ?? null"
+      [selectedSeatIds]="selectedSeatIds"
       (seatSelected)="selectSeat($event)"
     ></app-seat-map>
   </div>
 
   <div class="bottom-row">
     <div class="selected-seat-details">
-      <span class="details-label">Выбранное место:</span>
-      <span class="details-value" *ngIf="selectedSeat">
-        {{ selectedSeat.seatLabel }} <span class="seat-price-chip">{{ selectedSeat.price }} ₽</span>
+      <span class="details-label">Выбранные места:</span>
+      <span class="details-value" *ngIf="selectedSeats.length > 0">
+        <span *ngFor="let s of selectedSeats; let last = last">
+          {{ s.seatLabel }}<span *ngIf="!last">, </span>
+        </span>
+        <span class="seat-price-chip">{{ getTotalPrice() }} ₽</span>
       </span>
-      <span class="details-value empty" *ngIf="!selectedSeat">
-        Место не выбрано
+      <span class="details-value empty" *ngIf="selectedSeats.length === 0">
+        Места не выбраны
       </span>
     </div>
 
     <button
       class="action-chip pay-button"
       type="button"
-      [disabled]="!selectedSeat"
+      [disabled]="selectedSeats.length === 0"
       (click)="proceed()"
     >
       {{ isLoggedIn ? 'Перейти к оплате' : 'Войти для оплаты' }}

@@ -82,6 +82,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     @Query("SELECT COUNT(t) FROM Ticket t WHERE t.eventId = :eventId AND t.status = :status")
     long countByEventIdAndStatus(@Param("eventId") Long eventId, @Param("status") TicketStatus status);
 
+    long countByEventIdAndUserIdAndStatusIn(Long eventId, Long userId, List<TicketStatus> statuses);
+
     /**
      * Получить общую выручку по мероприятию (сумма цен BOOKED билетов)
      */

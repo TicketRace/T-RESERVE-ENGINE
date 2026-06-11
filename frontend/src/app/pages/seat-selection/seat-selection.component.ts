@@ -20,7 +20,8 @@ import { WebSocketService } from '../../services/websocket.service';
 export class SeatSelectionComponent implements OnInit, OnDestroy {
   event: EventItem | null = null;
   seats: Seat[] = [];
-  selectedSeat: Seat | null = null;
+  selectedSeatIds: Set<number> = new Set();
+  selectedSeats: Seat[] = [];
   private readonly destroy$ = new Subject<void>();
   groupedSeats: Record<string, Seat[]> = {};
   private apiUrl = environment.apiUrl;
@@ -93,28 +94,44 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
     this.ws.disconnect();
   }
 
+  private readonly MAX_SEATS = 5;
+
   selectSeat(seat: Seat): void {
-    this.selectedSeat = seat;
+    if (this.selectedSeatIds.has(seat.seatId)) {
+      this.selectedSeatIds.delete(seat.seatId);
+      this.selectedSeats = this.selectedSeats.filter(s => s.seatId !== seat.seatId);
+    } else {
+      if (this.selectedSeatIds.size >= this.MAX_SEATS) {
+        alert(`Максимум ${this.MAX_SEATS} билетов на один заказ`);
+        return;
+      }
+      this.selectedSeatIds.add(seat.seatId);
+      this.selectedSeats.push(seat);
+    }
   }
 
   get isLoggedIn(): boolean {
     return this.authService.isLoggedIn();
   }
 
+  getTotalPrice(): number {
+    return this.selectedSeats.reduce((sum, seat) => sum + seat.price, 0);
+  }
+
   proceed(): void {
-    if (!this.selectedSeat) return;
+    if (this.selectedSeats.length === 0) return;
 
     if (this.isLoggedIn) {
       this.router.navigate(['/payment', this.event?.id], {
         state: {
-          selectedSeat: this.selectedSeat,
+          selectedSeats: this.selectedSeats,
           event: this.event,
         },
       });
     } else {
       // Save pending seat selection before login redirect
       sessionStorage.setItem('pending_seat_selection', JSON.stringify({
-        selectedSeat: this.selectedSeat,
+        selectedSeats: this.selectedSeats,
         event: this.event,
       }));
 

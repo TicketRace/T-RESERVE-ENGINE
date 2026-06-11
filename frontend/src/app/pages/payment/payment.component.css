@@ -182,3 +182,101 @@
     gap: 2rem;
   }
 }
+
+/* Conflict Overlay */
+.conflict-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.conflict-dialog {
+  background: var(--bg-secondary);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--line-soft);
+  padding: 2.5rem;
+  border-radius: 24px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+}
+
+.conflict-dialog h3 {
+  font-family: var(--font-family-tech);
+  font-size: 1.4rem;
+  color: var(--ink-900);
+  margin-bottom: 1rem;
+}
+
+.conflict-dialog p {
+  color: var(--ink-700);
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.failed-seats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin: 1rem 0 1.5rem;
+}
+
+.failed-seat-chip {
+  background: rgba(235, 87, 87, 0.1);
+  color: #eb5757;
+  border: 1px solid rgba(235, 87, 87, 0.2);
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.conflict-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.btn-cancel, .btn-accept {
+  flex: 1;
+  padding: 1rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: none;
+}
+
+.btn-cancel {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink-700);
+  border: 1px solid var(--line-soft);
+}
+
+.btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--ink-900);
+}
+
+.btn-accept {
+  background: var(--lime-400);
+  color: #101514;
+  box-shadow: 0 8px 16px rgba(207, 168, 86, 0.2);
+}
+
+.btn-accept:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(207, 168, 86, 0.35);
+}
