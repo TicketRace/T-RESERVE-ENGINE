@@ -22,6 +22,12 @@ import java.time.temporal.ChronoUnit;
 
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.treserve.booking.pdf.PdfGenerator;
+import com.treserve.booking.notification.EmailSender;
+import com.treserve.booking.event.EventTitleProvider;
+
+import com.treserve.booking.event.TicketBookedEventProducer;
+import com.treserve.common.event.TicketBookedEvent;
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -34,6 +40,8 @@ public class BookingService {
     private final TransactionTemplate transactionTemplate;
     /** Уровень 1: Redis SETNX — быстрый атомарный фильтр перед PG. */
     private final DistributedLockService distributedLock;
+
+    private final TicketBookedEventProducer eventProducer;
 
     @Value("${app.booking.lock-duration-minutes:10}")
     private int lockDurationMinutes;
@@ -140,12 +148,68 @@ public class BookingService {
 
             seatService.evictSeatsCache(ticket.getEventId());
             log.info("BOOKED ticket {} for user {}", ticketId, userId);
+            sendAsyncTicketBookedEvent(ticket, userId);
         } catch (PessimisticLockingFailureException e) {
             log.debug("Conflict on confirm ticket {} — seat is currently being processed", ticketId);
             throw new SeatAlreadyLockedException("Ticket is currently locked by another process, please try again");
         }
     }
 
+    private void sendAsyncTicketBookedEvent(Ticket ticket, Long userId) {
+        try {
+            var userInfo = userLookup.findById(userId);
+            if (userInfo == null) {
+                log.warn("User {} not found, cannot send async event for ticket {}", userId, ticket.getId());
+                return;
+            }
+
+            String eventTitle = eventTitleProvider.getEventTitle(ticket.getEventId());
+            
+            TicketBookedEvent event = TicketBookedEvent.builder()
+                    .ticketId(ticket.getId())
+                    .userId(userId)
+                    .userEmail(userInfo.email())
+                    .userName(userInfo.name())
+                    .eventTitle(eventTitle)
+                    .eventId(ticket.getEventId())
+                    .seatId(ticket.getSeatId())
+                    .price(ticket.getPrice())
+                    .bookedAt(Instant.now())
+                    .verifyToken(ticket.getVerifyToken() != null ? ticket.getVerifyToken().toString() : null)
+                    .build();
+            
+            eventProducer.sendTicketBookedEvent(event);
+            log.info("📨 Async event sent to RabbitMQ for ticket {}", ticket.getId());
+        } catch (Exception e) {
+            log.error("Failed to send async event for ticket {}: {}", ticket.getId(), e.getMessage());
+            // Не бросаем исключение — билет уже подтверждён
+        }
+    }
+
+    // === ОСТАВЛЯЕМ СТАРЫЙ МЕТОД (для обратной совместимости, но он больше не вызывается) ===
+    private void sendTicketEmail(Ticket ticket, Long userId) {
+        log.info("=== USING UPDATED VERSION WITH PDF DISABLED ===");
+        try {
+            // Получаем пользователя через порт UserLookup
+            var userInfo = userLookup.findById(userId);
+            if (userInfo == null) {
+                log.warn("User {} not found, cannot send email for ticket {}", userId, ticket.getId());
+                return;
+            }
+
+            // Получаем название мероприятия через интерфейс EventTitleProvider
+            String eventTitle = eventTitleProvider.getEventTitle(ticket.getEventId());
+            
+            // Отправляем email 
+            byte[] pdfBytes = pdfGenerator.generatePdf(ticket);
+            emailSender.sendTicketEmail(userInfo.email(), userInfo.name(), pdfBytes, ticket.getId(), eventTitle);
+            
+            log.info("Ticket email sent to {} for ticket {}", userInfo.email(), ticket.getId());
+        } catch (Exception e) {
+            // Не бросаем исключение — бронирование уже подтверждено
+            log.error("Failed to send email for ticket {}: {}", ticket.getId(), e.getMessage(), e);
+        }
+    }
     /**
      * Ручная отмена блокировки.
      * LOCKED → AVAILABLE
