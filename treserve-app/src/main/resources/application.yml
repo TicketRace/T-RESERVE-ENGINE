@@ -45,6 +45,14 @@ spring:
     port: 5672
     username: guest
     password: guest
+    # === retry для RabbitMQ ===
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-attempts: 3
+          multiplier: 2.0
 
   # ═══ Virtual Threads (Java 21) ═══
   threads:
@@ -146,3 +154,26 @@ minio:
 # ═══ PDF Generation ═══
 pdf:
   base-url: ${PDF_BASE_URL:http://localhost:8081/api/tickets}
+
+# === Resilience4j Circuit Breaker настройки ===
+resilience4j:
+  circuitbreaker:
+    instances:
+      minio:
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 50
+        event-consumer-buffer-size: 10
+      email:
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 30s
+        failure-rate-threshold: 50
+        event-consumer-buffer-size: 10

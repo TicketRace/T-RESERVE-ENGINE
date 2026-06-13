@@ -27,6 +27,9 @@ import com.treserve.booking.pdf.PdfGenerator;
 import com.treserve.booking.notification.EmailSender;
 import com.treserve.booking.event.EventTitleProvider;
 
+import com.treserve.booking.event.TicketBookedEventProducer;
+import com.treserve.common.event.TicketBookedEvent;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -41,6 +44,8 @@ public class BookingService {
     private final PdfGenerator pdfGenerator;
     private final EmailSender emailSender;
     private final EventTitleProvider eventTitleProvider;
+
+    private final TicketBookedEventProducer eventProducer;
 
     @Value("${app.booking.lock-duration-minutes:10}")
     private int lockDurationMinutes;
@@ -138,7 +143,7 @@ public class BookingService {
             seatService.pushSeatsUpdate(ticket.getEventId());
             log.info("BOOKED ticket {} for user {}", ticketId, userId);
 
-            sendTicketEmail(ticket, userId);
+            sendAsyncTicketBookedEvent(ticket, userId);
 
         } catch (PessimisticLockingFailureException e) {
             log.debug("Conflict on confirm ticket {} — seat is currently being processed", ticketId);
@@ -146,6 +151,38 @@ public class BookingService {
         }
     }
 
+    private void sendAsyncTicketBookedEvent(Ticket ticket, Long userId) {
+        try {
+            var userInfo = userLookup.findById(userId);
+            if (userInfo == null) {
+                log.warn("User {} not found, cannot send async event for ticket {}", userId, ticket.getId());
+                return;
+            }
+
+            String eventTitle = eventTitleProvider.getEventTitle(ticket.getEventId());
+            
+            TicketBookedEvent event = TicketBookedEvent.builder()
+                    .ticketId(ticket.getId())
+                    .userId(userId)
+                    .userEmail(userInfo.email())
+                    .userName(userInfo.name())
+                    .eventTitle(eventTitle)
+                    .eventId(ticket.getEventId())
+                    .seatId(ticket.getSeatId())
+                    .price(ticket.getPrice())
+                    .bookedAt(Instant.now())
+                    .verifyToken(ticket.getVerifyToken() != null ? ticket.getVerifyToken().toString() : null)
+                    .build();
+            
+            eventProducer.sendTicketBookedEvent(event);
+            log.info("📨 Async event sent to RabbitMQ for ticket {}", ticket.getId());
+        } catch (Exception e) {
+            log.error("Failed to send async event for ticket {}: {}", ticket.getId(), e.getMessage());
+            // Не бросаем исключение — билет уже подтверждён
+        }
+    }
+
+    // === ОСТАВЛЯЕМ СТАРЫЙ МЕТОД (для обратной совместимости, но он больше не вызывается) ===
     private void sendTicketEmail(Ticket ticket, Long userId) {
         log.info("=== USING UPDATED VERSION WITH PDF DISABLED ===");
         try {
