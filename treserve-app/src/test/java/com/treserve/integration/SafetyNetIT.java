@@ -3,6 +3,7 @@ package com.treserve.integration;
 import com.treserve.booking.entity.Ticket;
 import com.treserve.booking.entity.TicketStatus;
 import com.treserve.booking.repository.TicketRepository;
+import com.treserve.booking.service.DistributedLockService;
 import com.treserve.booking.service.SafetyNetScheduler;
 import com.treserve.booking.service.SeatService;
 import com.treserve.support.AbstractPostgresIntegrationTest;
@@ -31,6 +32,9 @@ class SafetyNetIT extends AbstractPostgresIntegrationTest {
 
     @Autowired
     private SeatService seatService;
+
+    @Autowired
+    private DistributedLockService distributedLockService;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -72,7 +76,7 @@ class SafetyNetIT extends AbstractPostgresIntegrationTest {
     }
 
     private void runSafetyNetJob() {
-        SafetyNetScheduler safetyNetScheduler = new SafetyNetScheduler(ticketRepository, seatService);
+        SafetyNetScheduler safetyNetScheduler = new SafetyNetScheduler(ticketRepository, seatService, distributedLockService);
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> safetyNetScheduler.releaseExpiredLocks());
     }
 
