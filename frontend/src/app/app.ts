@@ -1,13 +1,14 @@
 import { Component, AfterViewInit, OnDestroy } from '@angular/core';
 import { RouterOutlet, NavigationEnd, Router } from '@angular/router';
 import { NavbarComponent } from './components/navbar/navbar.component';
+import { ActiveLockBannerComponent } from './components/active-lock-banner/active-lock-banner.component';
 import { filter } from 'rxjs';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NavbarComponent, CommonModule],
+  imports: [RouterOutlet, NavbarComponent, ActiveLockBannerComponent, CommonModule],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })

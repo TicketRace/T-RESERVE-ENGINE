@@ -1,11 +1,14 @@
-﻿export interface Booking {
+export interface Booking {
   ticketId: number;
+  eventId: number;
   eventTitle: string;
+  seatId: number;
   seatLabel: string;
   status: 'BOOKED' | 'LOCKED' | 'CANCELLED';
   price: number;
-  bookedAt: string;
+  bookedAt?: string;
   eventStartTime: string;
+  lockExpiresAt?: string;
 }
 
 export interface LockResponse {
