@@ -139,6 +139,9 @@ cors:
 # ═══ Server ═══
 server:
   port: ${PORT:8080}
+  tomcat:
+    accept-count: 2000
+    max-connections: 10000
   error:
     include-message: always
     include-stacktrace: never
