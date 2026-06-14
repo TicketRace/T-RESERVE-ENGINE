@@ -173,6 +173,36 @@
   background: #687076;
 }
 
+.cancel-booking-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-top: 12px;
+  min-height: 43px;
+  padding: .65rem 1.15rem;
+  background: transparent;
+  color: #ef4444; /* matching the error color */
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 18px; /* same as typical action-chips */
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cancel-booking-btn:hover:not([disabled]) {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.cancel-booking-btn[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: rgba(104, 112, 118, 0.2);
+  color: #687076;
+}
+
 @media (max-width: 900px) {
   .payment-page {
     padding: 6rem 0 5rem;
