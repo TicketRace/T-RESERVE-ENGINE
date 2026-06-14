@@ -42,6 +42,7 @@ public class BookingService {
     private final DistributedLockService distributedLock;
 
     private final TicketBookedEventProducer eventProducer;
+    private final com.treserve.booking.event.EventTitleProvider eventTitleProvider;
 
     @Value("${app.booking.lock-duration-minutes:10}")
     private int lockDurationMinutes;
@@ -186,30 +187,7 @@ public class BookingService {
         }
     }
 
-    // === ОСТАВЛЯЕМ СТАРЫЙ МЕТОД (для обратной совместимости, но он больше не вызывается) ===
-    private void sendTicketEmail(Ticket ticket, Long userId) {
-        log.info("=== USING UPDATED VERSION WITH PDF DISABLED ===");
-        try {
-            // Получаем пользователя через порт UserLookup
-            var userInfo = userLookup.findById(userId);
-            if (userInfo == null) {
-                log.warn("User {} not found, cannot send email for ticket {}", userId, ticket.getId());
-                return;
-            }
 
-            // Получаем название мероприятия через интерфейс EventTitleProvider
-            String eventTitle = eventTitleProvider.getEventTitle(ticket.getEventId());
-            
-            // Отправляем email 
-            byte[] pdfBytes = pdfGenerator.generatePdf(ticket);
-            emailSender.sendTicketEmail(userInfo.email(), userInfo.name(), pdfBytes, ticket.getId(), eventTitle);
-            
-            log.info("Ticket email sent to {} for ticket {}", userInfo.email(), ticket.getId());
-        } catch (Exception e) {
-            // Не бросаем исключение — бронирование уже подтверждено
-            log.error("Failed to send email for ticket {}: {}", ticket.getId(), e.getMessage(), e);
-        }
-    }
     /**
      * Ручная отмена блокировки.
      * LOCKED → AVAILABLE
