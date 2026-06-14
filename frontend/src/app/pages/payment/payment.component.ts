@@ -27,6 +27,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
 
   errorMessage: string | null = null;
   isLoading = false;
+  loadingMessage = 'Бронируем...';
 
   showConflictDialog = false;
 
@@ -120,6 +121,11 @@ export class PaymentComponent implements OnInit, OnDestroy {
 
   async cancelPartialBooking(): Promise<void> {
     this.showConflictDialog = false;
+    await this.cancelAllBookings();
+  }
+
+  async cancelAllBookings(): Promise<void> {
+    this.loadingMessage = 'Отменяем...';
     this.isLoading = true;
     for (const lock of this.lockedSeats) {
       try {
@@ -128,6 +134,8 @@ export class PaymentComponent implements OnInit, OnDestroy {
         console.error('Failed to cancel lock', e);
       }
     }
+    this.lockedSeats = [];
+    sessionStorage.removeItem(this.LOCK_KEY);
     this.isLoading = false;
     this.goBack();
   }
@@ -141,10 +149,10 @@ export class PaymentComponent implements OnInit, OnDestroy {
       if (remaining <= 0) {
         this.expiresLabel = '00:00';
         clearInterval(this.timerInterval);
-        sessionStorage.removeItem(this.LOCK_KEY);
-
-        this.router.navigate(['/'], {
-          state: { message: 'Время бронирования истекло' },
+        this.cancelAllBookings().then(() => {
+          this.router.navigate(['/'], {
+            state: { message: 'Время бронирования истекло' },
+          });
         });
         return;
       }
@@ -164,6 +172,7 @@ export class PaymentComponent implements OnInit, OnDestroy {
   async payFree(): Promise<void> {
     if (this.lockedSeats.length === 0) return;
 
+    this.loadingMessage = 'Оплачиваем...';
     this.isLoading = true;
     this.errorMessage = null;
 

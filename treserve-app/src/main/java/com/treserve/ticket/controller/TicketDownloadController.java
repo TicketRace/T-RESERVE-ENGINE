@@ -46,4 +46,26 @@ public class TicketDownloadController {
                 .headers(headers)
                 .body(pdfBytes);
     }
+
+    @GetMapping("/{id}/qr")
+    @Operation(summary = "Получить QR-код билета")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "QR-код успешно сгенерирован"),
+        @ApiResponse(responseCode = "401", description = "Неавторизован"),
+        @ApiResponse(responseCode = "403", description = "Билет не принадлежит пользователю"),
+        @ApiResponse(responseCode = "404", description = "Билет не найден")
+    })
+    public ResponseEntity<byte[]> downloadTicketQr(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Long userId) {
+
+        byte[] qrBytes = downloadService.getTicketQrCode(id, userId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_PNG);
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(qrBytes);
+    }
 }

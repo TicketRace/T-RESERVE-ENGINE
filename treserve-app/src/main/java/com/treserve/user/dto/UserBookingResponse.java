@@ -26,6 +26,9 @@ public class UserBookingResponse {
     @Schema(description = "Номер места", example = "A-12")
     private String seatLabel;
 
+    @Schema(description = "ID места", example = "10")
+    private Long seatId;
+
     @Schema(description = "Статус бронирования", example = "BOOKED", allowableValues = {"LOCKED", "BOOKED"})
     private String status;
 
@@ -34,4 +37,7 @@ public class UserBookingResponse {
 
     @Schema(description = "Дата подтверждения брони (для BOOKED)", example = "2026-04-22T10:00:00Z")
     private Instant bookedAt;
+
+    @Schema(description = "Дата истечения блокировки (для LOCKED)", example = "2026-04-22T10:10:00Z")
+    private Instant lockExpiresAt;
 }
