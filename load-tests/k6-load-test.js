@@ -33,7 +33,7 @@ const errorRate    = new Rate('error_rate');
 const lockDuration = new Trend('booking_lock_duration_ms', true);
 
 // ─── Нагрузочные параметры ────────────────────────────────────────────────────
-const TARGET_SCENARIO = __ENV.SCENARIO || 'all'; // 'all', 'mixed', 'race'
+const TARGET_SCENARIO = __ENV.SCENARIO || 'all'; // 'all', 'mixed', 'race', 'sustained', 'redis_stress'
 
 let activeScenarios = {};
 let activeThresholds = {};
@@ -67,6 +67,37 @@ if ((TARGET_SCENARIO === 'all' && !IS_LOCAL) || TARGET_SCENARIO === 'race') {
   activeThresholds['http_req_duration{name:lock}'] = ['p(99)<50'];
   activeThresholds['booking_lock_success{scenario:race_condition}'] = ['count===1'];
   activeThresholds['booking_lock_conflict{scenario:race_condition}'] = ['count===999'];
+}
+
+if (TARGET_SCENARIO === 'all' || TARGET_SCENARIO === 'sustained') {
+  activeScenarios.sustained_load = {
+    executor: 'constant-arrival-rate',
+    rate: IS_LOCAL ? 50 : 300, // RPS: 300 для полного режима, 50 для локального
+    timeUnit: '1s',
+    duration: '30s', // Sustained load 30 сек
+    preAllocatedVUs: 50,
+    maxVUs: 500,
+    exec: 'mixedFlow', // Используем случайные места
+  };
+  // Мы ожидаем стабильности без всплесков
+  activeThresholds['http_req_duration'] = IS_LOCAL ? ['p(99)<2000'] : ['p(99)<1000'];
+}
+
+if (TARGET_SCENARIO === 'redis_stress') {
+  activeScenarios.redis_stress = {
+    executor: 'ramping-arrival-rate',
+    startRate: 100,
+    timeUnit: '1s',
+    preAllocatedVUs: 500,
+    maxVUs: 3000,
+    stages: [
+      { target: 1000, duration: '15s' }, // Разгон до 1000 RPS
+      { target: 3000, duration: '30s' }, // Разгон до 3000 RPS (ищем деградацию)
+      { target: 5000, duration: '15s' }, // Пиковая попытка сломать Redis
+    ],
+    exec: 'redisStressFlow', // Упрощенный флоу только для нагрузки на локи
+  };
+  // Порогов нет, наша цель — просто собрать метрики (когда p95 улетит вверх)
 }
 
 export const options = {
@@ -201,6 +232,36 @@ export function raceCondition(data) {
   } else if (res.status === 409) {
     lockConflict.add(1, { scenario: 'race_condition' });
     errorRate.add(false);
+  } else {
+    errorRate.add(true);
+  }
+}
+
+// ─── Сценарий 3: Нагрузка на Redis (Поиск предела деградации) ────────────────
+export function redisStressFlow(data) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${data.token}`,
+  };
+
+  // Чтобы не упираться в одну строку БД и один ключ Redis, рандомизируем билеты
+  const eventId = Math.floor(Math.random() * 3) + 1;
+  const seatId = Math.floor(Math.random() * 200) + 1;
+
+  const start = Date.now();
+  const res = http.post(
+    `${BASE_URL}/api/bookings/lock`,
+    JSON.stringify({ eventId, seatId }),
+    { headers, tags: { name: 'lock', scenario: 'redis_stress' } }
+  );
+  lockDuration.add(Date.now() - start);
+
+  if (res.status === 200) {
+    lockSuccess.add(1, { scenario: 'redis_stress' });
+    // Для максимизации RPS мы не делаем cancel в этом тесте. 
+    // Все места заблокируются за пару секунд, а дальше Redis будет отдавать 409 из памяти (что мы и хотим тестировать)
+  } else if (res.status === 409) {
+    lockConflict.add(1, { scenario: 'redis_stress' });
   } else {
     errorRate.add(true);
   }
