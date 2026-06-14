@@ -1,37 +1,60 @@
-﻿<div class="seat-zone">
-  <div class="screen">сцена</div>
-    <div class="seat-row" *ngFor="let row of groupedSeats | keyvalue: sortRows">
+<div class="seat-zone animate-fade-in">
+  <!-- Stage/Screen -->
+  <div class="screen-perspective">
+    <div class="screen">Сцена</div>
+  </div>
 
+  <!-- Legend -->
+  <div class="legend-row">
+    <div class="legend-item">
+      <span class="legend-dot available"></span>
+      <span class="legend-label">Свободно</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-dot selected"></span>
+      <span class="legend-label">Выбрано</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-dot locked"></span>
+      <span class="legend-label">Бронь</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-dot booked"></span>
+      <span class="legend-label">Занято</span>
+    </div>
+  </div>
+
+  <!-- Seating grid -->
+  <div class="seating-grid">
+    <div class="seat-row" *ngFor="let row of groupedSeats | keyvalue: sortRows">
       <div class="row-label">
         {{ row.key }}
       </div>
 
-    <div class="row-seats">
-      <button
-        *ngFor="let seat of row.value"
-        class="seat-tile"
-        type="button"
-
-        [title]="
-          seat.status === 'AVAILABLE'
-              ? 'Место доступно'
+      <div class="row-seats">
+        <button
+          *ngFor="let seat of row.value"
+          class="seat-tile"
+          type="button"
+          [title]="
+            seat.status === 'AVAILABLE'
+              ? ('Ряд ' + row.key + ' место ' + seat.seatNumber + ' • ' + seat.price + ' ₽')
               : seat.status === 'BOOKED'
-                ? 'Место куплено'
+                ? 'Место занято'
                 : seat.status === 'LOCKED'
-                  ? 'Место временно забронировано'
+                  ? 'Временная бронь'
                   : ''
           "
-          
-        [class.available]="seat.status === 'AVAILABLE'"
-        [class.locked]="seat.status === 'LOCKED'"
-        [class.booked]="seat.status === 'BOOKED'"
-        [class.selected]="selectedSeatId === seat.seatId"
-        [disabled]="seat.status !== 'AVAILABLE'"
-        (click)="onSeatClick(seat)"
-      >
-        {{ seat.seatNumber }}
-      </button>
-
+          [class.available]="seat.status === 'AVAILABLE'"
+          [class.locked]="seat.status === 'LOCKED'"
+          [class.booked]="seat.status === 'BOOKED'"
+          [class.selected]="selectedSeatIds.has(seat.seatId)"
+          [disabled]="seat.status !== 'AVAILABLE'"
+          (click)="onSeatClick(seat)"
+        >
+          {{ seat.seatNumber }}
+        </button>
+      </div>
     </div>
   </div>
 </div>

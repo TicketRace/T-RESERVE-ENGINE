@@ -17,6 +17,7 @@ export class AuthComponent {
   mode: 'login' | 'register' = 'login';
 
   error = '';
+  infoMessage = '';
   hidePassword = true;
 
   constructor(
@@ -38,6 +39,10 @@ export class AuthComponent {
       this.mode = url[0].path === 'register' ? 'register' : 'login';
       this.error = '';
       this.form.reset();
+    });
+
+    this.route.queryParams.subscribe(params => {
+      this.infoMessage = params['message'] || '';
     });
   }
 
@@ -90,7 +95,22 @@ export class AuthComponent {
         if (response.user.role === 'ADMIN') {
           this.router.navigate(['/admin']);
         } else {
-          this.router.navigate(['/events']);
+          const savedSelection = sessionStorage.getItem('pending_seat_selection');
+          if (savedSelection) {
+            try {
+              const parsed = JSON.parse(savedSelection);
+              const eventId = parsed.event?.id || parsed.session?.id;
+              if (eventId) {
+                this.router.navigate(['/payment', eventId]);
+                return;
+              }
+            } catch (e) {
+              console.error('Failed to parse pending seat selection', e);
+            }
+          }
+
+          const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/';
+          this.router.navigateByUrl(returnUrl);
         }
       },
       error: (err: HttpErrorResponse) => {
@@ -122,6 +142,10 @@ export class AuthComponent {
 
   togglePassword(): void {
     this.hidePassword = !this.hidePassword;
+  }
+
+  loginWithGoogle(): void {
+    this.authService.googleLogin();
   }
 
 }

@@ -1,0 +1,12 @@
+# ═══════════════════════════════════════════════════
+# railway.toml — конфиг для treserve-app (backend)
+# ═══════════════════════════════════════════════════
+
+[build]
+dockerfile = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/actuator/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

@@ -1,64 +1,89 @@
-﻿<button type="button" class="back-button" (click)="goBack()">
-    ← Назад
-  </button>
+<section class="shell create-page">
+  <div class="page-header animate-fade-in">
+    <button type="button" class="back-button" (click)="goBack()" title="Назад">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+    </button>
+    <h1>{{ isEditMode ? 'Редактирование события' : 'Создать событие' }}</h1>
+  </div>
 
-<form class="form-grid" (ngSubmit)="createEvent()">
+  <form class="form-grid animate-slide-up" (ngSubmit)="createEvent()">
 
-  <label>Название события 
-    <input [(ngModel)]="title" name="title" type="text" />
-  </label>
+    <label class="form-field field-title">
+      <span class="field-label">Название события</span>
+      <input [(ngModel)]="title" name="title" type="text" placeholder="Введите название..." required />
+    </label>
 
-  <label>
-    Описание
-    <textarea [(ngModel)]="description" name="description" > 
-    </textarea>
-  </label>
+    <label class="form-field field-category">
+      <span class="field-label">Категория</span>
+      <input [(ngModel)]="category" name="category" type="text" placeholder="Спектакль, Концерт..." />
+    </label>
 
-  <label>
-    URL изображения
-    <input [(ngModel)]="imageUrl" name="imageUrl" type="text" placeholder="https://..."/>
-  </label>
+    <label class="form-field field-description">
+      <span class="field-label">Описание</span>
+      <textarea [(ngModel)]="description" name="description" placeholder="Подробное описание события..."></textarea>
+    </label>
 
-  <label>
-    Категория
-    <input [(ngModel)]="category" name="category" type="text" />
-  </label>
+    <label class="form-field field-time">
+      <span class="field-label">Время проведения</span>
+      <input [(ngModel)]="startTime" name="startTime" type="datetime-local" />
+    </label>
 
-  <label>
-    Возрастное ограничение
-    <input [(ngModel)]="ageRestriction" name="ageRestriction" type="text" placeholder="18+" />
-  </label>
+    <label class="form-field field-duration">
+      <span class="field-label">Длительность (мин)</span>
+      <input [(ngModel)]="durationMinutes" name="durationMinutes" type="number" placeholder="120" />
+    </label>
 
-  <label>
-    Длительность (минуты)
-    <input [(ngModel)]="durationMinutes" name="durationMinutes" type="number" />
-  </label>
+    <label class="form-field field-venue">
+      <span class="field-label">Место проведения</span>
+      <div class="select-wrapper">
+        <select [(ngModel)]="selectedVenueId" name="venue" [disabled]="isEditMode">
+          <option *ngFor="let v of venues" [ngValue]="v.id">
+            {{ v.name }} (мест: {{ v.seatsCount }})
+          </option>
+        </select>
+        <svg class="select-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
+      <small *ngIf="isEditMode" class="hint">Площадку нельзя изменить после создания</small>
+    </label>
 
-  <label>Время проведения 
-    <input [(ngModel)]="startTime" name="startTime" type="datetime-local" />
-  </label>
+    <label class="form-field field-price">
+      <span class="field-label">Цена (₽)</span>
+      <input [(ngModel)]="basePrice" name="basePrice" type="number" placeholder="1000" />
+    </label>
 
-  <label>Место проведения 
-    <select [(ngModel)]="selectedVenueId" name="venue" [disabled]="isEditMode">
-      <option *ngFor="let v of venues" [ngValue]="v.id">
-        {{ v.name }} (мест: {{ v.seatsCount }})
-      </option>
-    </select>
-    <small *ngIf="isEditMode" class="hint">
-      Площадку нельзя изменить после создания события
-    </small>
-  </label>
+    <label class="form-field field-image">
+      <span class="field-label">URL изображения</span>
+      <input [(ngModel)]="imageUrl" name="imageUrl" type="text" placeholder="https://..." />
+    </label>
 
-  <label>Цена билета
-    <input [(ngModel)]="basePrice" name="basePrice" type="number" />
-  </label>
+    <label class="form-field field-age">
+      <span class="field-label">Возраст</span>
+      <input [(ngModel)]="ageRestriction" name="ageRestriction" type="text" placeholder="16+" />
+    </label>
 
-  <button class="create-button" type="submit">
-    Сохранить событие
-  </button>
+    <div class="form-actions">
+      <button class="action-chip submit-btn" type="submit">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+          <polyline points="17 21 17 13 7 13 7 21"></polyline>
+          <polyline points="7 3 7 8 15 8"></polyline>
+        </svg>
+        Сохранить
+      </button>
+    </div>
 
-</form>
+  </form>
 
-<div class="create-success" *ngIf="created">
-  {{ isEditMode ? 'Событие изменено' : 'Событие добавлено' }}
-</div>
+  <div class="create-success animate-fade-in" *ngIf="created">
+    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+    {{ isEditMode ? 'Событие изменено' : 'Успешно добавлено' }}
+  </div>
+</section>

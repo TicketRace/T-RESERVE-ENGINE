@@ -1,4 +1,47 @@
-<div *ngIf="!isAuthPage">
-  <app-navbar></app-navbar>
+<!-- Background Layer: Subtle ambient starfields, grid, and organic dark green/teal glows -->
+<div class="background-layer" id="bg-layer">
+  <div class="stars"></div>
+  <div class="cyber-grid"></div>
+  <div class="wave-glow glow-left"></div>
+  <div class="wave-glow glow-right"></div>
+  <div class="liquid-overlay"></div>
 </div>
-<router-outlet></router-outlet>
+
+<div *ngIf="!isAuthPage" class="app-layout">
+  <app-navbar></app-navbar>
+  <app-active-lock-banner></app-active-lock-banner>
+  <main class="content-area">
+    <router-outlet></router-outlet>
+  </main>
+  <footer class="app-footer animate-fade-in">
+    <div class="shell footer-row">
+      <div class="footer-brand">
+        <h3>T-RESERVE</h3>
+        <p>Билеты на лучшие события города в один клик. Надежное бронирование, удобный выбор мест.</p>
+      </div>
+      <div class="footer-links">
+        <div class="link-group">
+          <h4>Сервис</h4>
+          <a routerLink="/">События</a>
+          <a routerLink="/profile">Личный кабинет</a>
+        </div>
+        <div class="link-group">
+          <h4>Компания</h4>
+          <a href="#">О проекте</a>
+          <a href="#">Контакты</a>
+        </div>
+      </div>
+    </div>
+    <div class="shell footer-bottom">
+      <span>© 2026 T-RESERVE. Все права защищены.</span>
+    </div>
+  </footer>
+</div>
+
+<div *ngIf="isAuthPage">
+  <router-outlet></router-outlet>
+</div>
+
+<!-- Global Sparkler Canvas -->
+<canvas id="global-sparkler-canvas"></canvas>
+

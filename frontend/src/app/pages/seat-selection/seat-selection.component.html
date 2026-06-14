@@ -1,36 +1,44 @@
-﻿<section class="shell seat-page" *ngIf="event">
+<section class="shell seat-page animate-fade-in" *ngIf="event">
+  <button class="back-link" [routerLink]="['/event', event.id]">← Назад к деталям</button>
+  
   <div class="header-line">
-    {{ event.title }}<br>
-    Дата: {{ event.startTime | date:'d MMMM HH:mm' }}
+    <h1>Выбор мест</h1>
+    <div class="event-mini-info">
+      <span class="mini-title">{{ event.title }}</span>
+      <span class="mini-divider">•</span>
+      <span class="mini-date">{{ event.startTime | date:'d MMMM, HH:mm' }}</span>
+    </div>
   </div>
-
-  <h1>Выберите место</h1>
 
   <div class="board-card">
     <app-seat-map
       [groupedSeats]="groupedSeats"
-      [selectedSeatId]="selectedSeat?.seatId ?? null"
+      [selectedSeatIds]="selectedSeatIds"
       (seatSelected)="selectSeat($event)"
     ></app-seat-map>
-
-    <div class="seat-price">
-      {{ event.basePrice }} руб
-    </div>
   </div>
 
   <div class="bottom-row">
-    <p>
-      Выбрано мест:
-      {{ selectedSeat ? '1. ' + selectedSeat.seatLabel : '0' }}
-    </p>
+    <div class="selected-seat-details">
+      <span class="details-label">Выбранные места:</span>
+      <span class="details-value" *ngIf="selectedSeats.length > 0">
+        <span *ngFor="let s of selectedSeats; let last = last">
+          {{ s.seatLabel }}<span *ngIf="!last">, </span>
+        </span>
+        <span class="seat-price-chip">{{ getTotalPrice() }} ₽</span>
+      </span>
+      <span class="details-value empty" *ngIf="selectedSeats.length === 0">
+        Места не выбраны
+      </span>
+    </div>
 
     <button
-      class="pay-button"
+      class="action-chip pay-button"
       type="button"
-      [disabled]="!selectedSeat"
+      [disabled]="selectedSeats.length === 0"
       (click)="proceed()"
     >
-      оплатить
+      {{ isLoggedIn ? 'Перейти к оплате' : 'Войти для оплаты' }}
     </button>
   </div>
 </section>

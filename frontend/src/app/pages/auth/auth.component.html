@@ -3,6 +3,10 @@
 
     <h1>{{ mode === 'login' ? 'Вход' : 'Регистрация' }}</h1>
 
+    <div class="info-alert animate-fade-in" *ngIf="infoMessage && mode === 'login'">
+      <span class="info-alert-text">{{ infoMessage }}</span>
+    </div>
+
     <form [formGroup]="form" (ngSubmit)="submit()">
 
       <input
@@ -59,11 +63,20 @@
         {{ mode === 'login' ? 'Войти' : 'Зарегистрироваться' }}
       </button>
 
-      <a *ngIf="mode === 'login'" routerLink="/register">
+      <div class="divider">
+        <span>или</span>
+      </div>
+
+      <button type="button" class="google-btn" (click)="loginWithGoogle()">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google Logo" class="google-icon">
+        Войти через Google
+      </button>
+
+      <a *ngIf="mode === 'login'" routerLink="/register" queryParamsHandling="preserve">
         Создать аккаунт
       </a>
 
-      <a *ngIf="mode === 'register'" routerLink="/login">
+      <a *ngIf="mode === 'register'" routerLink="/login" queryParamsHandling="preserve">
         Уже есть аккаунт?
       </a>
 
