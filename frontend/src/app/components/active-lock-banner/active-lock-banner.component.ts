@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Booking } from '../../models/booking';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-active-lock-banner',
@@ -106,11 +107,15 @@ export class ActiveLockBannerComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly http: HttpClient,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    // Check if user is authenticated (simple check: if token exists or just try fetching)
+    if (!this.authService.isLoggedIn()) {
+      return;
+    }
+
     this.http.get<Booking[]>(`${environment.apiUrl}/api/users/me/bookings`).subscribe({
       next: (bookings) => {
         this.lockedBookings = bookings.filter(b => b.status === 'LOCKED');
