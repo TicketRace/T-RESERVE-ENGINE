@@ -13,12 +13,12 @@
     <button *ngIf="isLoggedIn" class="signin-link account-btn" (click)="goProfile()">Account</button>
 
     <!-- Theme toggle button (always visible) -->
-    <button class="theme-toggle-btn" (click)="toggleTheme()" title="Toggle Theme">
+    <button class="theme-toggle-btn" [class.spin-anim]="isSpinning" (click)="toggleTheme()" title="Toggle Theme">
       {{ isLightTheme ? '🌙' : '☀️' }}
     </button>
 
     <!-- One-symbol dropdown menu in the far right -->
-    <div class="dropdown-menu">
+    <div class="dropdown-menu" [class.menu-open]="isMenuOpen" (click)="toggleMenu($event)">
       <button class="menu-trigger-btn" title="Menu"></button>
       <div class="dropdown-content">
         <!-- Navigation Links -->

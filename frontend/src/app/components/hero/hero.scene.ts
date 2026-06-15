@@ -1136,8 +1136,11 @@ export class HeroScene {
         this.x += this.vx;
         this.y += this.vy;
 
-        if (this.x < 0 || this.x > width) this.vx *= -1;
-        if (this.y < 0 || this.y > height) this.vy *= -1;
+        if (this.x < 0) { this.x = 0; this.vx *= -1; }
+        else if (this.x > width) { this.x = width; this.vx *= -1; }
+
+        if (this.y < 0) { this.y = 0; this.vy *= -1; }
+        else if (this.y > height) { this.y = height; this.vy *= -1; }
 
         const dx = mouseState.x - this.x;
         const dy = mouseState.y - this.y;
@@ -1197,14 +1200,25 @@ export class HeroScene {
     
     animate();
 
-    this.addListener(window, 'resize', () => {
-      width = canvas.offsetWidth;
-      height = canvas.offsetHeight;
-      if (width > 0 && height > 0) {
-        canvas.width = width * window.devicePixelRatio;
-        canvas.height = height * window.devicePixelRatio;
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    const resizeObserver = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        width = entry.contentRect.width;
+        height = entry.contentRect.height;
+        if (width > 0 && height > 0) {
+          canvas.width = width * window.devicePixelRatio;
+          canvas.height = height * window.devicePixelRatio;
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
       }
     });
+    resizeObserver.observe(canvas);
+
+    // Ensure we unobserve when destroyed
+    const originalDestroy = this.destroy.bind(this);
+    this.destroy = () => {
+      resizeObserver.disconnect();
+      originalDestroy();
+    };
   }
 }

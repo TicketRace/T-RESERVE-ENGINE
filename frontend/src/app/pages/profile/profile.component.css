@@ -277,11 +277,10 @@
 }
 
 .qr-label {
-  font-family: var(--font-family-body);
-  font-size: 0.75rem;
+  font-size: 0.88rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+  color: #1a1b1e;
+  margin-top: 4px;
 }
 
 .download-pdf-btn {
@@ -301,6 +300,50 @@
   background: var(--lime-400);
   color: var(--ink-900);
   box-shadow: 0 6px 15px rgba(234, 247, 54, 0.3);
+}
+
+.pdf-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.pdf-modal {
+  position: relative;
+  width: 85%;
+  height: 90%;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.pdf-frame {
+  flex: 1;
+  width: 100%;
+  border: none;
+}
+
+.close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+
+  background: rgba(0,0,0,0.75);
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
 }
 
 @media (max-width: 900px) {
@@ -338,5 +381,113 @@
   .download-pdf-btn {
     font-size: 0.75rem;
     padding: 0.4rem;
+  }
+}
+.qr-container {
+  cursor: pointer;
+}
+.simulated-qr {
+  z-index: 1;
+}
+.simulated-qr::after {
+  content: '';
+  position: absolute;
+  top: -8px; left: -8px; right: -8px; bottom: -8px;
+  border-radius: 14px;
+  border: 2px solid var(--lime-400);
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.9); opacity: 1; }
+  70% { transform: scale(1.2); opacity: 0; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+.qr-corner { transition: border-color 0.3s ease; }
+.qr-center-dot { transition: background-color 0.3s ease; }
+.qr-label {
+  color: var(--violet-700);
+  background: rgba(168, 162, 244, 0.12);
+  padding: 6px 12px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .qr-container:hover { transform: scale(1.05); }
+  .qr-container:hover .simulated-qr {
+    box-shadow: 0 8px 24px rgba(207, 168, 86, 0.3);
+    border-color: var(--lime-500);
+  }
+  .qr-container:hover .qr-corner { border-color: var(--violet-700); }
+  .qr-container:hover .qr-center-dot { background-color: var(--violet-700); }
+  .qr-container:hover .qr-label {
+    background: var(--lime-400);
+    color: var(--ink-900);
+    transform: translateY(-2px);
+  }
+}
+
+.qr-container {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.simulated-qr {
+  transition: all 0.3s ease;
+  z-index: 1;
+}
+
+/* Pulsing ring to invite click */
+.simulated-qr::after {
+  content: '';
+  position: absolute;
+  top: -8px; left: -8px; right: -8px; bottom: -8px;
+  border-radius: 14px;
+  border: 2px solid var(--lime-400);
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.9); opacity: 1; }
+  70% { transform: scale(1.2); opacity: 0; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+
+.qr-corner { transition: border-color 0.3s ease; }
+.qr-center-dot { transition: background-color 0.3s ease; }
+.qr-label {
+  color: var(--violet-700);
+  background: rgba(168, 162, 244, 0.12);
+  padding: 6px 12px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+/* 1. Mobile touch state (instantly un-applies when touch ends) */
+.qr-container:active { transform: scale(1.05); }
+.qr-container:active .simulated-qr { box-shadow: 0 8px 24px rgba(207, 168, 86, 0.3); border-color: var(--lime-500); }
+.qr-container:active .qr-corner { border-color: var(--violet-700); }
+.qr-container:active .qr-center-dot { background-color: var(--violet-700); }
+.qr-container:active .qr-label {
+  background: var(--lime-400);
+  color: var(--ink-900);
+  transform: translateY(-2px);
+}
+
+/* 2. Desktop hover state */
+@media (hover: hover) and (pointer: fine) {
+  .qr-container:hover { transform: scale(1.05); }
+  .qr-container:hover .simulated-qr { box-shadow: 0 8px 24px rgba(207, 168, 86, 0.3); border-color: var(--lime-500); }
+  .qr-container:hover .qr-corner { border-color: var(--violet-700); }
+  .qr-container:hover .qr-center-dot { background-color: var(--violet-700); }
+  .qr-container:hover .qr-label {
+    background: var(--lime-400);
+    color: var(--ink-900);
+    transform: translateY(-2px);
   }
 }
