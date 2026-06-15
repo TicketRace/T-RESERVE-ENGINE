@@ -150,6 +150,8 @@ server:
   port: ${PORT:8080}
   forward-headers-strategy: framework
   tomcat:
+    remoteip:
+      internal-proxies: .*
     accept-count: 2000
     max-connections: 10000
   error:
