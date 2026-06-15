@@ -93,11 +93,13 @@
   border: 1px solid rgba(168, 162, 244, 0.2);
 }
 
-.seat-tile.available:hover {
-  transform: scale(1.15) translateY(-2px);
-  background: var(--violet-500);
-  color: var(--ink-900);
-  box-shadow: 0 6px 15px rgba(168, 162, 244, 0.25);
+@media (hover: hover) and (pointer: fine) {
+  .seat-tile.available:hover {
+    transform: scale(1.15) translateY(-2px);
+    background: var(--violet-500);
+    color: var(--ink-900);
+    box-shadow: 0 6px 15px rgba(168, 162, 244, 0.25);
+  }
 }
 
 .seat-tile.selected {
@@ -209,11 +211,13 @@
   border: 1px solid rgba(168, 162, 244, 0.45);
 }
 
-:host-context(.light-theme) .seat-tile.available:hover {
-  background: #7c4dff;
-  color: #ffffff !important;
-  border-color: #6200ea;
-  box-shadow: 0 6px 15px rgba(124, 77, 255, 0.35);
+@media (hover: hover) and (pointer: fine) {
+  :host-context(.light-theme) .seat-tile.available:hover {
+    background: #7c4dff;
+    color: #ffffff !important;
+    border-color: #6200ea;
+    box-shadow: 0 6px 15px rgba(124, 77, 255, 0.35);
+  }
 }
 
 :host-context(.light-theme) .seat-tile.selected {
@@ -241,3 +245,4 @@
 :host-context(.light-theme) .legend-label {
   color: rgba(18, 19, 26, 0.7);
 }
+
