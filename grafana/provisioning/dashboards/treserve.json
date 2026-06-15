@@ -130,9 +130,30 @@
     },
     {
       "id": 6,
-      "title": "HTTP Errors (4xx + 5xx)",
+      "title": "HTTP Client Errors (4xx)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 24, "w": 12, "h": 7 },
+      "gridPos": { "x": 0, "y": 24, "w": 8, "h": 7 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "fixedColor": "orange", "mode": "fixed" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20 }
+        }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"treserve-app-.*\",status=~\"4..\"}[30s]))",
+          "legendFormat": "4xx/s",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "HTTP Server Errors (5xx)",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 24, "w": 8, "h": 7 },
       "fieldConfig": {
         "defaults": {
           "unit": "reqps",
@@ -143,17 +164,17 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"treserve-app-.*\",status=~\"4..|5..\"}[30s]))",
-          "legendFormat": "errors/s",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"treserve-app-.*\",status=~\"5..\"}[30s]))",
+          "legendFormat": "5xx/s",
           "refId": "A"
         }
       ]
     },
     {
-      "id": 7,
+      "id": 8,
       "title": "Load Balance — RPS per Instance",
       "type": "piechart",
-      "gridPos": { "x": 12, "y": 24, "w": 12, "h": 7 },
+      "gridPos": { "x": 16, "y": 24, "w": 8, "h": 7 },
       "fieldConfig": {
         "defaults": { "unit": "reqps" }
       },
