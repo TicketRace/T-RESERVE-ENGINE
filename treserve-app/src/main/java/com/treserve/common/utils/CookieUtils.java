@@ -35,6 +35,7 @@ public class CookieUtils {
         cookie.setHttpOnly(true);
         cookie.setSecure(secure); // HTTPS → true, localhost HTTP → false
         cookie.setMaxAge(maxAge);
+        cookie.setAttribute("SameSite", secure ? "None" : "Lax"); // Important for cross-site Railway cookies
         response.addCookie(cookie);
     }
 
@@ -46,6 +47,8 @@ public class CookieUtils {
                     cookie.setValue("");
                     cookie.setPath("/");
                     cookie.setMaxAge(0);
+                    cookie.setSecure(request.isSecure());
+                    cookie.setAttribute("SameSite", request.isSecure() ? "None" : "Lax");
                     response.addCookie(cookie);
                 }
             }
