@@ -9,4 +9,12 @@ package com.treserve.booking.port;
  */
 public interface EventLookup {
     boolean existsById(Long eventId);
+
+    /**
+     * Получает название мероприятия по ID.
+     * 
+     * @param eventId ID мероприятия
+     * @return название мероприятия или "Unknown Event", если не найдено
+     */
+    String getEventTitle(Long eventId);
 }

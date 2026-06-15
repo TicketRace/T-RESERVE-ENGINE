@@ -20,7 +20,8 @@ public class TicketDownloadService {
 
     private final TicketRepository ticketRepository;
     private final TicketPdfGenerator pdfGenerator;
-    private final FileStorageService storageService;  // ← используем интерфейс
+    private final FileStorageService storageService;
+    private final QrCodeGenerator qrCodeGenerator;
 
     @Transactional
     public byte[] getOrCreateTicketPdf(Long ticketId, Long userId) {
@@ -60,6 +61,26 @@ public class TicketDownloadService {
         }
         
         return pdfBytes;
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] getTicketQrCode(Long ticketId, Long userId) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket", ticketId));
+
+        if (ticket.getUserId() == null || !ticket.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("Ticket does not belong to user");
+        }
+
+        if (ticket.getStatus() != TicketStatus.BOOKED) {
+            throw new IllegalStateException("Ticket is not confirmed");
+        }
+
+        try {
+            return qrCodeGenerator.generateQrCode(ticket.getVerifyToken());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate QR code", e);
+        }
     }
 
     private byte[] downloadFromStorage(String key) {

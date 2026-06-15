@@ -41,7 +41,7 @@
 
       <div *ngIf="isLoading" class="loader-box">
         <div class="spinner"></div>
-        <span>Бронируем...</span>
+        <span>{{ loadingMessage }}</span>
       </div>
 
       <div class="payment-actions-wrapper" *ngIf="!isLoading && !showConflictDialog">
@@ -53,6 +53,14 @@
           [disabled]="isLoading || lockedSeats.length === 0"
         >
           Подтвердить и оплатить
+        </button>
+        <button
+          class="cancel-booking-btn"
+          type="button"
+          (click)="cancelAllBookings()"
+          [disabled]="isLoading"
+        >
+          Отменить бронирование
         </button>
       </div>
     </div>
