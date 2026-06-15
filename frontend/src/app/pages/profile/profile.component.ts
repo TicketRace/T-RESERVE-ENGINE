@@ -84,19 +84,7 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  previewPdf(ticketId: number): void {
-    this.ticketService.downloadPdf(ticketId).subscribe(blob => {
 
-      const url = window.URL.createObjectURL(blob);
-
-      this.rawPdfUrl = url;
-
-      this.selectedPdfUrl =
-        this.sanitizer.bypassSecurityTrustResourceUrl(url);
-
-      this.showPdfModal = true;
-    });
-  }
 
   closePdf(): void {
     this.showPdfModal = false;
