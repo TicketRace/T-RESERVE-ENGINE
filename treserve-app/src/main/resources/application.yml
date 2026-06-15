@@ -149,6 +149,7 @@ cors:
 # ═══ Server ═══
 server:
   port: ${PORT:8080}   # Railway задаёт PORT автоматически; локально — 8080
+  forward-headers-strategy: framework
   tomcat:
     accept-count: 2000
     max-connections: 10000
