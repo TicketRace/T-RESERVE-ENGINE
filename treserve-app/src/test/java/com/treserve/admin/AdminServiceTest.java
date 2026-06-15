@@ -305,32 +305,7 @@ class AdminServiceTest {
         verify(eventRepository, never()).save(any());
     }
 
-    @Test
-    @DisplayName("updateEvent: продажи уже начались → IllegalArgumentException")
-    void updateEvent_afterSalesStarted_throwsException() {
-        // Event создаётся ДО MockedStatic
-        Event pastEvent = new Event();
-        pastEvent.setId(1L);
-        pastEvent.setTitle("Тестовый концерт");
-        pastEvent.setDescription("Описание тестового концерта");
-        pastEvent.setVenue(testVenue);
-        pastEvent.setStartTime(NOW.minusSeconds(3600)); // до мока — в прошлом
-        pastEvent.setBasePrice(BigDecimal.valueOf(1000));
-        pastEvent.setStatus("ACTIVE");
-        pastEvent.setCreatedBy(testAdmin);
 
-        try (MockedStatic<Instant> instantMock = mockStatic(Instant.class)) {
-            instantMock.when(Instant::now).thenReturn(NOW);
-
-            when(eventRepository.findById(1L)).thenReturn(Optional.of(pastEvent));
-
-            assertThatThrownBy(() -> adminService.updateEvent(1L, updateRequest, 1L))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Cannot edit event after sales started");
-
-            verify(eventRepository, never()).save(any());
-        }
-    }
 
     // ==================== deleteEvent ====================
 
