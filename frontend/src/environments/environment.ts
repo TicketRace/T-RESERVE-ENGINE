@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8080',
-  wsUrl: 'ws://localhost:8080'   // dev: явный адрес бэкенда
+  apiUrl: '',
+  wsUrl: 'ws://' + window.location.hostname + ':8080'
 };

@@ -71,6 +71,19 @@ export class OAuth2CallbackComponent implements OnInit {
         if (user?.role === 'ADMIN') {
           this.router.navigate(['/admin']);
         } else {
+          const savedSelection = sessionStorage.getItem('pending_seat_selection');
+          if (savedSelection) {
+            try {
+              const parsed = JSON.parse(savedSelection);
+              const eventId = parsed.event?.id || parsed.session?.id;
+              if (eventId) {
+                this.router.navigate(['/payment', eventId]);
+                return;
+              }
+            } catch (e) {
+              console.error('Failed to parse pending seat selection', e);
+            }
+          }
           this.router.navigate(['/profile']);
         }
       } else {

@@ -13,6 +13,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;  // === ДОБАВЛЕН ИМПОРТ ===
 
 @SpringBootTest(properties = {
     "spring.flyway.clean-disabled=false",
@@ -63,19 +64,24 @@ public abstract class AbstractPostgresIntegrationTest {
     @Autowired
     private RedisConnectionFactory redisConnectionFactory;
 
-    
-    
+    @Autowired
+    private RabbitListenerEndpointRegistry rabbitRegistry;
 
     @BeforeEach
     void resetDatabase() {
+        if (rabbitRegistry != null) {
+            rabbitRegistry.stop();
+        }
+        
         flyway.clean();
         flyway.migrate();
+        
+        if (rabbitRegistry != null) {
+            rabbitRegistry.start();
+        }
+        
         try (var connection = redisConnectionFactory.getConnection()) {
             connection.serverCommands().flushAll();
         }
     }
 }
-
-
-
-

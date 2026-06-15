@@ -72,11 +72,11 @@
         Войти через Google
       </button>
 
-      <a *ngIf="mode === 'login'" routerLink="/register">
+      <a *ngIf="mode === 'login'" routerLink="/register" queryParamsHandling="preserve">
         Создать аккаунт
       </a>
 
-      <a *ngIf="mode === 'register'" routerLink="/login">
+      <a *ngIf="mode === 'register'" routerLink="/login" queryParamsHandling="preserve">
         Уже есть аккаунт?
       </a>
 

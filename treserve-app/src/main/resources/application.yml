@@ -45,6 +45,14 @@ spring:
     port: 5672
     username: guest
     password: guest
+    # === retry для RabbitMQ ===
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-attempts: 3
+          multiplier: 2.0
 
   # ═══ Virtual Threads (Java 21) ═══
   threads:
@@ -82,7 +90,7 @@ spring:
 app:
   jwt:
     secret: ${JWT_SECRET:t-reserve-super-secret-key-change-in-prod-256-bits-minimum}
-    expiration-ms: 900000          # 15 min (access token)
+    expiration-ms: 900000          # 15 min (access token) — ранее 24h, уменьшено для безопасности
     refresh-expiration-ms: 604800000  # 7 days (refresh token)
   booking:
     lock-duration-minutes: 10
@@ -108,7 +116,7 @@ springdoc:
     tags-sorter: alpha
     operations-sorter: method
 
-# ═══ Actuator ═══
+# ═══ Actuator + Prometheus ═══
 management:
   health:
     mail:
@@ -116,7 +124,16 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      instance: ${INSTANCE_ID:local}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true  # p50/p95/p99 latency гистограмма
+      slo:
+        http.server.requests: 50ms,100ms,200ms,500ms,1s
 
 # ═══ Logging ═══
 logging:
@@ -125,15 +142,22 @@ logging:
     org.springframework.security: DEBUG
 
 # ═══ CORS ═══
+# Локально — localhost origins. Railway: задай CORS_ALLOWED_ORIGINS=https://frontend-xxx.up.railway.app
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:5173,http://localhost:3000,http://localhost,http://localhost:8081}
 
 # ═══ Server ═══
 server:
-  port: ${PORT:8080}
+  port: ${PORT:8080}   # Railway задаёт PORT автоматически; локально — 8080
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      internal-proxies: .*
+    accept-count: 2000
+    max-connections: 10000
   error:
     include-message: always
-    include-stacktrace: never
+    include-stacktrace: never    # never в проде — не светим стектрейсы
 
 # ═══ MinIO (S3-compatible storage) ═══
 minio:
@@ -146,3 +170,26 @@ minio:
 # ═══ PDF Generation ═══
 pdf:
   base-url: ${PDF_BASE_URL:http://localhost:8081/api/tickets}
+
+# === Resilience4j Circuit Breaker настройки ===
+resilience4j:
+  circuitbreaker:
+    instances:
+      minio:
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 50
+        event-consumer-buffer-size: 10
+      email:
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 30s
+        failure-rate-threshold: 50
+        event-consumer-buffer-size: 10

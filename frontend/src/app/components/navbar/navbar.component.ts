@@ -13,6 +13,8 @@ import { CommonModule } from '@angular/common';
 })
 export class NavbarComponent implements OnInit, OnDestroy {
   isLoggedIn = false;
+  isMenuOpen = false;
+  isSpinning = false;
   isAdmin = false;
   userName = '';
   isLightTheme = false;
@@ -46,6 +48,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
       )
       .subscribe(() => {
         this.isHidden = false;
+        this.isMenuOpen = false;
         const currentScrollY = window.scrollY;
         const basePath = this.router.url.split(/[?#]/)[0];
         const isRootPage = basePath === '/' || basePath === '';
@@ -79,7 +82,24 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.isScrolledOrSubpage = !isRootPage || currentScrollY > 80;
   }
 
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.isMenuOpen) {
+      this.isMenuOpen = false;
+    }
+  }
+
+  toggleMenu(event: Event): void {
+    event.stopPropagation();
+    this.isMenuOpen = !this.isMenuOpen;
+  }
+
   toggleTheme(): void {
+    this.isSpinning = true;
+    setTimeout(() => {
+      this.isSpinning = false;
+    }, 500);
+
     this.isLightTheme = !this.isLightTheme;
     if (this.isLightTheme) {
       document.body.classList.add('light-theme');
@@ -111,13 +131,25 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   goHome(): void {
-    if (this.router.url === '/') {
-      const el = document.getElementById('events-catalog');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    } else {
+    if (this.router.url !== '/') {
       this.router.navigate(['/']);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  goEvents(): void {
+    const basePath = this.router.url.split(/[?#]/)[0];
+    if (basePath === '/' || basePath === '') {
+      const el = document.getElementById('events-catalog');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      this.router.navigate(['/']).then(() => {
+        setTimeout(() => {
+          const el = document.getElementById('events-catalog');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      });
     }
   }
 

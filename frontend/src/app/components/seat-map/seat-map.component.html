@@ -48,7 +48,7 @@
           [class.available]="seat.status === 'AVAILABLE'"
           [class.locked]="seat.status === 'LOCKED'"
           [class.booked]="seat.status === 'BOOKED'"
-          [class.selected]="selectedSeatId === seat.seatId"
+          [class.selected]="selectedSeatIds.has(seat.seatId)"
           [disabled]="seat.status !== 'AVAILABLE'"
           (click)="onSeatClick(seat)"
         >

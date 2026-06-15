@@ -175,20 +175,27 @@
 
 .text-gold {
   color: var(--color-accent-gold);
-  transition: color 0.4s ease;
+  transition: color 0.4s ease, text-shadow 0.4s ease;
 }
 
 .text-white {
   color: var(--color-text-primary);
-  transition: color 0.4s ease;
+  transition: color 0.4s ease, text-shadow 0.4s ease;
 }
 
-.main-title:hover .text-gold {
+/* Hovering specifically on the second part swaps the colors */
+.main-title:has(.text-white:hover) .text-gold {
   color: var(--color-text-primary);
 }
 
-.main-title:hover .text-white {
+.main-title:has(.text-white:hover) .text-white {
   color: var(--color-accent-gold);
+}
+
+/* Optional: adding slight glow on hover to make it feel premium */
+.main-title:has(.text-white:hover) .text-white,
+.main-title:has(.text-gold:hover) .text-gold {
+  text-shadow: 0 0 12px rgba(207, 168, 86, 0.4);
 }
 
 /* Right side panel stack container */
@@ -687,8 +694,10 @@
   /* Show mobile nodes canvas */
   #mobile-nodes-canvas {
     display: block;
+    width: 100%;
     height: 180px;
     margin: 8px auto;
+    justify-self: stretch;
   }
 
   .ui-layer {

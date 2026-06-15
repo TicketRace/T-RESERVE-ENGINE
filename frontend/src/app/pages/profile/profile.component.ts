@@ -41,6 +41,36 @@ export class ProfileComponent implements OnInit {
       });
   }
 
+  qrUrls: Record<number, string> = {};
+  activeQrTicketId: number | null = null;
+  activeQrUrl: string | null = null;
+
+  openQrModal(ticketId: number): void {
+    if (this.qrUrls[ticketId]) {
+      this.activeQrTicketId = ticketId;
+      this.activeQrUrl = this.qrUrls[ticketId];
+      return;
+    }
+
+    this.http.get(`${this.apiUrl}/api/tickets/${ticketId}/qr`, { responseType: 'blob' })
+      .subscribe({
+        next: (blob) => {
+          const url = window.URL.createObjectURL(blob);
+          this.qrUrls[ticketId] = url;
+          this.activeQrTicketId = ticketId;
+          this.activeQrUrl = url;
+        },
+        error: (err) => {
+          console.error('Failed to load QR code', err);
+        }
+      });
+  }
+
+  closeQrModal(): void {
+    this.activeQrTicketId = null;
+    this.activeQrUrl = null;
+  }
+
   downloadTicketPDF(ticketId: number): void {
     this.ticketService.downloadPdf(ticketId).subscribe(blob => {
       const url = window.URL.createObjectURL(blob);
