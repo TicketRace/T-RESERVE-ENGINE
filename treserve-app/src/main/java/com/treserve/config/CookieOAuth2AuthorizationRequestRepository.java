@@ -33,10 +33,12 @@ public class CookieOAuth2AuthorizationRequestRepository implements Authorization
             return;
         }
 
+        boolean isSecure = request.isSecure() || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto"));
+
         CookieUtils.addCookie(response, COOKIE_NAME,
                 CookieUtils.serialize(authorizationRequest),
                 COOKIE_EXPIRE_SECONDS,
-                request.isSecure()); // true на HTTPS (прод), false на HTTP (localhost)
+                isSecure);
     }
 
     @Override

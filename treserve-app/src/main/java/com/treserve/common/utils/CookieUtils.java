@@ -47,8 +47,9 @@ public class CookieUtils {
                     cookie.setValue("");
                     cookie.setPath("/");
                     cookie.setMaxAge(0);
-                    cookie.setSecure(request.isSecure());
-                    cookie.setAttribute("SameSite", request.isSecure() ? "None" : "Lax");
+                    boolean isSecure = request.isSecure() || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto"));
+                    cookie.setSecure(isSecure);
+                    cookie.setAttribute("SameSite", isSecure ? "None" : "Lax");
                     response.addCookie(cookie);
                 }
             }
