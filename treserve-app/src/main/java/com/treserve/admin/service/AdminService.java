@@ -86,10 +86,8 @@ public class AdminService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", eventId));
 
-        // Проверка: можно редактировать только до начала продаж (startTime > now)
-        if (event.getStartTime().isBefore(java.time.Instant.now())) {
-            throw new IllegalArgumentException("Cannot edit event after sales started");
-        }
+        // Убрали жесткую блокировку редактирования (раньше нельзя было менять даже картинку после начала продаж)
+        // В будущем здесь нужно блокировать только изменение цены (basePrice) или площадки (venue)
 
         if (request.getTitle() != null) event.setTitle(request.getTitle());
         if (request.getDescription() != null) event.setDescription(request.getDescription());
