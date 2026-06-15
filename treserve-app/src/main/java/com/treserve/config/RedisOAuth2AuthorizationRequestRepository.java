@@ -52,13 +52,20 @@ public class RedisOAuth2AuthorizationRequestRepository
             return;
         }
 
-        String state     = authorizationRequest.getState();
-        String redisKey  = KEY_PREFIX + state;
-        byte[] bytes     = SerializationUtils.serialize(authorizationRequest);
+        String state      = authorizationRequest.getState();
+        String redisKey   = KEY_PREFIX + state;
+        byte[] bytes      = SerializationUtils.serialize(authorizationRequest);
         String serialized = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 
-        redisTemplate.opsForValue().set(redisKey, serialized, TTL_SECONDS, TimeUnit.SECONDS);
-        log.info("[OAuth2] Saved in Redis: key={}", redisKey);
+        try {
+            redisTemplate.opsForValue().set(redisKey, serialized, TTL_SECONDS, TimeUnit.SECONDS);
+            log.info("[OAuth2] Saved in Redis: key={}", redisKey);
+        } catch (Exception e) {
+            // Redis недоступен — OAuth2 не сможет завершиться. Логируем явно.
+            log.error("[OAuth2] REDIS UNAVAILABLE — cannot save OAuth2 state. " +
+                    "Check SPRING_DATA_REDIS_HOST env var on Railway. key={}", redisKey, e);
+            throw new IllegalStateException("Redis unavailable for OAuth2 state storage", e);
+        }
     }
 
     // ─── Load ──────────────────────────────────────────────────────────────────
