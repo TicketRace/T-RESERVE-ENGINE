@@ -35,9 +35,11 @@ public class UserService {
                         t.getEventStartTime(),
                         t.getEventTitle(),
                         t.getSeatLabel(),
+                        t.getSeatId(),
                         t.getStatus(),
                         t.getPrice(),
-                        t.getBookedAt()
+                        t.getBookedAt(),
+                        t.getLockExpiresAt()
                 ))
                 .collect(Collectors.toList());
     }

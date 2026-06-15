@@ -1,4 +1,4 @@
-﻿import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { AuthResponse, User } from '../models/user';
 import { HttpClient } from '@angular/common/http';
@@ -37,6 +37,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
     this.currentUserSubject.next(null);
   }
 
@@ -66,5 +67,29 @@ export class AuthService {
     ).pipe(
       tap(res => this.persist(res))
     );
+  }
+
+  /** Редирект на Google OAuth2 — бэкенд обрабатывает весь flow */
+  googleLogin(): void {
+    window.location.href = `${this.apiUrl}/oauth2/authorization/google`;
+  }
+
+  /**
+   * Вызывается из OAuth2CallbackComponent после редиректа от бэкенда.
+   * Декодирует JWT для получения user info и сохраняет токены.
+   */
+  handleOAuth2Callback(token: string, refreshToken: string): void {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const user: User = {
+        id:    Number(payload.sub),
+        email: payload.email,
+        name:  payload.name || payload.email.split('@')[0],
+        role:  payload.role as 'USER' | 'ADMIN',
+      };
+      this.persist({ token, refreshToken, user });
+    } catch {
+      console.error('Failed to parse OAuth2 JWT');
+    }
   }
 }

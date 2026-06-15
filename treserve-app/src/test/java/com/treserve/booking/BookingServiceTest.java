@@ -6,6 +6,7 @@ import com.treserve.booking.entity.TicketStatus;
 import com.treserve.booking.port.UserLookup;
 import com.treserve.booking.repository.TicketRepository;
 import com.treserve.booking.service.BookingService;
+import com.treserve.booking.service.DistributedLockService;
 import com.treserve.booking.service.SeatService;
 import com.treserve.common.exception.ForbiddenOperationException;
 import com.treserve.common.exception.ResourceNotFoundException;
@@ -21,17 +22,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
  * Unit-тесты для BookingService.
- * Тестируем только бизнес-логику сервиса, не Spring/JPA.
+ * Тестируем бизнес-логику сервиса с учетом Redis-блокировки.
  */
 @ExtendWith(MockitoExtension.class)
 class BookingServiceTest {
@@ -39,11 +42,13 @@ class BookingServiceTest {
     @Mock
     private TicketRepository ticketRepository;
     @Mock
-    private UserLookup userLookup;   // ← интерфейс вместо UserRepository
+    private UserLookup userLookup;
     @Mock
     private SeatService seatService;
     @Mock
     private org.springframework.transaction.support.TransactionTemplate transactionTemplate;
+    @Mock
+    private DistributedLockService distributedLock;
 
     @InjectMocks
     private BookingService bookingService;
@@ -87,8 +92,10 @@ class BookingServiceTest {
     // ─── tryLock ──────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("tryLock: свободное место → успешная блокировка + expiresAt ≈ now+10min")
+    @DisplayName("tryLock: всё успешно → лок получен, release() НЕ вызван")
     void tryLock_success() {
+        when(distributedLock.tryAcquire(eq(EVENT_ID), eq(SEAT_ID), eq(USER_ID), any(Duration.class)))
+                .thenReturn(true);
         when(ticketRepository.findAvailableForUpdate(eq(EVENT_ID), eq(SEAT_ID), any(Instant.class)))
                 .thenReturn(Optional.of(availableTicket));
         when(userLookup.existsById(USER_ID)).thenReturn(true);
@@ -111,26 +118,28 @@ class BookingServiceTest {
         assertThat(availableTicket.getLockExpiresAt()).isEqualTo(response.getExpiresAt());
 
         verify(seatService).evictSeatsCache(EVENT_ID);
+        verify(distributedLock, never()).release(any(), any());
     }
 
     @Test
-    @DisplayName("tryLock: место не AVAILABLE (уже занято) → SeatAlreadyLockedException")
-    void tryLock_alreadyLocked() {
-        when(userLookup.existsById(USER_ID)).thenReturn(true);
-        when(ticketRepository.findAvailableForUpdate(eq(EVENT_ID), eq(SEAT_ID), any(Instant.class)))
-                .thenReturn(Optional.empty());
+    @DisplayName("tryLock: Redis отклоняет (false) → SeatAlreadyLockedException, без вызова БД")
+    void tryLock_redisRejects() {
+        when(distributedLock.tryAcquire(eq(EVENT_ID), eq(SEAT_ID), eq(USER_ID), any(Duration.class)))
+                .thenReturn(false);
 
         assertThatThrownBy(() -> bookingService.tryLock(EVENT_ID, SEAT_ID, USER_ID))
                 .isInstanceOf(SeatAlreadyLockedException.class);
 
-        verify(userLookup, times(1)).existsById(USER_ID);
-        verify(ticketRepository, never()).save(any());
-        verify(seatService, never()).evictSeatsCache(any());
+        verify(userLookup, never()).existsById(any());
+        verify(ticketRepository, never()).findAvailableForUpdate(any(), any(), any());
+        verify(distributedLock, never()).release(any(), any());
     }
 
     @Test
-    @DisplayName("tryLock: PG блокировка (строка занята другой транзакцией) → SeatAlreadyLockedException")
-    void tryLock_pgLockContention() {
+    @DisplayName("tryLock: PG бросает ошибку → release() вызывается в finally")
+    void tryLock_pgFails_releasesRedis() {
+        when(distributedLock.tryAcquire(eq(EVENT_ID), eq(SEAT_ID), eq(USER_ID), any(Duration.class)))
+                .thenReturn(true);
         when(userLookup.existsById(USER_ID)).thenReturn(true);
         when(ticketRepository.findAvailableForUpdate(eq(EVENT_ID), eq(SEAT_ID), any(Instant.class)))
                 .thenThrow(new PessimisticLockingFailureException("FOR UPDATE NOWAIT failed"));
@@ -138,15 +147,41 @@ class BookingServiceTest {
         assertThatThrownBy(() -> bookingService.tryLock(EVENT_ID, SEAT_ID, USER_ID))
                 .isInstanceOf(SeatAlreadyLockedException.class);
 
-        verify(userLookup, times(1)).existsById(USER_ID);
-        verify(ticketRepository, never()).save(any());
-        verify(seatService, never()).evictSeatsCache(any());
+        verify(distributedLock).release(EVENT_ID, SEAT_ID);
+    }
+
+    @Test
+    @DisplayName("tryLock: юзер не найден → release() вызывается явно перед исключением")
+    void tryLock_userNotFound_releasesRedis() {
+        when(distributedLock.tryAcquire(eq(EVENT_ID), eq(SEAT_ID), eq(USER_ID), any(Duration.class)))
+                .thenReturn(true);
+        when(userLookup.existsById(USER_ID)).thenReturn(false);
+
+        assertThatThrownBy(() -> bookingService.tryLock(EVENT_ID, SEAT_ID, USER_ID))
+                .isInstanceOf(ResourceNotFoundException.class);
+
+        verify(distributedLock).release(EVENT_ID, SEAT_ID);
+    }
+
+    @Test
+    @DisplayName("tryLock: место не AVAILABLE в БД → SeatAlreadyLockedException, release() вызывается")
+    void tryLock_alreadyLocked() {
+        when(distributedLock.tryAcquire(eq(EVENT_ID), eq(SEAT_ID), eq(USER_ID), any(Duration.class)))
+                .thenReturn(true);
+        when(userLookup.existsById(USER_ID)).thenReturn(true);
+        when(ticketRepository.findAvailableForUpdate(eq(EVENT_ID), eq(SEAT_ID), any(Instant.class)))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> bookingService.tryLock(EVENT_ID, SEAT_ID, USER_ID))
+                .isInstanceOf(SeatAlreadyLockedException.class);
+
+        verify(distributedLock).release(EVENT_ID, SEAT_ID);
     }
 
     // ─── confirm ──────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("confirm: LOCKED билет → BOOKED + bookedAt установлен")
+    @DisplayName("confirm: LOCKED билет → BOOKED + release() вызывается")
     void confirm_success() {
         when(ticketRepository.findByIdForUpdate(TICKET_ID))
                 .thenReturn(Optional.of(lockedTicket));
@@ -160,10 +195,11 @@ class BookingServiceTest {
         assertThat(lockedTicket.getUserId()).isEqualTo(USER_ID);
         verify(ticketRepository).save(lockedTicket);
         verify(seatService).evictSeatsCache(EVENT_ID);
+        verify(distributedLock).release(EVENT_ID, SEAT_ID);
     }
 
     @Test
-    @DisplayName("confirm: истёкший лок → IllegalArgumentException")
+    @DisplayName("confirm: истёкший лок → IllegalArgumentException, release() НЕ вызывается")
     void confirm_expired() {
         lockedTicket.setLockExpiresAt(Instant.now().minusSeconds(60));
         when(ticketRepository.findByIdForUpdate(TICKET_ID))
@@ -175,10 +211,11 @@ class BookingServiceTest {
 
         verify(ticketRepository, never()).save(any());
         verify(seatService, never()).evictSeatsCache(any());
+        verify(distributedLock, never()).release(any(), any());
     }
 
     @Test
-    @DisplayName("confirm: чужой лок → ForbiddenOperationException")
+    @DisplayName("confirm: чужой лок → ForbiddenOperationException, release() НЕ вызывается")
     void confirm_wrongUser() {
         when(ticketRepository.findByIdForUpdate(TICKET_ID))
                 .thenReturn(Optional.of(lockedTicket));
@@ -189,7 +226,7 @@ class BookingServiceTest {
 
         verify(ticketRepository, never()).save(any());
         verify(seatService, never()).evictSeatsCache(any());
-        assertThat(lockedTicket.getStatus()).isEqualTo(TicketStatus.LOCKED);
+        verify(distributedLock, never()).release(any(), any());
     }
 
     @Test
@@ -204,7 +241,7 @@ class BookingServiceTest {
                 .hasMessageContaining("not in LOCKED state");
 
         verify(ticketRepository, never()).save(any());
-        verify(seatService, never()).evictSeatsCache(any());
+        verify(distributedLock, never()).release(any(), any());
     }
 
     @Test
@@ -217,13 +254,13 @@ class BookingServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class);
 
         verify(ticketRepository, never()).save(any());
-        verify(seatService, never()).evictSeatsCache(any());
+        verify(distributedLock, never()).release(any(), any());
     }
 
     // ─── cancel ───────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("cancel: LOCKED билет → AVAILABLE, пользователь сброшен")
+    @DisplayName("cancel: LOCKED билет → AVAILABLE + release() вызывается")
     void cancel_success() {
         when(ticketRepository.findByIdForUpdate(TICKET_ID))
                 .thenReturn(Optional.of(lockedTicket));
@@ -235,10 +272,11 @@ class BookingServiceTest {
         assertThat(lockedTicket.getUserId()).isNull();
         assertThat(lockedTicket.getLockExpiresAt()).isNull();
         verify(seatService).evictSeatsCache(EVENT_ID);
+        verify(distributedLock).release(EVENT_ID, SEAT_ID);
     }
 
     @Test
-    @DisplayName("cancel: чужой лок → ForbiddenOperationException")
+    @DisplayName("cancel: чужой лок → ForbiddenOperationException, release() НЕ вызывается")
     void cancel_wrongUser() {
         when(ticketRepository.findByIdForUpdate(TICKET_ID))
                 .thenReturn(Optional.of(lockedTicket));
@@ -248,8 +286,7 @@ class BookingServiceTest {
                 .hasMessageContaining("not locked by you");
 
         verify(ticketRepository, never()).save(any());
-        verify(seatService, never()).evictSeatsCache(any());
-        assertThat(lockedTicket.getStatus()).isEqualTo(TicketStatus.LOCKED);
+        verify(distributedLock, never()).release(any(), any());
     }
 
     @Test
@@ -264,7 +301,7 @@ class BookingServiceTest {
                 .hasMessageContaining("Can only cancel LOCKED");
 
         verify(ticketRepository, never()).save(any());
-        verify(seatService, never()).evictSeatsCache(any());
+        verify(distributedLock, never()).release(any(), any());
     }
 
     @Test
@@ -277,6 +314,6 @@ class BookingServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class);
 
         verify(ticketRepository, never()).save(any());
-        verify(seatService, never()).evictSeatsCache(any());
+        verify(distributedLock, never()).release(any(), any());
     }
 }

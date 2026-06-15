@@ -8,9 +8,11 @@ import org.springframework.data.repository.query.Param;
 import com.treserve.booking.entity.Ticket;
 import com.treserve.booking.entity.TicketStatus;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
@@ -42,7 +44,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
      * Если строка уже заблокирована другой транзакцией → PG бросает ошибку мгновенно.
      */
     @Query(value = """
-        SELECT id, event_id, seat_id, status, price, user_id, lock_expires_at, booked_at
+        SELECT id, event_id, seat_id, status, price, user_id, lock_expires_at, booked_at, pdf_url, verify_token
         FROM tickets
         WHERE event_id = :eventId AND seat_id = :seatId 
           AND (status = 'AVAILABLE' OR (status = 'LOCKED' AND lock_expires_at < :now))
@@ -56,10 +58,15 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     /** Найти билет по ID с блокировкой строки */
     @Query(value = """
-        SELECT id, event_id, seat_id, status, price, user_id, lock_expires_at, booked_at
+        SELECT id, event_id, seat_id, status, price, user_id, lock_expires_at, booked_at, pdf_url, verify_token
         FROM tickets WHERE id = :id FOR UPDATE NOWAIT
     """, nativeQuery = true)
     Optional<Ticket> findByIdForUpdate(@Param("id") Long id);
+    Optional<Ticket> findByVerifyToken(UUID verifyToken);
+    
+    @Modifying
+    @Query("UPDATE Ticket t SET t.pdfUrl = :pdfUrl WHERE t.id = :id AND t.pdfUrl IS NULL")
+    int updatePdfUrlIfNull(@Param("id") Long id, @Param("pdfUrl") String pdfUrl);
 
     /** Bulk Delete всех билетов мероприятия */
     @Modifying
@@ -68,6 +75,20 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     /** Проверка наличия оплаченных билетов — один COUNT запрос, без загрузки в память */
     boolean existsByEventIdAndStatus(Long eventId, TicketStatus status);
+
+    /**
+     * Получить количество проданных билетов по мероприятию
+     */
+    @Query("SELECT COUNT(t) FROM Ticket t WHERE t.eventId = :eventId AND t.status = :status")
+    long countByEventIdAndStatus(@Param("eventId") Long eventId, @Param("status") TicketStatus status);
+
+    long countByEventIdAndUserIdAndStatusIn(Long eventId, Long userId, List<TicketStatus> statuses);
+
+    /**
+     * Получить общую выручку по мероприятию (сумма цен BOOKED билетов)
+     */
+    @Query("SELECT COALESCE(SUM(t.price), 0) FROM Ticket t WHERE t.eventId = :eventId AND t.status = :status")
+    BigDecimal sumPriceByEventIdAndStatus(@Param("eventId") Long eventId, @Param("status") TicketStatus status);
 
     /**
      * Safety net: просроченные LOCKED билеты.
@@ -83,6 +104,9 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     /** Билеты юзера по статусу */
     List<Ticket> findByUserIdAndStatus(Long userId, TicketStatus status);
 
+    @Query("SELECT e.title FROM Event e WHERE e.id = :eventId")
+    String findEventTitleByEventId(@Param("eventId") Long eventId);
+
     /**
      * Билеты пользователя с деталями ивента и места (native SQL JOIN).
      * Возвращает проекцию TicketDetail без JPA @ManyToOne зависимостей.
@@ -97,7 +121,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
                t.status,
                t.price,
                t.booked_at       AS bookedAt,
-               t.lock_expires_at AS lockExpiresAt
+               t.lock_expires_at AS lockExpiresAt,
+               t.pdf_url         AS pdfUrl
         FROM tickets t
         JOIN events e ON t.event_id = e.id
         JOIN seats  s ON t.seat_id  = s.id

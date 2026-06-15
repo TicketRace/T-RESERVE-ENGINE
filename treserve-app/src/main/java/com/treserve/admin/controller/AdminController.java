@@ -1,6 +1,7 @@
 package com.treserve.admin.controller;
 
 import com.treserve.admin.dto.DashboardResponse;
+import com.treserve.admin.dto.EventStatisticsResponse;
 import com.treserve.admin.service.AdminService;
 import com.treserve.event.dto.EventCreateRequest;
 import com.treserve.event.dto.EventResponse;
@@ -80,15 +81,14 @@ public class AdminController {
         adminService.deleteEvent(id);
     }
 
-    @GetMapping("/dashboard")
-    @Operation(summary = "Дашборд: статистика (mock)")
+        @GetMapping("/dashboard")
+    @Operation(summary = "Дашборд: статистика по мероприятиям администратора")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Статистика получена", content = @Content(schema = @Schema(implementation = DashboardResponse.class))),
         @ApiResponse(responseCode = "401", description = "Неавторизован (требуется JWT токен)"),
         @ApiResponse(responseCode = "403", description = "Доступ запрещён (требуется роль ADMIN)")
     })
-    public DashboardResponse getDashboard() {
-        // Mock данные, позже замените на реальные из БД
-        return new DashboardResponse(42, 128, 12500.50);
+    public DashboardResponse getDashboard(@AuthenticationPrincipal Long adminId) {
+        return adminService.getDashboard(adminId);
     }
 }

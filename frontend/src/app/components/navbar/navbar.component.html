@@ -1,18 +1,47 @@
-<header class="nav-frame">
-  <div class="shell nav-row">
-    <a *ngIf="!isAdmin" class="nav-link brand" routerLink="/events">
-      События
-    </a>
-    <nav class="nav-actions">
-      <a *ngIf="isAdmin" class="nav-link" routerLink="/admin">
-        Мои события
-      </a>
+<header class="hud-header nav-frame animate-fade-in" [class.nav-hidden]="isHidden"
+  [class.nav-glassy]="isScrolledOrSubpage">
+  <div class="logo-wrapper" (click)="isAdmin ? router.navigate(['/admin']) : goHome()">
+    <img src="/logo.png" alt="T Logo" class="logo-icon-img">
+    <span class="logo-text-reserve">Reserve</span>
+  </div>
 
-      <a *ngIf="!isAdmin" class="nav-link" (click)="goProfile()">
-        Личный кабинет
-      </a>
-      <span *ngIf="isLoggedIn" class="user-name">{{ userName }}</span>
-      <button *ngIf="isLoggedIn" class="text-button" type="button" (click)="logout()">Выйти</button>
-    </nav>
+  <div class="auth-wrapper">
+    <!-- Sign in button (visible only before login) -->
+    <button *ngIf="!isLoggedIn" class="signin-link" (click)="goLogin()">Sign in</button>
+
+    <!-- Account button (visible only after login) -->
+    <button *ngIf="isLoggedIn" class="signin-link account-btn" (click)="goProfile()">Account</button>
+
+    <!-- Theme toggle button (always visible) -->
+    <button class="theme-toggle-btn" (click)="toggleTheme()" title="Toggle Theme">
+      {{ isLightTheme ? '🌙' : '☀️' }}
+    </button>
+
+    <!-- One-symbol dropdown menu in the far right -->
+    <div class="dropdown-menu">
+      <button class="menu-trigger-btn" title="Menu"></button>
+      <div class="dropdown-content">
+        <!-- Navigation Links -->
+        <a *ngIf="isAdmin" class="dropdown-link" routerLink="/admin">
+          Панель управления
+        </a>
+        <a *ngIf="!isAdmin" class="dropdown-link" href="javascript:void(0)" (click)="goEvents()">
+          События
+        </a>
+        
+        <div class="dropdown-divider" *ngIf="isLoggedIn"></div>
+        
+        <!-- Logged in status (hidden inside menu) -->
+        <div *ngIf="isLoggedIn" class="dropdown-info" (click)="goProfile()">
+          <span class="info-label">Пользователь</span>
+          <span class="info-value">{{ userName || 'User' }}</span>
+        </div>
+        
+        <div class="dropdown-divider" *ngIf="isLoggedIn"></div>
+        
+        <!-- Logout action -->
+        <button *ngIf="isLoggedIn" class="dropdown-btn logout" (click)="logout()">Sign out</button>
+      </div>
+    </div>
   </div>
 </header>

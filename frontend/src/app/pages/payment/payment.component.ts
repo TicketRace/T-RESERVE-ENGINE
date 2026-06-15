@@ -1,9 +1,10 @@
-﻿import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EventSession } from '../../models/event';
 import { Seat } from '../../models/seat';
 import { BookingService } from '../../services/booking.service';
 import { CommonModule } from '@angular/common';
+import { lastValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-payment',
@@ -14,16 +15,21 @@ import { CommonModule } from '@angular/common';
 })
 export class PaymentComponent implements OnInit, OnDestroy {
   session: EventSession | null = null;
-  selectedSeat: Seat | null = null;
+  selectedSeats: Seat[] = [];
 
-  lockId: number | null = null;
+  lockedSeats: { seat: Seat; lockId: number; expiresAt: string }[] = [];
+  failedSeats: Seat[] = [];
+
   expiresLabel = '10:00';
 
   private timerInterval: any;
-  private readonly LOCK_KEY = 'payment_lock';
+  private readonly LOCK_KEY = 'payment_locks';
 
   errorMessage: string | null = null;
   isLoading = false;
+  loadingMessage = 'Бронируем...';
+
+  showConflictDialog = false;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -35,57 +41,103 @@ export class PaymentComponent implements OnInit, OnDestroy {
     const sessionId = Number(this.route.snapshot.paramMap.get('sessionId'));
 
     const state = history.state as {
-      selectedSeat?: Seat;
+      selectedSeats?: Seat[];
       session?: EventSession;
     };
 
-    this.selectedSeat = state?.selectedSeat ?? null;
-    this.session = state?.session ?? null;
+    this.selectedSeats = state?.selectedSeats ?? [];
+    this.session = (state?.session ?? (state as any)?.event) ?? null;
 
-    if (!this.selectedSeat) {
-      this.router.navigate(['/events']);
+    if (this.selectedSeats.length === 0) {
+      const saved = sessionStorage.getItem('pending_seat_selection');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          this.selectedSeats = parsed.selectedSeats || (parsed.selectedSeat ? [parsed.selectedSeat] : []);
+          this.session = parsed.event || parsed.session;
+          sessionStorage.removeItem('pending_seat_selection');
+        } catch (e) {
+          console.error('Failed to parse pending seat selection', e);
+        }
+      }
+    }
+
+    if (this.selectedSeats.length === 0) {
+      this.router.navigate(['/']);
       return;
     }
 
-    const saved = sessionStorage.getItem(this.LOCK_KEY);
-
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      this.lockId = parsed.lockId;
-      this.startTimer(parsed.expiresAt);
+    const savedLocks = sessionStorage.getItem(this.LOCK_KEY);
+    if (savedLocks) {
+      const parsed = JSON.parse(savedLocks);
+      this.lockedSeats = parsed.lockedSeats;
+      if (this.lockedSeats.length > 0) {
+        this.startTimer(this.lockedSeats[0].expiresAt);
+      }
     } else {
-      this.createLock(sessionId);
+      this.createLocks(sessionId);
     }
   }
 
-  private createLock(sessionId: number): void {
-    if (!this.selectedSeat) return;
-
+  private async createLocks(sessionId: number): Promise<void> {
     this.isLoading = true;
     this.errorMessage = null;
 
-    this.bookingService
-      .lockSeat(sessionId, this.selectedSeat.seatId)
-      .subscribe({
-        next: (lock) => {
-          this.isLoading = false;
+    for (const seat of this.selectedSeats) {
+      try {
+        const lock = await lastValueFrom(this.bookingService.lockSeat(sessionId, seat.seatId));
+        this.lockedSeats.push({ seat, lockId: lock.lockId, expiresAt: lock.expiresAt });
+      } catch (err: any) {
+        this.failedSeats.push(seat);
+      }
+    }
 
-          this.lockId = lock.lockId;
-          sessionStorage.setItem(this.LOCK_KEY, JSON.stringify(lock));
+    this.isLoading = false;
 
-          this.startTimer(lock.expiresAt);
-        },
-        error: (err) => {
-          this.isLoading = false;
+    if (this.failedSeats.length > 0) {
+      if (this.lockedSeats.length === 0) {
+        this.errorMessage = 'Все выбранные места уже заняты.';
+        setTimeout(() => this.goBack(), 2000);
+      } else {
+        this.showConflictDialog = true;
+      }
+    } else {
+      this.saveLocksAndStartTimer();
+    }
+  }
 
-          if (err.status === 409) {
-            this.errorMessage = 'Место уже занято';
-            setTimeout(() => this.router.navigate(['/events']), 2000);
-          } else {
-            this.errorMessage = 'Ошибка бронирования';
-          }
-        },
-      });
+  private saveLocksAndStartTimer(): void {
+    sessionStorage.setItem(this.LOCK_KEY, JSON.stringify({ lockedSeats: this.lockedSeats }));
+    if (this.lockedSeats.length > 0) {
+      this.startTimer(this.lockedSeats[0].expiresAt);
+    }
+  }
+
+  acceptPartialBooking(): void {
+    this.showConflictDialog = false;
+    this.selectedSeats = this.lockedSeats.map(l => l.seat);
+    this.saveLocksAndStartTimer();
+  }
+
+  async cancelPartialBooking(): Promise<void> {
+    this.showConflictDialog = false;
+    await this.cancelAllBookings();
+  }
+
+  async cancelAllBookings(): Promise<void> {
+    this.loadingMessage = 'Отменяем...';
+    this.isLoading = true;
+    for (const lock of this.lockedSeats) {
+      try {
+        await lastValueFrom(this.bookingService.cancelBooking(lock.lockId));
+      } catch (e) {
+        console.error('Failed to cancel lock', e);
+      }
+    }
+    this.lockedSeats = [];
+    sessionStorage.removeItem(this.LOCK_KEY);
+    this.isLoading = false;
+    this.goBack();
   }
 
   private startTimer(expiresAt: string): void {
@@ -97,10 +149,10 @@ export class PaymentComponent implements OnInit, OnDestroy {
       if (remaining <= 0) {
         this.expiresLabel = '00:00';
         clearInterval(this.timerInterval);
-        sessionStorage.removeItem(this.LOCK_KEY);
-
-        this.router.navigate(['/events'], {
-          state: { message: 'Время бронирования истекло' },
+        this.cancelAllBookings().then(() => {
+          this.router.navigate(['/'], {
+            state: { message: 'Время бронирования истекло' },
+          });
         });
         return;
       }
@@ -117,18 +169,26 @@ export class PaymentComponent implements OnInit, OnDestroy {
     this.timerInterval = setInterval(tick, 1000);
   }
 
-  payFree(): void {
-    if (!this.lockId) return;
+  async payFree(): Promise<void> {
+    if (this.lockedSeats.length === 0) return;
 
-    this.bookingService.confirmBooking(this.lockId).subscribe({
-      next: () => {
-        sessionStorage.removeItem(this.LOCK_KEY);
-        this.router.navigate(['/payment-success']);
-      },
-      error: () => {
-        this.errorMessage = 'Ошибка оплаты';
-      },
-    });
+    this.loadingMessage = 'Оплачиваем...';
+    this.isLoading = true;
+    this.errorMessage = null;
+
+    for (const lock of this.lockedSeats) {
+      try {
+        await lastValueFrom(this.bookingService.confirmBooking(lock.lockId));
+      } catch (err) {
+        this.errorMessage = 'Ошибка оплаты одного из билетов.';
+        this.isLoading = false;
+        return;
+      }
+    }
+
+    this.isLoading = false;
+    sessionStorage.removeItem(this.LOCK_KEY);
+    this.router.navigate(['/payment-success']);
   }
 
   ngOnDestroy(): void {
@@ -146,5 +206,9 @@ export class PaymentComponent implements OnInit, OnDestroy {
       ['/event', this.session?.id],
       { state: { reloadSeats: true } }
     );
+  }
+
+  getTotalPrice(): number {
+    return this.selectedSeats.reduce((sum, seat) => sum + seat.price, 0);
   }
 }

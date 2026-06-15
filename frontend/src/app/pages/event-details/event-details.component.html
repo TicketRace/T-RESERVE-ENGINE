@@ -1,35 +1,75 @@
-﻿<section class="shell details-page" *ngIf="event as data">
-  <div class="title-card">
-    <p>{{ data.category }} {{ data.ageRestriction }} {{ data.venue.name }}</p>
-    <h1>{{ data.title }}</h1>
-    <div 
-      class="poster"
-      [style.background-image]="'url(' + data.imageUrl + ')'"
-    ></div>
-
-    <button
-      class="action-chip"
-      type="button"
-      (click)="selectSession(sessions[0])"
-    >
-      Купить билеты
-    </button>
+<section class="details-container animate-fade-in" *ngIf="event as data">
+  <!-- Hero Banner -->
+  <div class="details-hero" [style.background-image]="data.imageUrl ? 'url(' + data.imageUrl + ')' : 'none'">
+    <div class="hero-overlay"></div>
+    <div class="shell hero-content">
+      <button class="back-link" routerLink="/" fragment="events-catalog">← Вернуться к событиям</button>
+      <div class="meta-row">
+        <span class="category-pill">{{ data.category }}</span>
+        <span class="age-pill">{{ data.ageRestriction }}</span>
+      </div>
+      <h1>{{ data.title }}</h1>
+      
+      <div class="hero-footer">
+        <div class="info-block">
+          <span class="info-icon">📍</span>
+          <div>
+            <div class="info-val">{{ data.venue?.name || data.venueName }}</div>
+            <div class="info-sub">{{ data.venue?.address || '' }}</div>
+          </div>
+        </div>
+        <div class="info-block">
+          <span class="info-icon">🎟️</span>
+          <div>
+            <div class="info-val">от {{ data.basePrice }} ₽</div>
+            <div class="info-sub">за билет</div>
+          </div>
+        </div>
+        <button class="share-btn" (click)="share()">
+          <span>{{ isCopied ? 'Ссылка скопирована!' : 'Поделиться 🔗' }}</span>
+        </button>
+      </div>
+    </div>
   </div>
 
-  <div class="dates-card">
-    <h2>Выберете дату</h2>
+  <!-- Content section -->
+  <div class="shell content-section">
+    <div class="details-grid">
+      <div class="desc-card">
+        <h2>О событии</h2>
+        <p class="description-text">{{ data.description }}</p>
+        
+        <div class="additional-info">
+          <div class="add-item">
+            <span class="add-label">Длительность</span>
+            <span class="add-val">2 часа</span>
+          </div>
+          <div class="add-item">
+            <span class="add-label">Язык</span>
+            <span class="add-val">Русский</span>
+          </div>
+        </div>
+      </div>
 
-    <div class="date-row" *ngFor="let session of sessions">
-      <span>{{ session.startsAt | date:'d MMMM HH:mm' }}</span>
-
-      <button
-        class="action-chip"
-        type="button"
-        (click)="selectSession(session)"
-      >
-        Купить билеты
-      </button>
+      <div class="booking-card">
+        <h2>Доступные сеансы</h2>
+        <p class="select-hint">Выберите дату и время для покупки билетов:</p>
+        
+        <div class="sessions-list">
+          <div class="session-row" *ngFor="let session of sessions" (click)="selectSession(session)">
+            <div class="session-date-info">
+              <span class="session-day">{{ session.startsAt | date:'d MMMM' }}</span>
+              <span class="session-time">{{ session.startsAt | date:'EEEE, HH:mm' }}</span>
+            </div>
+            <div class="session-price-action">
+              <span class="session-price">{{ session.price }} ₽</span>
+              <button class="action-chip select-btn" type="button">
+                Выбрать
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-
   </div>
 </section>

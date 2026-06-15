@@ -1,5 +1,5 @@
-﻿import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, interval, switchMap, takeUntil } from 'rxjs';
 import { EventItem } from '../../models/event';
 import { Seat } from '../../models/seat';
@@ -7,18 +7,21 @@ import { CommonModule } from '@angular/common';
 import { SeatMapComponent } from '../../components/seat-map/seat-map.component';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../../services/auth.service';
+import { WebSocketService } from '../../services/websocket.service';
 
 @Component({
   selector: 'app-seat-selection',
   standalone: true,
-  imports: [CommonModule, SeatMapComponent],
+  imports: [CommonModule, SeatMapComponent, RouterLink],
   templateUrl: './seat-selection.component.html',
   styleUrl: './seat-selection.component.css',
 })
 export class SeatSelectionComponent implements OnInit, OnDestroy {
   event: EventItem | null = null;
   seats: Seat[] = [];
-  selectedSeat: Seat | null = null;
+  selectedSeatIds: Set<number> = new Set();
+  selectedSeats: Seat[] = [];
   private readonly destroy$ = new Subject<void>();
   groupedSeats: Record<string, Seat[]> = {};
   private apiUrl = environment.apiUrl;
@@ -51,6 +54,8 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly http: HttpClient,
+    private readonly authService: AuthService,
+    private readonly ws: WebSocketService
   ) {}
 
   ngOnInit(): void {
@@ -76,38 +81,67 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
         error: err => console.error('SEATS ERROR:', err)
       });
 
-    interval(3000)
-      .pipe(
-        takeUntil(this.destroy$),
-        switchMap(() =>
-          this.http.get<Seat[]>(`${this.apiUrl}/api/events/${eventId}/seats`)
-        )
-      )
-      .subscribe(seats => {
-        console.log('SEATS UPDATE:', seats);
-        this.seats = seats;
-        this.updateGroupedSeats();
-      });
+    this.ws.connect(eventId, (seats) => {
+      console.log('WS UPDATE:', seats);
+      this.seats = seats;
+      this.updateGroupedSeats();
+    });
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.ws.disconnect();
   }
 
+  private readonly MAX_SEATS = 5;
+
   selectSeat(seat: Seat): void {
-    this.selectedSeat = seat;
+    if (this.selectedSeatIds.has(seat.seatId)) {
+      this.selectedSeatIds.delete(seat.seatId);
+      this.selectedSeats = this.selectedSeats.filter(s => s.seatId !== seat.seatId);
+    } else {
+      if (this.selectedSeatIds.size >= this.MAX_SEATS) {
+        alert(`Максимум ${this.MAX_SEATS} билетов на один заказ`);
+        return;
+      }
+      this.selectedSeatIds.add(seat.seatId);
+      this.selectedSeats.push(seat);
+    }
+  }
+
+  get isLoggedIn(): boolean {
+    return this.authService.isLoggedIn();
+  }
+
+  getTotalPrice(): number {
+    return this.selectedSeats.reduce((sum, seat) => sum + seat.price, 0);
   }
 
   proceed(): void {
-    if (!this.selectedSeat) return;
+    if (this.selectedSeats.length === 0) return;
 
-    this.router.navigate(['/payment', this.event?.id], {
-      state: {
-        selectedSeat: this.selectedSeat,
+    if (this.isLoggedIn) {
+      this.router.navigate(['/payment', this.event?.id], {
+        state: {
+          selectedSeats: this.selectedSeats,
+          event: this.event,
+        },
+      });
+    } else {
+      // Save pending seat selection before login redirect
+      sessionStorage.setItem('pending_seat_selection', JSON.stringify({
+        selectedSeats: this.selectedSeats,
         event: this.event,
-      },
-    });
+      }));
+
+      this.router.navigate(['/login'], {
+        queryParams: { 
+          returnUrl: `/payment/${this.event?.id}`,
+          message: 'Для продолжения бронирования и покупки билетов, пожалуйста, авторизуйтесь.'
+        }
+      });
+    }
   }
   
 }

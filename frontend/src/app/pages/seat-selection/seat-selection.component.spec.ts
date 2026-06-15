@@ -1,14 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SeatSelectionComponent } from './seat-selection.component';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { HttpClient } from '@angular/common/http';
 import { Seat } from '../../models/seat';
+import { WebSocketService } from '../../services/websocket.service';
 
 describe('SeatSelectionComponent', () => {
   let component: SeatSelectionComponent;
   let fixture: ComponentFixture<SeatSelectionComponent>;
   let router: jasmine.SpyObj<Router>;
+  let wsSpy: jasmine.SpyObj<WebSocketService>;
+  let httpMock: HttpTestingController;
 
   const mockSeats: Seat[] = [
     {
@@ -35,6 +38,7 @@ describe('SeatSelectionComponent', () => {
 
   beforeEach(async () => {
     router = jasmine.createSpyObj('Router', ['navigate']);
+    wsSpy = jasmine.createSpyObj('WebSocketService', ['connect', 'disconnect']);
 
     await TestBed.configureTestingModule({
       imports: [
@@ -57,11 +61,40 @@ describe('SeatSelectionComponent', () => {
           provide: Router,
           useValue: router,
         },
+        {
+          provide: WebSocketService,
+          useValue: wsSpy,
+        },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SeatSelectionComponent);
     component = fixture.componentInstance;
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  it('should load event on init', () => {
+    fixture.detectChanges();
+
+    const requests = httpMock.match(req =>
+      req.method === 'GET'
+    );
+
+    const eventReq = requests.find(r =>
+      r.request.url.includes('/api/events/1')
+    );
+
+    const seatsReq = requests.find(r =>
+      r.request.url.includes('/seats')
+    );
+
+    expect(eventReq).toBeTruthy();
+    expect(seatsReq).toBeTruthy();
+
+    eventReq!.flush({ id: 1, title: 'Concert' });
+    seatsReq!.flush([]);
+
+    expect(component.event?.title).toBe('Concert');
   });
 
   //selectSeat
@@ -117,6 +150,31 @@ describe('SeatSelectionComponent', () => {
 
     expect(component.groupedSeats['B'][1].seatNumber)
       .toBe(2);
+  });
+
+  //WS callback
+  it('should update seats from websocket and regroup them', () => {
+    const seats: Seat[] = [
+      { seatId: 1, rowLabel: 'A', seatNumber: 2, status: 'AVAILABLE' } as Seat,
+      { seatId: 2, rowLabel: 'A', seatNumber: 1, status: 'AVAILABLE' } as Seat,
+    ];
+
+    let capturedCallback: ((seats: Seat[]) => void) | undefined;
+
+    wsSpy.connect.and.callFake((eventId: number, cb: any) => {
+      expect(eventId).toBe(1);
+      capturedCallback = cb;
+    });
+
+    fixture.detectChanges();
+
+    expect(wsSpy.connect).toHaveBeenCalled();
+    expect(capturedCallback).toBeDefined();
+
+    capturedCallback!(seats);
+
+    expect(component.seats.length).toBe(2);
+    expect(component.groupedSeats['A'][0].seatNumber).toBe(1);
   });
 
   //destroy
