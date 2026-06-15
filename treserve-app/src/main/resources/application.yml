@@ -149,7 +149,7 @@ cors:
 # ═══ Server ═══
 server:
   port: ${PORT:8080}   # Railway задаёт PORT автоматически; локально — 8080
-  forward-headers-strategy: framework
+  forward-headers-strategy: native
   tomcat:
     remoteip:
       internal-proxies: .*
