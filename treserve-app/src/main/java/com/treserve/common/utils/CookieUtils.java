@@ -25,66 +25,68 @@ public class CookieUtils {
     /**
      * Добавляет cookie в ответ.
      *
-     * Пишем Set-Cookie заголовок напрямую, а не через Cookie API.
-     * Причина: Tomcat/Servlet Cookie API не гарантирует корректную сериализацию
-     * SameSite=None в паре с Secure через cookie.setAttribute() во всех версиях.
-     * Chrome ОТБРАСЫВАЕТ SameSite=None куки без Secure=true — это первопричина
-     * authorization_request_not_found в Railway деплоях.
+     * Используем Cookie API (Томкэт автоматически экранирует спецсимволы в значении).
+     * SameSite=None требует Secure=true — иначе Chrome выбрасывает куки.
+     * Secure=true обеспечивается через native forward-headers-strategy
+     * (Томкэт RemoteIpValve обрабатывает X-Forwarded-Proto).
      *
      * @param secure true для HTTPS (прод/Railway), false для HTTP (локально)
      */
     public static void addCookie(HttpServletResponse response, String name, String value,
             int maxAge, boolean secure) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(name).append("=").append(value);
-        sb.append("; Path=/");
-        sb.append("; HttpOnly");
-        sb.append("; Max-Age=").append(maxAge);
-        if (secure) {
-            sb.append("; Secure");
-            sb.append("; SameSite=None"); // Требуется для cross-site OAuth2 callback (Google → backend)
-        } else {
-            sb.append("; SameSite=Lax");  // Локально HTTP — Lax достаточно
-        }
-        response.addHeader("Set-Cookie", sb.toString());
+        Cookie cookie = new Cookie(name, value);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(secure);
+        cookie.setMaxAge(maxAge);
+        // Jakarta Servlet 6.0 (Tomcat 10.1) поддерживает setAttribute() для SameSite
+        cookie.setAttribute("SameSite", secure ? "None" : "Lax");
+        response.addCookie(cookie);
     }
 
     /**
      * Удаляет cookie установкой Max-Age=0.
-     * Также пишем напрямую в заголовок — по той же причине что и addCookie.
      */
     public static void deleteCookie(HttpServletRequest request, HttpServletResponse response, String name) {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) return;
         for (Cookie cookie : cookies) {
             if (cookie.getName().equals(name)) {
-                // native strategy: request.isSecure() уже true на Railway (Tomcat RemoteIpValve)
                 boolean isSecure = request.isSecure()
                         || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto"));
-                StringBuilder sb = new StringBuilder();
-                sb.append(name).append("=");
-                sb.append("; Path=/");
-                sb.append("; HttpOnly");
-                sb.append("; Max-Age=0");
-                if (isSecure) {
-                    sb.append("; Secure");
-                    sb.append("; SameSite=None");
-                } else {
-                    sb.append("; SameSite=Lax");
-                }
-                response.addHeader("Set-Cookie", sb.toString());
+                cookie.setValue("");
+                cookie.setPath("/");
+                cookie.setMaxAge(0);
+                cookie.setSecure(isSecure);
+                cookie.setAttribute("SameSite", isSecure ? "None" : "Lax");
+                response.addCookie(cookie);
             }
         }
     }
 
-    @SuppressWarnings("deprecation") // SerializationUtils deprecated в Spring 6.x, но безопасно для OAuth2AuthorizationRequest в httpOnly cookie
+    /**
+     * Сериализует объект в Base64 URL-безопасную строку.
+     * Используем withoutPadding() — символ '=' не попадает в значение cookie
+     * и не путает RFC 6265 парсер Tomcat.
+     */
+    @SuppressWarnings("deprecation")
     public static String serialize(Object object) {
-        return Base64.getUrlEncoder().encodeToString(SerializationUtils.serialize(object));
+        return Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(SerializationUtils.serialize(object));
     }
 
+    /**
+     * Десериализует Base64 значение cookie.
+     * Добавляет padding если нужно — обрабатывает оба варианта (с padding и без).
+     */
     @SuppressWarnings("deprecation")
     public static <T> T deserialize(Cookie cookie, Class<T> cls) {
-        byte[] decodedBytes = Base64.getUrlDecoder().decode(cookie.getValue());
+        String value = cookie.getValue();
+        // Нормализация padding для совместимости (вход: с '=' или без)
+        int mod = value.length() % 4;
+        if (mod == 2)      value += "==";
+        else if (mod == 3) value += "=";
+        byte[] decodedBytes = Base64.getUrlDecoder().decode(value);
         return cls.cast(SerializationUtils.deserialize(decodedBytes));
     }
 }
