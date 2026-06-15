@@ -126,12 +126,31 @@
 }
 
 @media (max-width: 960px) {
+  .admin-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+  
+  .admin-top .admin-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 0.8rem;
+  }
+
+  .admin-top .create-link {
+    flex: 1 1 auto;
+    text-align: center;
+    justify-content: center;
+  }
+
   .admin-row {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .admin-actions {
+  .admin-row .admin-actions {
     width: 100%;
     justify-content: flex-end;
   }
