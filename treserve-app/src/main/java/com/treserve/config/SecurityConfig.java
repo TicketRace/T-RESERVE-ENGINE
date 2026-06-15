@@ -38,7 +38,7 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final ObjectMapper objectMapper;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
-    private final CookieOAuth2AuthorizationRequestRepository cookieAuthRepo;
+    private final RedisOAuth2AuthorizationRequestRepository redisOAuth2Repo;
 
     @Value("${app.frontend-url:http://localhost:4200}")
     private String frontendUrl;
@@ -94,7 +94,7 @@ public class SecurityConfig {
             // OAuth2 Login — Google redirect flow
             .oauth2Login(oauth2 -> oauth2
                 .authorizationEndpoint(auth -> auth
-                    .authorizationRequestRepository(cookieAuthRepo)
+                    .authorizationRequestRepository(redisOAuth2Repo)
                 )
                 .successHandler(oAuth2SuccessHandler)
                 .failureHandler((req, res, ex) -> {
