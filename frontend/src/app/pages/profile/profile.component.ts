@@ -4,11 +4,14 @@ import { User } from '../../models/user';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { TicketService } from '../../services/ticket.service';
+import { TicketPublicResponse } from '../../models/ticket-public-response';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule], 
+  imports: [CommonModule],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css',
 })
@@ -16,9 +19,14 @@ export class ProfileComponent implements OnInit {
   user: User | null = null;
   bookings: Booking[] = [];
   private apiUrl = environment.apiUrl;
+  rawPdfUrl: string | null = null;
+  selectedPdfUrl: SafeResourceUrl | null = null;
+  showPdfModal = false;
 
   constructor(
   private readonly http: HttpClient,
+  private readonly ticketService: TicketService,
+  private readonly sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
@@ -64,24 +72,28 @@ export class ProfileComponent implements OnInit {
   }
 
   downloadTicketPDF(ticketId: number): void {
-    this.http.get(`${this.apiUrl}/api/tickets/${ticketId}/download`, { responseType: 'blob' })
-      .subscribe({
-        next: (blob) => {
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `ticket-${ticketId}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          window.URL.revokeObjectURL(url);
-          // Omit alert or keep a short success log. Actually let's keep the alert per user request.
-          alert(`Билет №${ticketId} успешно экспортирован в PDF!`);
-        },
-        error: (err) => {
-          console.error('Failed to download PDF', err);
-          alert('Ошибка при скачивании билета');
-        }
-      });
+    this.ticketService.downloadPdf(ticketId).subscribe(blob => {
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ticket-${ticketId}.pdf`;
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+    });
+  }
+
+
+
+  closePdf(): void {
+    this.showPdfModal = false;
+
+    if (this.rawPdfUrl) {
+      window.URL.revokeObjectURL(this.rawPdfUrl);
+    }
+
+    this.rawPdfUrl = null;
+    this.selectedPdfUrl = null;
   }
 }

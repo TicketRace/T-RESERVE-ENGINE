@@ -111,10 +111,12 @@
   line-height: 1;
 }
 
-.theme-toggle-btn:hover {
-  transform: rotate(360deg) scale(1.1);
-  border-color: var(--lime-400);
-  box-shadow: 0 6px 20px rgba(207, 168, 86, 0.35);
+@media (hover: hover) and (pointer: fine) {
+  .theme-toggle-btn:hover {
+    transform: rotate(360deg) scale(1.1);
+    border-color: var(--lime-400);
+    box-shadow: 0 6px 20px rgba(207, 168, 86, 0.35);
+  }
 }
 
 /* Sign in Button */
@@ -293,15 +295,17 @@
   transition: transform 0.3s ease, color 0.3s ease;
 }
 
-.menu-trigger-btn:hover,
-.dropdown-menu:hover .menu-trigger-btn {
-  color: #ffffff; /* Turn white on hover */
-  background: transparent;
-}
+@media (hover: hover) and (pointer: fine) {
+  .menu-trigger-btn:hover,
+  .dropdown-menu:hover .menu-trigger-btn {
+    color: #ffffff; /* Turn white on hover */
+    background: transparent;
+  }
 
-.dropdown-menu:hover .menu-trigger-btn::after {
-  content: '▼'; /* Black down-pointing triangle U+25BC */
-  font-size: 17px; /* Compensate visual size difference */
+  .dropdown-menu:hover .menu-trigger-btn::after {
+    content: '▼'; /* Black down-pointing triangle U+25BC */
+    font-size: 17px; /* Compensate visual size difference */
+  }
 }
 
 /* Dropdown Content */
@@ -325,10 +329,12 @@
   padding: 12px;
 }
 
-.dropdown-menu:hover .dropdown-content {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+@media (hover: hover) and (pointer: fine) {
+  .dropdown-menu:hover .dropdown-content {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
 }
 
 /* Dropdown Elements */
@@ -417,10 +423,12 @@
   box-shadow: none;
 }
 
-:host-context(.light-theme) .menu-trigger-btn:hover,
-:host-context(.light-theme) .dropdown-menu:hover .menu-trigger-btn {
-  color: #2d3135; /* Turn charcoal on hover */
-  background: transparent;
+@media (hover: hover) and (pointer: fine) {
+  :host-context(.light-theme) .menu-trigger-btn:hover,
+  :host-context(.light-theme) .dropdown-menu:hover .menu-trigger-btn {
+    color: #2d3135; /* Turn charcoal on hover */
+    background: transparent;
+  }
 }
 
 :host-context(.light-theme) .dropdown-content {
@@ -462,3 +470,36 @@
 :host-context(.light-theme) .dropdown-btn.logout:hover {
   background: rgba(235, 87, 87, 0.12);
 }
+/* MOBILE CLICK OVERRIDES (triggered by JS classes instead of hover) */
+@media (hover: none) {
+  .theme-toggle-btn.spin-anim {
+    animation: mobile-spin 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dropdown-menu.menu-open .dropdown-content {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .dropdown-menu.menu-open .menu-trigger-btn {
+    color: #ffffff;
+  }
+
+  .dropdown-menu.menu-open .menu-trigger-btn::after {
+    content: '▼';
+    font-size: 17px;
+  }
+
+  :host-context(.light-theme) .dropdown-menu.menu-open .menu-trigger-btn {
+    color: #2d3135;
+  }
+}
+
+@keyframes mobile-spin {
+  0% { transform: scale(0.9) rotate(0deg); }
+  50% { transform: scale(0.9) rotate(180deg); }
+  100% { transform: scale(1) rotate(360deg); }
+}
+

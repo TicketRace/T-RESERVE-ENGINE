@@ -7,6 +7,7 @@ import { PaymentSuccessComponent } from './pages/payment-success/payment-success
 import { ProfileComponent } from './pages/profile/profile.component';
 import { AdminComponent } from './pages/admin/admin.component';
 import { AdminCreateEventComponent } from './pages/admin-create-event/admin-create-event.component';
+import { AdminEventDetailsComponent } from './pages/admin-event-details/admin-event-details';
 import { AdminVenueBuilderComponent } from './pages/admin-venue-builder/admin-venue-builder.component';
 import { AuthComponent } from './pages/auth/auth.component';
 import { OAuth2CallbackComponent } from './pages/oauth2-callback/oauth2-callback.component';
@@ -22,6 +23,7 @@ export const routes: Routes = [
   { path: 'login', component: AuthComponent },
   { path: 'register', component: AuthComponent },
   { path: 'admin', component: AdminComponent, canActivate: [authGuard] },
+  { path: 'admin/events/:id', component: AdminEventDetailsComponent, canActivate: [authGuard] },
   { path: 'admin/create', component: AdminCreateEventComponent, canActivate: [authGuard] },
   { path: 'admin/create/:id', component: AdminCreateEventComponent, canActivate: [authGuard] },
   { path: 'oauth2/callback', component: OAuth2CallbackComponent },

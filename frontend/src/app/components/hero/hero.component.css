@@ -694,8 +694,10 @@
   /* Show mobile nodes canvas */
   #mobile-nodes-canvas {
     display: block;
+    width: 100%;
     height: 180px;
     margin: 8px auto;
+    justify-self: stretch;
   }
 
   .ui-layer {

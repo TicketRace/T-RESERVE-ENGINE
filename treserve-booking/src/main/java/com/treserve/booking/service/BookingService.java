@@ -141,6 +141,10 @@ public class BookingService {
             ticket.setStatus(TicketStatus.BOOKED);
             ticket.setBookedAt(Instant.now());
             ticket.setLockExpiresAt(null);
+            
+            if (ticket.getVerifyToken() == null) {
+                ticket.setVerifyToken(java.util.UUID.randomUUID());
+            }
 
             ticketRepository.save(ticket);
 

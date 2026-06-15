@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AdminEventSummary } from '../../models/event';
 import { User } from '../../models/user';
 import { AuthService } from '../../services/auth.service';
@@ -6,23 +6,25 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { FormsModule } from '@angular/forms';
+import { AdminCheckInService } from '../../services/admin-checkin.service';
+import { Html5QrcodeScanner } from 'html5-qrcode';
+import {CheckInResponse} from '../../models/checkInResponse';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, RouterLink], 
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.css',
 })
 export class AdminComponent implements OnInit {
   user: User | null = null;
   events: AdminEventSummary[] = [];
-  showCreatedModal = false;
   private apiUrl = environment.apiUrl;
-
   constructor(
     private readonly authService: AuthService,
-    private readonly http: HttpClient,
+    private readonly http: HttpClient
   ) {}
 
   loadEvents(): void {

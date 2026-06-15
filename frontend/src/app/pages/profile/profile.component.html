@@ -65,12 +65,25 @@
             </div>
             <span class="qr-label">Показать QR-код</span>
           </div>
-          
+
           <button class="download-pdf-btn" (click)="downloadTicketPDF(booking.ticketId)">
             Скачать PDF
           </button>
         </div>
+
       </div>
+    </div>
+  </div>
+  <div class="pdf-overlay" *ngIf="showPdfModal">
+    <div class="pdf-modal">
+
+      <button class="close-btn" (click)="closePdf()">✕</button>
+
+      <iframe
+        [src]="selectedPdfUrl"
+        class="pdf-frame">
+      </iframe>
+
     </div>
   </div>
 </section>

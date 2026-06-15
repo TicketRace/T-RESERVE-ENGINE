@@ -44,7 +44,7 @@ public class SecurityConfig {
     private String frontendUrl;
 
     // Локально: localhost origins. Railway: задай CORS_ALLOWED_ORIGINS=https://frontend-xxx.up.railway.app
-    @Value("${cors.allowed-origins:http://localhost:4200,http://localhost:5173,http://localhost:3000,http://localhost,http://localhost:8081}")
+    @Value("${cors.allowed-origins:http://localhost:4200,http://192.168.0.103:4200,http://localhost:5173,http://localhost:3000,http://localhost,http://localhost:8081}")
     private String corsAllowedOrigins;
 
     @Bean

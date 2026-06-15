@@ -3,6 +3,21 @@
   padding-bottom: 60px;
 }
 
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 99999;
+
+  background: #ef4444;
+  color: white;
+
+  padding: 12px 20px;
+  border-radius: 12px;
+
+  font-weight: 600;
+  box-shadow: 0 10px 25px rgba(0,0,0,.2);
+}
 .admin-top {
   display: flex;
   justify-content: space-between;
@@ -50,6 +65,7 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
 }
 
 .admin-row:hover {
@@ -111,12 +127,31 @@
 }
 
 @media (max-width: 960px) {
+  .admin-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+  
+  .admin-top .admin-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 0.8rem;
+  }
+
+  .admin-top .create-link {
+    flex: 1 1 auto;
+    text-align: center;
+    justify-content: center;
+  }
+
   .admin-row {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .admin-actions {
+  .admin-row .admin-actions {
     width: 100%;
     justify-content: flex-end;
   }
@@ -158,4 +193,167 @@
   background: rgba(255, 59, 59, 0.15);
   border-color: rgba(255, 59, 59, 0.4);
   color: #ff3b3b;
+}
+
+.created-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(6px);
+}
+
+.created-card {
+  width: min(520px, 92vw);
+  background: #111;
+  border-radius: 18px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  color: white;
+  animation: pop 0.2s ease;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.created-card input {
+  width: 100%;
+  padding: 12px 14px;
+  margin: 8px 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  outline: none;
+}
+
+.created-card input:focus {
+  border-color: #eaf736;
+  box-shadow: 0 0 0 2px rgba(234, 247, 54, 0.2);
+}
+
+.created-card button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #eaf736;
+  color: #111;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: 0.2s;
+}
+
+.created-card button:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+#qr-reader {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid rgba(234, 247, 54, 0.4);
+  margin: 12px 0;
+}
+
+#qr-reader__dashboard_section_csr button {
+  background: #eaf736 !important;
+  color: #111 !important;
+}
+
+.created-card button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.scanner-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.scanner-container {
+  position: relative;
+  width: 100%;
+  margin: 12px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid rgba(234, 247, 54, 0.4);
+}
+
+#qr-reader {
+  width: 100%;
+  border: none;
+  margin: 0;
+  border-radius: 0;
+}
+
+.scanner-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: overlayFadeIn 0.3s ease forwards;
+  text-align: center;
+  padding: 20px;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; transform: scale(1.05); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.scanner-overlay.success {
+  background: rgba(16, 185, 129, 0.85); /* Emerald green */
+  color: #fff;
+}
+
+.scanner-overlay.error {
+  background: rgba(239, 68, 68, 0.85); /* Red */
+  color: #fff;
+}
+
+.overlay-icon {
+  margin-bottom: 16px;
+  animation: bounceScale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes bounceScale {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.overlay-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin: 0 0 8px 0;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.overlay-message {
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+  opacity: 0.9;
+  line-height: 1.4;
+  white-space: pre-wrap;
 }
