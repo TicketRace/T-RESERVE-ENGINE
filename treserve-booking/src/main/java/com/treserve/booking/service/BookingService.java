@@ -101,14 +101,17 @@ public class BookingService {
                 log.info("LOCKED seat {} event {} user {} (expires {})",
                     seatId, eventId, userId, expiresAt);
 
-                seatService.evictSeatsCache(eventId);
                 return new LockResponse(ticket.getId(), expiresAt);
             });
             pgSuccess = true;
+            seatService.pushSeatsUpdate(eventId);
             return result;
         } catch (PessimisticLockingFailureException e) {
-            log.debug("PG lock contention on seat {} event {} — should not happen if Redis works", seatId, eventId);
+            log.error("PG lock contention exception exactly:", e);
             throw new SeatAlreadyLockedException("Seat " + seatId + " for event " + eventId);
+        } catch (Exception e) {
+            log.error("Unexpected error during transactionTemplate.execute!", e);
+            throw e;
         } finally {
             // Откатить Redis-ключ если PG не смог завершить операцию
             if (!pgSuccess) {
@@ -151,8 +154,8 @@ public class BookingService {
             // Освобождаем Redis-ключ: место теперь BOOKED, лок больше не нужен
             distributedLock.release(ticket.getEventId(), ticket.getSeatId());
 
-            seatService.evictSeatsCache(ticket.getEventId());
             log.info("BOOKED ticket {} for user {}", ticketId, userId);
+            seatService.pushSeatsUpdate(ticket.getEventId());
             sendAsyncTicketBookedEvent(ticket, userId);
         } catch (PessimisticLockingFailureException e) {
             log.debug("Conflict on confirm ticket {} — seat is currently being processed", ticketId);
@@ -222,8 +225,8 @@ public class BookingService {
             // Освобождаем Redis-ключ: место снова AVAILABLE
             distributedLock.release(ticket.getEventId(), ticket.getSeatId());
 
-            seatService.evictSeatsCache(ticket.getEventId());
             log.info("CANCELLED lock on ticket {} by user {}", ticketId, userId);
+            seatService.pushSeatsUpdate(ticket.getEventId());
         } catch (PessimisticLockingFailureException e) {
             log.debug("Conflict on cancel ticket {} — seat is currently being processed", ticketId);
             throw new SeatAlreadyLockedException("Ticket is currently locked by another process, please try again");

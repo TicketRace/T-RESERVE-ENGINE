@@ -16,7 +16,7 @@ export const options = {
       executor: 'shared-iterations',
       vus: targetVus,
       iterations: targetVus,
-      maxDuration: '10s'
+      maxDuration: '40s'
     }
   }
 };
@@ -40,4 +40,5 @@ export default function(data) {
 
   if (res.status === 200) lockSuccess.add(1);
   else if (res.status === 409) lockConflict.add(1);
+  else console.log(`UNEXPECTED STATUS: ${res.status} BODY: ${res.body}`);
 }

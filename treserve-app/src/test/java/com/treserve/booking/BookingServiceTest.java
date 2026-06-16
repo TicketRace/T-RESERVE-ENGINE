@@ -117,7 +117,7 @@ class BookingServiceTest {
                         after.plus(10, ChronoUnit.MINUTES));
         assertThat(availableTicket.getLockExpiresAt()).isEqualTo(response.getExpiresAt());
 
-        verify(seatService).evictSeatsCache(EVENT_ID);
+        verify(seatService).pushSeatsUpdate(EVENT_ID);
         verify(distributedLock, never()).release(any(), any());
     }
 
@@ -194,7 +194,7 @@ class BookingServiceTest {
         assertThat(lockedTicket.getBookedAt()).isNotNull();
         assertThat(lockedTicket.getUserId()).isEqualTo(USER_ID);
         verify(ticketRepository).save(lockedTicket);
-        verify(seatService).evictSeatsCache(EVENT_ID);
+        verify(seatService).pushSeatsUpdate(EVENT_ID);
         verify(distributedLock).release(EVENT_ID, SEAT_ID);
     }
 
@@ -210,7 +210,7 @@ class BookingServiceTest {
                 .hasMessageContaining("Lock expired");
 
         verify(ticketRepository, never()).save(any());
-        verify(seatService, never()).evictSeatsCache(any());
+        verify(seatService, never()).pushSeatsUpdate(any());
         verify(distributedLock, never()).release(any(), any());
     }
 
@@ -225,7 +225,7 @@ class BookingServiceTest {
                 .hasMessageContaining("not locked by you");
 
         verify(ticketRepository, never()).save(any());
-        verify(seatService, never()).evictSeatsCache(any());
+        verify(seatService, never()).pushSeatsUpdate(any());
         verify(distributedLock, never()).release(any(), any());
     }
 
@@ -271,7 +271,7 @@ class BookingServiceTest {
         assertThat(lockedTicket.getStatus()).isEqualTo(TicketStatus.AVAILABLE);
         assertThat(lockedTicket.getUserId()).isNull();
         assertThat(lockedTicket.getLockExpiresAt()).isNull();
-        verify(seatService).evictSeatsCache(EVENT_ID);
+        verify(seatService).pushSeatsUpdate(EVENT_ID);
         verify(distributedLock).release(EVENT_ID, SEAT_ID);
     }
 
