@@ -7,7 +7,7 @@ import com.treserve.common.exception.ResourceNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +32,7 @@ public class SeatService {
     private final TicketRepository ticketRepository;
     private final EventLookup eventLookup;
     private final SimpMessagingTemplate messagingTemplate;
+    private final CacheManager cacheManager;
     /**
      * Получить карту мест для ивента.
      * Кэшируется в Redis с TTL 10 сек (настроено в RedisCacheConfig).
@@ -63,14 +64,27 @@ public class SeatService {
      * Инвалидировать кэш карты мест.
      * Вызывается после любого изменения статуса билета (lock/confirm/cancel/safety-net).
      */
-    @CacheEvict(value = "seats", key = "#eventId")
     public void evictSeatsCache(Long eventId) {
         log.debug("Cache EVICT for seats:{}", eventId);
+        try {
+            var cache = cacheManager.getCache("seats");
+            if (cache != null) {
+                cache.evict(eventId);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to evict seats cache (Redis might be down): {}", e.getMessage());
+        }
     }
 
-    @CacheEvict(value = "seats", key = "#eventId", beforeInvocation = true)
     public void pushSeatsUpdate(Long eventId) {
-        List<SeatInfo> seats = getSeats(eventId);
+        evictSeatsCache(eventId); // Сначала инвалидируем кэш руками
+        List<SeatInfo> seats;
+        try {
+            seats = getSeats(eventId);
+        } catch (Exception e) {
+            log.warn("Failed to get seats for pushUpdate: {}", e.getMessage());
+            return;
+        }
 
         messagingTemplate.convertAndSend(
             "/topic/seats." + eventId,
