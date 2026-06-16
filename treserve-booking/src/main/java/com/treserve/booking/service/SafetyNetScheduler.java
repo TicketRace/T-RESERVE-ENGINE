@@ -63,7 +63,7 @@ public class SafetyNetScheduler {
         expired.stream()
             .map(Ticket::getEventId)
             .distinct()
-            .forEach(seatService::evictSeatsCache);
+            .forEach(seatService::pushSeatsUpdate);
 
         log.info("SafetyNet: released {} expired locks (PG + Redis)", expired.size());
     }
