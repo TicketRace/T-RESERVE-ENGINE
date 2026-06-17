@@ -2,10 +2,8 @@
 
 > Высоконагруженная система бронирования билетов с защитой от Race Condition.
 
-[Figma](https://www.figma.com/design/SjI0zvNK74xYOAYqUwlnl3/%D0%A1%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0-%D0%B1%D1%80%D0%BE%D0%BD%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F?node-id=0-1&t=zJmoVd0dsGO4Khtd-1)
-
 ## 🛠 Технологический стек
-Java 21 · Spring Boot 3.3 · PostgreSQL 16 · Redis 7 · RabbitMQ · JWT · Flyway · Docker · GitHub Actions CI
+Java 21 · Spring Boot 3.3 · PostgreSQL 16 · Redis 7 · MinIO (S3) · WebSockets · JWT · Playwright · K6 · GitHub Actions CI · Railway CI/CD · Docker
 
 Подробное обоснование выбора технологий → [ARCHITECTURE.md](./ARCHITECTURE.md)
 
@@ -75,25 +73,39 @@ curl -s -X POST http://localhost:8080/api/bookings/lock \
 → 409 Conflict: место уже занято!
 ```
 
+### 6. Скачать билет в PDF
+```bash
+curl -s http://localhost:8080/api/tickets/1/download \
+  -H "Authorization: Bearer YOUR_TOKEN" --output ticket.pdf
+```
+
 Полный набор тестовых команд: [API_ENDPOINTS.md](./API_ENDPOINTS.md)
 
 ---
 
 ## Автоматические тесты
 
-Unit-тесты:
-
+Unit-тесты (JUnit 5 + Mockito):
 ```bash
 mvn test
 ```
 
-Интеграционные тесты используют Testcontainers, PostgreSQL и Redis, поэтому для запуска нужен Docker:
-
+Интеграционные тесты (Testcontainers, PostgreSQL и Redis):
 ```bash
 mvn verify -P integration-tests
 ```
 
-В CI интеграционные тесты запускаются отдельным job и являются quality gate перед merge.
+E2E UI-тесты (Playwright):
+```bash
+cd frontend && npm run e2e:mocked
+```
+
+Load тесты Race Condition (k6 — 1000 VUs):
+```bash
+k6 run load-tests/k6-race.js
+```
+
+В CI интеграционные и E2E тесты запускаются отдельными jobs и являются quality gate перед merge.
 
 ---
 
