@@ -65,11 +65,13 @@ erDiagram
         BIGSERIAL id PK
         BIGINT event_id FK "ссылка на мероприятие"
         BIGINT seat_id FK "ссылка на место"
-        VARCHAR_20 status "AVAILABLE / LOCKED / BOOKED"
+        VARCHAR_20 status "AVAILABLE / LOCKED / BOOKED / USED"
         NUMERIC price "цена конкретного билета"
         BIGINT user_id FK "кто забронировал (NULL если свободно)"
         TIMESTAMPTZ lock_expires_at "когда истечёт блокировка"
         TIMESTAMPTZ booked_at "время подтверждения оплаты"
+        VARCHAR_500 pdf_url "путь к билету в MinIO"
+        UUID verify_token "токен для QR-кода"
     }
 ```
 
@@ -185,6 +187,8 @@ erDiagram
 | `user_id` | BIGINT | FK → users(id), nullable | Кто забронировал. NULL = свободно |
 | `lock_expires_at` | TIMESTAMPTZ | nullable | Когда истечёт блокировка. Cancel Worker проверяет это |
 | `booked_at` | TIMESTAMPTZ | nullable | Когда оплата подтверждена |
+| `pdf_url` | VARCHAR(500) | nullable | Ссылка на сгенерированный PDF-билет в MinIO |
+| `verify_token` | UUID | UNIQUE, nullable | Уникальный токен для генерации и сканирования QR-кода |
 
 > [!NOTE]
 > Для бронирования используется Redis distributed lock (SETNX) + PG pessimistic lock (FOR UPDATE SKIP LOCKED).
@@ -199,7 +203,8 @@ stateDiagram-v2
     LOCKED --> BOOKED: Оплата подтверждена
     LOCKED --> AVAILABLE: Таймер 10мин истёк<br>(Cancel Worker)
     LOCKED --> AVAILABLE: Пользователь<br>отменил вручную
-    BOOKED --> [*]: Финальное состояние
+    BOOKED --> USED: Скан QR-кода на входе<br>(Admin Check-In)
+    USED --> [*]: Финальное состояние
 ```
 
 > [!IMPORTANT]

@@ -13,64 +13,65 @@
 | Runtime | **Java 21** (Virtual Threads) | 1000+ concurrent без reactive |
 | Framework | **Spring Boot 3.3** | Security, Data JPA, Actuator |
 | Database | **PostgreSQL 16** | `SELECT FOR UPDATE NOWAIT` — ядро Race Condition protection |
-| Cache | **Redis 7** | `@Cacheable` для карты мест (TTL 10 сек) |
-| Message Broker | **RabbitMQ 3.13** | Зарезервировано для v2 (уведомления) |
+| Cache & Locks | **Redis 7** | Распределенные блокировки (`SETNX`) и кэш-слой для карты мест |
+| Object Storage | **MinIO (S3)** | Хранение сгенерированных PDF-билетов и QR-кодов |
+| Message Broker | **RabbitMQ 3.13** | Отправка билетов на почту |
 | Auth | **JWT** (jjwt) | Stateless, роли USER/ADMIN |
-| Frontend | **Angular** | SPA, polling карты мест каждые 3 сек |
+| Frontend | **Custom CSS + Angular**| Pure CSS движок (Glassmorphism), без тяжелых UI-библиотек |
+| Real-Time | **WebSockets (STOMP)** | Мгновенное обновление карты мест без REST-поллинга |
 | Migrations | **Flyway** | Version-controlled schema |
-| CI | **GitHub Actions** | `mvn verify` + PG + Redis на каждый PR |
-| Контейнеризация | **Docker Compose** | Один `docker compose up` для запуска |
+| CI/CD | **GitHub Actions + Railway** | `mvn verify`, Playwright E2E тесты, деплой в Railway |
+| Контейнеризация | **Docker Compose** | Полная изоляция сервисов (`docker-compose.prod.yml`) |
 
 ---
 
-## PostgreSQL vs Redis Lock
+## Двухуровневая блокировка (Redis + PostgreSQL)
 
-**Выбрали:** PostgreSQL `SELECT FOR UPDATE NOWAIT`
- вместо Redis `SETNX` (distributed lock)
+Мы используем двухуровневую систему: **Redis `SETNX`** + **PostgreSQL `SELECT FOR UPDATE NOWAIT`**.
 
-### Почему
+### Как это работает
 
 ```
-Юзер кликнул место A-1 → Spring Boot → BEGIN TRANSACTION
-  → SELECT * FROM tickets WHERE event_id=1 AND seat_id=1 AND status='AVAILABLE'
-    FOR UPDATE NOWAIT
-  → Строка свободна? → UPDATE status='LOCKED', user_id=X
-  → COMMIT
-
-Другой юзер в это же время → FOR UPDATE NOWAIT
-  → PostgreSQL: "строка заблокирована" → мгновенная ошибка → 409 Conflict
+Юзер кликнул место A-1 
+  → Redis SETNX (distributed lock)
+    → Если занято в Redis → мгновенный отказ (0.5ms)
+    → Если свободно → Spring Boot → BEGIN TRANSACTION
+      → PostgreSQL: SELECT * FROM tickets WHERE id=1 FOR UPDATE NOWAIT
+        → Строка свободна? → UPDATE status='LOCKED', user_id=X
+      → COMMIT
 ```
 
-**Преимущества PG (MVP):**
-- Один источник правды (ACID)
-- Нет рассинхрона Redis ↔ PG
-- `NOWAIT` = мгновенный ответ, без ожидания
-
-**В v2 (Redis SETNX):**
-Если нагрузочный тест покажет bottleneck на PG — Redis `SETNX` станет первым барьером (0.5ms vs 5ms), PG останется как финальная запись. Двухуровневая блокировка: Redis фильтрует, PG фиксирует.
+**Преимущества:**
+- **Redis** фильтрует 99% паразитной нагрузки при массовых кликах в одну точку.
+- **PostgreSQL** выступает финальным источником правды (ACID), исключая любой рассинхрон.
+- Использование `NOWAIT` гарантирует отсутствие дедлоков и зависших транзакций в СУБД.
 
 ---
 
 ## Жизненный цикл билета (State Machine)
 
-```
-AVAILABLE ──[lock]──→ LOCKED ──[confirm]──→ BOOKED
-                        │
-                        ├──[cancel]──→ AVAILABLE
-                        └──[timeout 10 мин]──→ AVAILABLE (SafetyNet)
+```mermaid
+stateDiagram-v2
+    [*] --> AVAILABLE: Создание ивента
+    AVAILABLE --> LOCKED: Блокировка на 10 мин
+    LOCKED --> BOOKED: Успешная оплата
+    LOCKED --> AVAILABLE: Отмена / Таймаут
+    BOOKED --> USED: Скан QR-кода на входе
 ```
 
 | Переход | Триггер | Механизм |
 |---|---|---|
-| AVAILABLE → LOCKED | `POST /bookings/lock` | PG `FOR UPDATE NOWAIT` |
+| AVAILABLE → LOCKED | `POST /bookings/lock` | Redis Lock + PG `FOR UPDATE NOWAIT` |
 | LOCKED → BOOKED | `POST /bookings/{id}/confirm` | Проверка user + TTL |
-| LOCKED → AVAILABLE | `DELETE /bookings/{id}` | Ручная отмена |
-| LOCKED → AVAILABLE | SafetyNet (30 сек) | `@Scheduled` авто-отмена |
+| LOCKED → AVAILABLE | `DELETE /bookings/{id}` | Ручная отмена корзины |
+| LOCKED → AVAILABLE | SafetyNet (10 мин) | `@Scheduled` авто-отмена просроченных локов |
+| BOOKED → USED | `POST /admin/checkin/{token}` | Онлайн-валидация QR-кода контролером |
 
 ---
 
 ## Кэширование (Redis)
 
+При фоллбэке на long polling.
 ```
 GET /api/events/{id}/seats — polling каждые 3 сек
 
@@ -83,66 +84,71 @@ GET /api/events/{id}/seats — polling каждые 3 сек
 - `@CacheEvict("seats")` — при lock/confirm/cancel/safety-net
 
 ---
+## Real-Time Синхронизация (WebSockets)
+
+Вместо ресурсоемкого REST-поллинга внедрена реактивная синхронизация:
+- Клиент устанавливает **WebSocket (STOMP)** соединение.
+- При любом изменении статуса места (Lock, Confirm, Cancel, SafetyNet-таймаут), `BookingService` мгновенно пушит событие в брокер сообщений.
+- UI всех подключенных пользователей обновляет цвета мест за миллисекунды без необходимости делать запросы в БД.
+
+---
+
+## Интеграция MinIO и генерация PDF
+
+При успешной брони система на лету генерирует электронный билет:
+1. **OpenPDF** собирает билет с динамическим QR-кодом (содержащим токен валидации UUID).
+2. Файл выгружается в **MinIO S3 Bucket**.
+3. В базу сохраняется `pdf_url`. Последующие запросы отдают готовый файл из кэша хранилища без повторной перегенерации.
+
 
 ## Структура проекта
 
 ```
-src/main/java/com/treserve/
-├── auth/           # JWT: регистрация, логин, refresh
-├── booking/        # ЯДРО: lock, confirm, cancel, SafetyNet
-│   ├── BookingService.java    — бизнес-логика бронирования
-│   ├── SeatService.java       — кэш карты мест (@Cacheable)
-│   ├── SafetyNetScheduler.java — авто-отмена просроченных локов
-│   └── dto/                   — LockRequest, LockResponse, SeatInfo
-├── event/          # Мероприятия (CRUD)
-├── venue/          # Площадки и места
-├── admin/          # Админ-панель (создание ивентов, дашборд)
-├── user/           # Профиль и история бронирований
-├── config/         # Security, Redis Cache, Swagger
-└── common/         # Exceptions, GlobalExceptionHandler
+T-RESERVE-ENGINE/ (Root)
+├── treserve-common/      # Общие DTO, Exceptions, базовые интерфейсы
+├── treserve-booking/     # ЯДРО: BookingService, Race Condition защита (Redis+PG), WebSockets, SafetyNet
+├── treserve-app/         # Точка входа: API контроллеры, Auth (JWT), Admin-панель, PDF-генератор, MinIO
+├── frontend/             # SPA на Angular (Custom Vanilla CSS, STOMP WebSockets)
+├── load-tests/           # k6 скрипты для тестирования высокой нагрузки
+├── nginx/                # Конфиги балансировщика
+├── prometheus/           # Сбор метрик (Prometheus + Grafana)
+├── docker-compose.yml    # Локальная разработка (PostgreSQL, Redis, MinIO, RabbitMQ)
+└── docker-compose.prod.yml # Production сборка (+ Nginx, мониторинг)
 ```
 
 ---
 
-## API Endpoints
+## API Endpoints (Ключевые)
 
 | Метод | Endpoint | Доступ | Описание |
 |---|---|---|---|
-| POST | `/api/auth/register` | Public | Регистрация |
-| POST | `/api/auth/login` | Public | Логин |
-| POST | `/api/auth/refresh` | Public | Обновить токен |
-| GET | `/api/events` | Public | Список мероприятий |
-| GET | `/api/events/{id}` | Public | Детали мероприятия |
-| GET | `/api/events/{id}/seats` | Public | Карта мест (cached) |
+| POST | `/api/auth/login` | Public | Авторизация |
+| GET | `/api/events/{id}/seats` | Public | Карта мест |
 | POST | `/api/bookings/lock` | User | Заблокировать место |
 | POST | `/api/bookings/{id}/confirm` | User | Подтвердить бронь |
-| DELETE | `/api/bookings/{id}` | User | Отменить блокировку |
-| GET | `/api/users/me` | User | Профиль |
-| GET | `/api/users/me/bookings` | User | История бронирований |
-| POST | `/api/admin/events` | Admin | Создать мероприятие |
-| PUT | `/api/admin/events/{id}` | Admin | Редактировать |
-| DELETE | `/api/admin/events/{id}` | Admin | Удалить |
-| GET | `/api/admin/dashboard` | Admin | Статистика |
+| GET | `/api/events` | Public | Список мероприятий |
+| GET | `/api/users/{id}` | User | Профиль пользователя |
+| GET | `/api/tickets/{id}/download` | User | Скачать PDF-билет |
+| POST | `/api/admin/checkin/{token}`| Admin | Скан QR-кода (вход) |
+
+*(Полный список в [API_ENDPOINTS.md](./API_ENDPOINTS.md))*
 
 ---
 
-## Тестирование
+## Тестирование и Нагрузка
 
 | Тип | Инструмент | Покрытие |
 |---|---|---|
-| Unit | JUnit 5 + Mockito | BookingService (12 кейсов), AdminService |
-| Integration | Testcontainers + PG | Race Condition (10 потоков → 1 победитель) |
+| Unit | **JUnit 5 + Mockito** | Бизнес-логика (`BookingService`, `AdminService`) |
+| Load Testing | **k6 (1000 VUs)** | Стресс-тест Race Condition. 1000 одновременных кликов в 1 мс, смешанная нагрузка (покупка, бронирование, просмотр), проверка деградации редис увеличение RPS до 5000+|
+| E2E (UI) | **Playwright** | Автоматизированная проверка фронтенда в браузере (CI) |
+| Integration| **Testcontainers** | База данных в изоляции |
 | API | Postman коллекция | Все эндпоинты |
-| CI | GitHub Actions | `mvn verify` на каждый PR |
-
+| CI | **GitHub Actions** | `mvn verify` + Playwright на каждый пуш |
 ---
 
-## Роадмап
+## В Роадмапе
 
-| Неделя | Фокус | Статус |
-|---|---|---|
-| 1-2 | Core: Auth, Booking (PG lock), Admin CRUD | ✅ Done |
-| 3 | Redis Cache, Unit Tests, CI, Swagger | ✅ Done |
-| 4 | Dockerization, Integration Tests, Frontend | 🔄 In Progress |
-| 5 | Nginx, Load Testing (JMeter), Polish | ⏳ Planned |
-| 6 | Документация, Презентация, Защита | ⏳ Planned |
+- Venue Builder (визуальный редактор зала)
+- Telegram-бот для просмотра билетов
+- Платёжная интеграция (ЮKassa)

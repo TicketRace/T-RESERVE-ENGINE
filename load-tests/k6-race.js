@@ -40,5 +40,5 @@ export default function(data) {
 
   if (res.status === 200) lockSuccess.add(1);
   else if (res.status === 409) lockConflict.add(1);
-  else console.log(`UNEXPECTED STATUS: ${res.status} BODY: ${res.body}`);
+  else if (res.status !== 0) console.log(`UNEXPECTED STATUS: ${res.status} BODY: ${res.body}`);
 }
