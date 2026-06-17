@@ -143,6 +143,7 @@ T-RESERVE-ENGINE/ (Root)
 | Load Testing | **k6 (1000 VUs)** | Стресс-тест Race Condition. 1000 одновременных кликов в 1 мс, смешанная нагрузка (покупка, бронирование, просмотр), проверка деградации редис увеличение RPS до 5000+|
 | E2E (UI) | **Playwright** | Автоматизированная проверка фронтенда в браузере (CI) |
 | Integration| **Testcontainers** | База данных в изоляции |
+| API | Postman коллекция | Все эндпоинты |
 | CI | **GitHub Actions** | `mvn verify` + Playwright на каждый пуш |
 ---
 
